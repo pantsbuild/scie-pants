@@ -1,3 +1,8 @@
+[workspace]
+members = [
+  "package",
+]
+
 [package]
 name = "scie-pants"
 version = "0.1.0"
@@ -7,4 +12,16 @@ authors = [
 ]
 publish = false
 
+[profile.release]
+opt-level = "s"
+strip = "symbols"
+lto = "fat"
+codegen-units = 1
+
 [dependencies]
+dirs = "4.0"
+env_logger = { version = "0.10", default-features = false }
+log = "0.4"
+logging_timer = "1.1"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.5"

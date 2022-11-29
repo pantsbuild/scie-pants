@@ -6,3 +6,5 @@
 /*.iml
 /*.ipr
 
+# Packaging output.
+/dist/
