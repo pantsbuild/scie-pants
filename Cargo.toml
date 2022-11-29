@@ -1,0 +1,10 @@
+[package]
+name = "scie-pants"
+version = "0.1.0"
+edition = "2021"
+authors = [
+  "John Sirois <john.sirois@gmail.com>",
+]
+publish = false
+
+[dependencies]
