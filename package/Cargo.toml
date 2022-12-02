@@ -1,6 +1,6 @@
 [package]
 name = "package"
-version = "0.1.1"
+version = "0.2.0"
 description = "Packages the scie-pants binary."
 authors = [
     "John Sirois <john.sirois@gmail.com>",
@@ -8,9 +8,7 @@ authors = [
 edition = "2021"
 publish = false
 
-[build-dependencies]
-scie-pants = { path="..", artifact="bin" }
-sha2 = "0.10"
-
 [dependencies]
+clap = { version = "4.0", features = ["derive"] }
 proc-exit = "2.0"
+sha2 = "0.10"
