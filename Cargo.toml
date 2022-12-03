@@ -19,6 +19,7 @@ lto = "fat"
 codegen-units = 1
 
 [dependencies]
+anyhow = "1.0"
 dirs = "4.0"
 env_logger = { version = "0.10", default-features = false }
 log = "0.4"
