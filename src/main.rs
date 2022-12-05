@@ -4,10 +4,11 @@
 use std::env;
 use std::ffi::OsString;
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use build_root::BuildRoot;
 use log::{info, trace};
 use logging_timer::{time, timer, Level};
+use pyver::PackageVersion;
 
 use crate::config::PantsConfig;
 use crate::pants_bootstrap::PantsBootstrap;
@@ -80,7 +81,25 @@ fn get_pants_process() -> Result<Process> {
     }
     let pants_config = PantsConfig::parse(build_root)?;
     let build_root = pants_config.build_root().to_path_buf();
-    let pants_version = pants_config.package_version();
+
+    let env_version = if let Some(raw_version) = env::var_os("PANTS_VERSION") {
+        Some(PackageVersion::new(
+            raw_version
+                .into_string()
+                .map_err(|raw| {
+                    anyhow!("Failed to interpret PANTS_VERSION {raw:?} as UTF-8 string.")
+                })?
+                .as_str(),
+        )?)
+    } else {
+        None
+    };
+    let pants_version = if let Some(ref env_version) = env_version {
+        Some(env_version)
+    } else {
+        pants_config.package_version()
+    };
+
     let debugpy_version = pants_config.debugpy_version().unwrap_or_default();
 
     let python = if let Some(version) = pants_version {
