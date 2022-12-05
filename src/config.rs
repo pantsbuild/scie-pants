@@ -1,53 +1,51 @@
 // Copyright 2022 Pants project contributors.
 // Licensed under the Apache License, Version 2.0 (see LICENSE).
 
-use std::path::{Path, PathBuf};
+use std::fmt::{Display, Formatter};
+use std::path::Path;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use logging_timer::time;
+use pyver::PackageVersion;
 use serde::Deserialize;
 
 use crate::build_root::BuildRoot;
 
-#[derive(Deserialize)]
-pub(crate) struct Global {
-    pub pants_version: String,
+#[derive(Debug, Deserialize)]
+#[serde(try_from = "String")]
+pub struct Version(PackageVersion);
+
+impl TryFrom<String> for Version {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
+        PackageVersion::new(value.as_str()).map(Self)
+    }
+}
+
+impl Display for Version {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
 }
 
 #[derive(Default, Deserialize)]
-pub(crate) struct Setup {
-    cache: Option<PathBuf>,
+pub(crate) struct Global {
+    #[serde(default)]
+    pub(crate) pants_version: Option<Version>,
 }
 
-impl Setup {
-    #[time("debug")]
-    pub(crate) fn cache(&mut self) -> Result<PathBuf> {
-        if let Some(setup_cache) = self.cache.as_ref() {
-            return Ok(setup_cache.clone());
-        }
-
-        let default_cache = if let Some(cache_dir) = dirs::cache_dir() {
-            cache_dir.join("pants").join("setup")
-        } else if let Some(home_dir) = dirs::home_dir() {
-            home_dir.join(".pants-setup")
-        } else {
-            bail!(
-                "Failed to determine a reasonable default cache directory for Pants setup and \
-                failed to find a fall back user home directory to establish \
-                ~/.pants-setup"
-            );
-        };
-        self.cache = Some(default_cache.clone());
-        Ok(default_cache)
-    }
+#[derive(Default, Deserialize)]
+pub(crate) struct DebugPy {
+    pub(crate) version: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub(crate) struct Config {
-    #[serde(rename = "GLOBAL")]
+    #[serde(default, rename = "GLOBAL")]
     pub(crate) global: Global,
     #[serde(default)]
-    pub(crate) setup: Setup,
+    pub(crate) debugpy: DebugPy,
 }
 
 pub(crate) struct PantsConfig {
@@ -56,12 +54,16 @@ pub(crate) struct PantsConfig {
 }
 
 impl PantsConfig {
+    pub(crate) fn package_version(&self) -> Option<&PackageVersion> {
+        self.config.global.pants_version.as_ref().map(|pv| &pv.0)
+    }
+
     pub(crate) fn build_root(&self) -> &Path {
         self.build_root.as_path()
     }
 
-    pub(crate) fn get_setup_cache(&mut self) -> Result<PathBuf> {
-        self.config.setup.cache()
+    pub(crate) fn debugpy_version(&self) -> Option<String> {
+        self.config.debugpy.version.clone()
     }
 }
 

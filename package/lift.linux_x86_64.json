@@ -1,0 +1,107 @@
+{
+  "scie": {
+    "lift": {
+      "name": "scie-pants",
+      "description": "Isolates your Pants from the elements.",
+      "files": [
+        {
+          "name": "scie-pants-linux-x86_64",
+          "key": "scie-pants",
+          "executable": true
+        },
+        {
+          "name": "ptex-linux-x86_64",
+          "key": "ptex",
+          "executable": true
+        },
+        {
+          "name": "installer.pex"
+        },
+        {
+          "name": "cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
+          "key": "python3.8",
+          "size": 26922922,
+          "hash": "e47edfb2ceaf43fc699e20c179ec428b6f3e497cf8e2dcd8e9c936d4b96b1e56",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        },
+        {
+          "name": "cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
+          "key": "python3.9",
+          "size": 26765574,
+          "hash": "cdc3a4cfddcd63b6cebdd75b14970e02d8ef0ac5be4d350e57ab5df56c19e85e",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        }
+      ],
+      "boot": {
+        "commands": {
+          "": {
+            "description": "Detects the current Pants installation and launches it.",
+            "exe": "{scie-pants}"
+          },
+          "pants": {
+            "description": "Runs a hermetic Pants installation.",
+            "exe": "{scie.bindings.install:VIRTUALENV}/bin/pants",
+            "args": [
+              "--pants-bin-name={scie.env.PANTS_BIN_NAME}",
+              "--pants-version={scie.bindings.install:PANTS_VERSION}",
+              "--python-repos-repos={scie.bindings.install:PANTS_PYTHON_REPOS_REPOS}"
+            ]
+          },
+          "pants_debug": {
+            "description": "Runs a hermetic Pants installation with a debug server for debugging Pants code.",
+            "exe": "{scie.bindings.install:VIRTUALENV}/bin/python",
+            "args": [
+              "-c",
+              "__import__(\"sys\").path.pop(0);print(\"Launching debugpy server at '127.0.0.1:5678' and waiting for client connection.\", file=__import__(\"sys\").stderr);__import__(\"debugpy.server.cli\").server.cli.main()",
+              "--listen",
+              "127.0.0.1:5678",
+              "--wait-for-client",
+              "{scie.bindings.install:VIRTUALENV}/bin/pants",
+              "--pants-bin-name={scie.env.PANTS_BIN_NAME}",
+              "--pants-version={scie.bindings.install:PANTS_VERSION}",
+              "--python-repos-repos={scie.bindings.install:PANTS_PYTHON_REPOS_REPOS}"
+            ]
+          }
+        },
+        "bindings": {
+          "ptex-fetch": {
+            "description": "Fetches hermetic CPython distributions for Pants internal use.",
+            "exe": "{ptex}",
+            "args": [
+              "{scie.lift}"
+            ]
+          },
+          "install": {
+            "description": "Installs a hermetic Pants environment from PyPI or binaries.pantsbuild.org with optional debug support.",
+            "env": {
+              "PEX_ROOT": "{scie.bindings}/pex_root"
+            },
+            "exe": "{scie.files.{scie.env.PYTHON}}/python/bin/{scie.env.PYTHON}",
+            "args": [
+              "{installer.pex}",
+              "--version",
+              "{scie.env.PANTS_VERSION}",
+              "--sha",
+              "{scie.env.PANTS_SHA}",
+              "--ptex",
+              "{ptex}",
+              "--config",
+              "{scie.env.PANTS_BUILDROOT_OVERRIDE}/pants.toml",
+              "--debug",
+              "{scie.env.PANTS_DEBUG}",
+              "--debugpy-requirement",
+              "{scie.env.PANTS_DEBUGPY_VERSION}",
+              "{scie.bindings}/venvs"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "ptex": {
+    "cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
+    "cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz"
+  }
+}

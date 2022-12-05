@@ -1,0 +1,65 @@
+{
+  "scie": {
+    "lift": {
+      "name": "installer-build",
+      "files": [
+        {
+          "name": "ptex-linux-x86_64",
+          "key": "ptex",
+          "executable": true
+        },
+        {
+          "name": "lock.json"
+        },
+        {
+          "name": "installer.py"
+        },
+        {
+          "name": "pex",
+          "size": 4068526,
+          "hash": "2b7be27e945d932241c30027e8ad08a83f61b7370586d75b1e4f35e510478490",
+          "type": "blob",
+          "source": "ptex-fetch"
+        },
+        {
+          "name": "cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
+          "key": "cpython-3.9",
+          "size": 26765574,
+          "hash": "cdc3a4cfddcd63b6cebdd75b14970e02d8ef0ac5be4d350e57ab5df56c19e85e",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        }
+      ],
+      "boot": {
+        "commands": {
+          "": {
+            "exe": "{cpython-3.9}/python/bin/python3.9",
+            "args": [
+              "{pex}",
+              "--lock",
+              "{lock.json}",
+              "--exe",
+              "{installer.py}",
+              "--no-emit-warnings",
+              "--venv",
+              "-o",
+              "installer.pex"
+            ]
+          }
+        },
+        "bindings": {
+          "ptex-fetch": {
+            "exe": "{ptex}",
+            "args": [
+              "{scie.lift}"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "ptex": {
+    "cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
+    "pex": "https://github.com/pantsbuild/pex/releases/download/v2.1.117/pex"
+  }
+}

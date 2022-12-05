@@ -6,7 +6,7 @@ use std::ffi::OsString;
 
 use anyhow::{Context, Result};
 use build_root::BuildRoot;
-use log::info;
+use log::{info, trace};
 use logging_timer::{time, timer, Level};
 
 use crate::config::PantsConfig;
@@ -78,32 +78,56 @@ fn get_pants_process() -> Result<Process> {
     if let Some(pants_bootstrap) = PantsBootstrap::load(&build_root)? {
         pants_bootstrap.export_env();
     }
-    let mut pants_config = PantsConfig::parse(build_root)?;
-    let setup_cache = pants_config.get_setup_cache()?;
+    let pants_config = PantsConfig::parse(build_root)?;
+    let build_root = pants_config.build_root().to_path_buf();
+    let pants_version = pants_config.package_version();
+    let debugpy_version = pants_config.debugpy_version().unwrap_or_default();
+
+    let python = if let Some(version) = pants_version {
+        match (version.release.major, version.release.minor) {
+            (1, _) => "python3.8",
+            (2, minor) if minor < 5 => "python3.8",
+            _ => "python3.9",
+        }
+    } else {
+        "python3.9"
+    };
+
     info!(
-        "Found Pants build root at {build_root} and setup cache at {setup_cache}",
-        build_root = pants_config.build_root().display(),
-        setup_cache = setup_cache.display()
+        "Found Pants build root at {build_root}",
+        build_root = build_root.display()
     );
-    info!(
-        "The required Pants version is {pants_version}",
-        pants_version = pants_config.config.global.pants_version
-    );
+    info!("The required Pants version is {pants_version:?}");
+
     let scie =
         env::var_os("SCIE").context("Failed to retrieve SCIE location from the environment.")?;
+    let scie_argv0 = env::var_os("SCIE_ARGV0")
+        .context("Failed to retrieve SCIE_ARGV0 location from the environment.")?;
+
+    let (scie_boot, pants_debug) = match env::var_os("PANTS_DEBUG") {
+        Some(value) if !value.is_empty() => ("pants_debug", "1"),
+        _ => ("pants", ""),
+    };
+
     Ok(Process {
         exe: scie,
         env: vec![
-            ("SCIE_BOOT".into(), "legacy_pants".into()),
+            ("SCIE_BOOT".into(), scie_boot.into()),
+            ("PANTS_BIN_NAME".into(), scie_argv0),
             (
                 "PANTS_BUILDROOT_OVERRIDE".into(),
-                pants_config.build_root().to_path_buf().into_os_string(),
+                build_root.into_os_string(),
             ),
-            ("PANTS_SETUP_CACHE".into(), setup_cache.into_os_string()),
+            ("PANTS_DEBUG".into(), pants_debug.into()),
+            ("PANTS_DEBUGPY_VERSION".into(), debugpy_version.into()),
             (
                 "PANTS_VERSION".into(),
-                pants_config.config.global.pants_version.into(),
+                pants_version
+                    .map(|pv| pv.original.clone())
+                    .unwrap_or_default()
+                    .into(),
             ),
+            ("PYTHON".into(), python.into()),
         ],
         ..Default::default()
     })
@@ -129,6 +153,7 @@ fn main() {
     env_logger::init();
     let _timer = timer!(Level::Debug; "MAIN");
     let pants_process = get_pants_process().or_exit();
+    trace!("Launching: {pants_process:#?}");
     let exit_code = pants_process.exec().or_exit();
     std::process::exit(exit_code)
 }
