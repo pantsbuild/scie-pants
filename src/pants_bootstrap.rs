@@ -17,7 +17,7 @@ pub(crate) struct PantsBootstrap {
 }
 
 impl PantsBootstrap {
-    #[time("debug")]
+    #[time("debug", "PantsBootstrap::{}")]
     pub(crate) fn load(build_root: &BuildRoot) -> Result<Option<Self>> {
         let pants_bootstrap = build_root.join(".pants.bootstrap");
         if !pants_bootstrap.is_file() {
@@ -108,7 +108,7 @@ impl PantsBootstrap {
         Ok(Some(Self { env }))
     }
 
-    #[time("debug")]
+    #[time("debug", "PantsBootstrap::{}")]
     pub(crate) fn export_env(&self) {
         for (key, value) in &self.env {
             if let Some(ref existing_value) = env::var_os(key) {

@@ -68,7 +68,7 @@ impl PantsConfig {
 }
 
 impl PantsConfig {
-    #[time("debug")]
+    #[time("debug", "PantsConfig::{}")]
     pub(crate) fn parse(build_root: BuildRoot) -> Result<PantsConfig> {
         let pants_config = build_root.join("pants.toml");
         let contents = std::fs::read(&pants_config).with_context(|| {

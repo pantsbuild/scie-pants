@@ -73,7 +73,7 @@ impl Process {
     }
 }
 
-#[time("debug")]
+#[time("debug", "ptex::{}")]
 fn get_pants_process() -> Result<Process> {
     let build_root = BuildRoot::find(None)?;
     if let Some(pants_bootstrap) = PantsBootstrap::load(&build_root)? {

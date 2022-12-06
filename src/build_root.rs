@@ -10,7 +10,7 @@ use logging_timer::time;
 pub(crate) struct BuildRoot(PathBuf);
 
 impl BuildRoot {
-    #[time("debug")]
+    #[time("debug", "BuildRoot::{}")]
     pub(crate) fn find(start_dir: Option<PathBuf>) -> Result<BuildRoot> {
         let start_search = if let Some(cwd) = start_dir {
             cwd
