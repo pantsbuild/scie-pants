@@ -45,7 +45,7 @@
             "env": {
               "PANTS_VERSION": "{scie.bindings.install:PANTS_VERSION}"
             },
-            "exe": "{scie.bindings.install:VIRTUALENV}/bin/pants",
+            "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/pants",
             "args": [
               "--pants-bin-name={scie.env.PANTS_BIN_NAME}",
               "--python-repos-repos={scie.bindings.install:PANTS_PYTHON_REPOS_REPOS}"
@@ -56,14 +56,14 @@
             "env": {
               "PANTS_VERSION": "{scie.bindings.install:PANTS_VERSION}"
             },
-            "exe": "{scie.bindings.install:VIRTUALENV}/bin/python",
+            "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/python",
             "args": [
               "-c",
               "__import__(\"sys\").path.pop(0);print(\"Launching debugpy server at '127.0.0.1:5678' and waiting for client connection.\", file=__import__(\"sys\").stderr);__import__(\"debugpy.server.cli\").server.cli.main()",
               "--listen",
               "127.0.0.1:5678",
               "--wait-for-client",
-              "{scie.bindings.install:VIRTUALENV}/bin/pants",
+              "{scie.bindings.install:VIRTUAL_ENV}/bin/pants",
               "--pants-bin-name={scie.env.PANTS_BIN_NAME}",
               "--python-repos-repos={scie.bindings.install:PANTS_PYTHON_REPOS_REPOS}"
             ]
@@ -80,7 +80,7 @@
               "--pants-venv-base-path",
               "{scie.base}",
               "--pants-venv-full-path",
-              "{scie.bindings.install:VIRTUALENV}"
+              "{scie.bindings.install:VIRTUAL_ENV}"
             ]
           },
           "update": {
