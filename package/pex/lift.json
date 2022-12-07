@@ -1,0 +1,97 @@
+{
+  "scie": {
+    "lift": {
+      "name": "pbt",
+      "description": "Python Build Tool: A BusyBox that provides `python` and `pex` subcommands.",
+      "files": [
+        {
+          "name": "ptex",
+          "executable": true
+        },
+        {
+          "name": "cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz",
+          "key": "python-linux-aarch64",
+          "size": 25080793,
+          "hash": "886ab33ced13c84bf59ce8ff79eba6448365bfcafea1bf415bd1d75e21b690aa",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        },
+        {
+          "name": "cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
+          "key": "python-linux-x86_64",
+          "size": 26922922,
+          "hash": "e47edfb2ceaf43fc699e20c179ec428b6f3e497cf8e2dcd8e9c936d4b96b1e56",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        },
+        {
+          "name": "cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz",
+          "key": "python-macos-aarch64",
+          "size": 17603392,
+          "hash": "1e0a92d1a4f5e6d4a99f86b1cbf9773d703fe7fd032590f3e9c285c7a5eeb00a",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        },
+        {
+          "name": "cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz",
+          "key": "python-macos-x86_64",
+          "size": 17985182,
+          "hash": "70b57f28c2b5e1e3dd89f0d30edd5bc414e8b20195766cf328e1b26bed7890e1",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        },
+        {
+          "name": "cpython-3.8.15+20221106-x86_64-pc-windows-msvc-static-install_only.tar.gz",
+          "key": "python-windows-x86_64",
+          "size": 42772349,
+          "hash": "f9c799b74f258fb520f7afae548f87b65c535ee14d885a64cc935a291436ae50",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        },
+        {
+          "name": "pex",
+          "size": 4068526,
+          "hash": "2b7be27e945d932241c30027e8ad08a83f61b7370586d75b1e4f35e510478490",
+          "type": "blob",
+          "source": "ptex-fetch"
+        }
+      ],
+      "boot": {
+        "commands": {
+          "pex": {
+            "exe": "{scie.files.python-{scie.env.OS}-{scie.env.ARCH}}/{scie.env.PYTHON_EXE}",
+            "args": [
+              "{pex}"
+            ]
+          },
+          "python": {
+            "exe": "{scie.files.python-{scie.env.OS}-{scie.env.ARCH}}/{scie.env.PYTHON_EXE}"
+          }
+        },
+        "bindings": {
+          "ptex-fetch": {
+            "exe": "{ptex}",
+            "args": [
+              "{scie.lift}"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "package": {
+    "cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz": "python/bin/python3.8",
+    "cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz": "python/bin/python3.8",
+    "cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz": "python/bin/python3.8",
+    "cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz": "python/bin/python3.8",
+    "cpython-3.8.15+20221106-x86_64-pc-windows-msvc-static-install_only.tar.gz": "python/python.exe"
+  },
+  "ptex": {
+    "cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz",
+    "cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
+    "cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz",
+    "cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz",
+    "cpython-3.8.15+20221106-x86_64-pc-windows-msvc-static-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-x86_64-pc-windows-msvc-static-install_only.tar.gz",
+    "pex": "https://github.com/pantsbuild/pex/releases/download/v2.1.117/pex"
+  }
+}

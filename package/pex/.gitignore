@@ -1,0 +1,6 @@
+# Input binaries for the pbt boot-pack.
+/ptex-*
+/scie-jump-*
+
+# The Python build tool itself.
+/pbt
