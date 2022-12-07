@@ -10,26 +10,11 @@ import sys
 import urllib.parse
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import NoReturn, Callable, Iterable
+from typing import Callable, Iterable, NoReturn
 
 import tomlkit
-from colors import green, red, yellow
 
-
-def log(message: str) -> None:
-    print(message, file=sys.stderr)
-
-
-def info(message: str) -> None:
-    log(green(message))
-
-
-def warn(message: str) -> None:
-    log(yellow(message))
-
-
-def fatal(message: str) -> NoReturn:
-    sys.exit(red(message))
+from scie_pants.log import fatal, info, warn
 
 
 def determine_sha_version(ptex: str, sha: str) -> tuple[str, str]:
@@ -46,7 +31,9 @@ def determine_sha_version(ptex: str, sha: str) -> tuple[str, str]:
     return find_links, version
 
 
-def determine_latest_stable_version(ptex: str, pants_config: Path) -> tuple[Callable[[], None], str]:
+def determine_latest_stable_version(
+    ptex: str, pants_config: Path
+) -> tuple[Callable[[], None], str]:
     info(f"Fetching latest stable Pants version since none is configured")
     data_url = "https://pypi.org/pypi/pantsbuild.pants/json"
     result = subprocess.run(args=[ptex, data_url], stdout=subprocess.PIPE, check=True)
@@ -55,7 +42,7 @@ def determine_latest_stable_version(ptex: str, pants_config: Path) -> tuple[Call
     def configure_version():
         backup = None
         if pants_config.exists():
-            info(f"Setting [GLOBAL] pants_version = \"{version}\" in {pants_config}")
+            info(f'Setting [GLOBAL] pants_version = "{version}" in {pants_config}')
             config = tomlkit.loads(pants_config.read_text())
             backup = f"{pants_config}.bak"
         else:
@@ -78,23 +65,17 @@ def install_pants(
     find_links: str | None = None,
 ) -> str:
     subprocess.run(
-        args=[
-            sys.executable,
-            "-m",
-            "venv",
-            "--clear",
-            "--prompt",
-            prompt,
-            str(venv_dir)
-        ],
-        check=True
+        args=[sys.executable, "-m", "venv", "--clear", "--prompt", prompt, str(venv_dir)],
+        check=True,
     )
     python = venv_dir / "bin" / "python"
 
     if not find_links:
         null_find_links_repo = venv_dir / ".null-find-links-repo"
         null_find_links_repo.mkdir()
-        find_links = str(null_find_links_repo)
+        find_links_repo = str(null_find_links_repo)
+    else:
+        find_links_repo = find_links
 
     def pip_install(*args: str) -> None:
         subprocess.run(
@@ -106,10 +87,10 @@ def install_pants(
                 "install",
                 "--quiet",
                 "--find-links",
-                find_links,
-                *args
+                find_links_repo,
+                *args,
             ],
-            check=True
+            check=True,
         )
 
     # Grab the latest pip, but don't advance setuptools past 58 which drops support for the
@@ -117,21 +98,21 @@ def install_pants(
     pip_install("-U", "pip", "setuptools<58")
     pip_install("--progress-bar", "off", *pants_requirements)
 
-    return find_links
+    return find_links_repo
 
 
 def main() -> NoReturn:
     parser = ArgumentParser()
-    parser.add_argument("--sha", help="The Pants sha to install (trumps --version)")
-    parser.add_argument("--version", help="The Pants version to install")
+    parser.add_argument("--pants-sha", help="The Pants sha to install (trumps --version)")
+    parser.add_argument("--pants-version", help="The Pants version to install")
     parser.add_argument(
-        "--ptex",
+        "--ptex-path",
         help=(
             "The path of a ptex binary for performing lookups of the latest stable Pants version "
             "as well as lookups of PANTS_SHA information."
-        )
+        ),
     )
-    parser.add_argument("--config", help="The path of the pants.toml file")
+    parser.add_argument("--pants-config", help="The path of the pants.toml file")
     parser.add_argument("--debug", type=bool, help="Install with debug capabilities.")
     parser.add_argument("--debugpy-requirement", help="The debugpy requirement to install")
     parser.add_argument("base_dir", nargs=1, help="The base directory to create Pants venvs in.")
@@ -145,15 +126,21 @@ def main() -> NoReturn:
     find_links = None
     if options.sha:
         if not options.ptex:
-            fatal("The --ptex option must be set when --sha is set.")
+            fatal("The --ptex-path option must be set when --pants-sha is set.")
         find_links, version = determine_sha_version(ptex=options.ptex, sha=options.sha)
     elif options.version:
         version = options.version
     else:
         if not options.ptex:
-            fatal("The --ptex option must be set when neither --sha nor --version is set.")
+            fatal(
+                "The --ptex-path option must be set when neither --pants-sha nor --pants-version "
+                "is set."
+            )
         if not options.config:
-            fatal("The --config option must be set when neither --sha nor --version is set.")
+            fatal(
+                "The --pants-config option must be set when neither --pants-sha nor "
+                "--pants-version is set."
+            )
         configure_version, version = determine_latest_stable_version(
             ptex=options.ptex, pants_config=Path(options.config)
         )
@@ -187,10 +174,10 @@ def main() -> NoReturn:
     with open(env_file, "a") as fp:
         print(f"PANTS_VERSION={version}", file=fp)
         print(f"PANTS_PYTHON_REPOS_REPOS={find_links}", file=fp)
-        print(f"VIRTUALENV={venv_dir}", file=fp)
+        print(f"VIRTUAL_ENV={venv_dir}", file=fp)
 
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

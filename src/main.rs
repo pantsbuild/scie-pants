@@ -123,9 +123,13 @@ fn get_pants_process() -> Result<Process> {
     let scie_argv0 = env::var_os("SCIE_ARGV0")
         .context("Failed to retrieve SCIE_ARGV0 location from the environment.")?;
 
-    let (scie_boot, pants_debug) = match env::var_os("PANTS_DEBUG") {
-        Some(value) if !value.is_empty() => ("pants_debug", "1"),
-        _ => ("pants", ""),
+    let pants_debug = match env::var_os("PANTS_DEBUG") {
+        Some(value) if !value.is_empty() => true,
+        _ => false,
+    };
+    let scie_boot = match env::var_os("PANTS_BOOTSTRAP_TOOLS") {
+        Some(_) => "bootstrap-tools",
+        None => if pants_debug { "pants-debug" } else { "pants" }
     };
 
     Ok(Process {
@@ -137,7 +141,7 @@ fn get_pants_process() -> Result<Process> {
                 "PANTS_BUILDROOT_OVERRIDE".into(),
                 build_root.into_os_string(),
             ),
-            ("PANTS_DEBUG".into(), pants_debug.into()),
+            ("PANTS_DEBUG".into(), if pants_debug { "1" } else { "" }.into()),
             ("PANTS_DEBUGPY_VERSION".into(), debugpy_version.into()),
             (
                 "PANTS_VERSION".into(),
