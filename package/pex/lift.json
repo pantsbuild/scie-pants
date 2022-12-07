@@ -80,11 +80,13 @@
     }
   },
   "package": {
-    "cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz": "python/bin/python3.8",
-    "cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz": "python/bin/python3.8",
-    "cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz": "python/bin/python3.8",
-    "cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz": "python/bin/python3.8",
-    "cpython-3.8.15+20221106-x86_64-pc-windows-msvc-static-install_only.tar.gz": "python/python.exe"
+    "python_exe": {
+      "linux-aarch64": "python/bin/python3.8",
+      "linux-x86_64": "python/bin/python3.8",
+      "macos-aarch64": "python/bin/python3.8",
+      "macos-x86_64": "python/bin/python3.8",
+      "windows-x86_64": "python/python.exe"
+    }
   },
   "ptex": {
     "cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz",

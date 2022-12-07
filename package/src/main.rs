@@ -179,5 +179,17 @@ fn main() -> ExitResult {
         "Wrote the {BINARY} (target: {target}) to {dst}",
         dst = dst.display()
     );
+
+    // 0. Define consts for scie-jump and ptex tags to use.
+    // 1. Get a ptex to use:
+    //    cargo install --git https://github.com/a-scie/ptex --tag v0.4.0 --root dist ptex
+    // 2. Get ptex:
+    //    dist/bin/ptex -O https://github.com/a-scie/ptex/releases/download/v0.4.0/ptex-{OS}-{ARCH}
+    // 3. Get scie-jump:
+    //    dist/bin/ptex -O https://github.com/a-scie/jump/releases/download/v0.5.0/scie-jump-{OS}-{ARCH}
+    // 4. Retrieve PYTHON_EXE from package/python_exe/{env::consts::OS}-{env::consts::ARCH}
+    // 5. Execute scie-jump with env exports of: env::consts::OS, env::consts::ARCH and PYTHON_EXE
+    // 6. Run `pbt pex ...` on tools/src to get tools.pex
+    // 7. Run `pbt python tools.pex package ...` to finish the packaging of the scie-pants scie.
     Code::SUCCESS.ok()
 }
