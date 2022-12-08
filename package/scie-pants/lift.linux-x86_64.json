@@ -18,18 +18,66 @@
           "name": "tools.pex"
         },
         {
+          "name": "cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz",
+          "key": "python3.8-linux-aarch64",
+          "size": 25080793,
+          "hash": "886ab33ced13c84bf59ce8ff79eba6448365bfcafea1bf415bd1d75e21b690aa",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        },
+        {
           "name": "cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
-          "key": "python3.8",
+          "key": "python3.8-linux-x86_64",
           "size": 26922922,
           "hash": "e47edfb2ceaf43fc699e20c179ec428b6f3e497cf8e2dcd8e9c936d4b96b1e56",
           "type": "tar.gz",
           "source": "ptex-fetch"
         },
         {
+          "name": "cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz",
+          "key": "python3.8-macos-aarch64",
+          "size": 17603392,
+          "hash": "1e0a92d1a4f5e6d4a99f86b1cbf9773d703fe7fd032590f3e9c285c7a5eeb00a",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        },
+        {
+          "name": "cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz",
+          "key": "python3.8-macos-x86_64",
+          "size": 17985182,
+          "hash": "70b57f28c2b5e1e3dd89f0d30edd5bc414e8b20195766cf328e1b26bed7890e1",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        },
+        {
+          "name": "cpython-3.9.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz",
+          "key": "python3.9-linux-aarch64",
+          "size": 24524876,
+          "hash": "52a8c0a67fb919f80962d992da1bddb511cdf92faf382701ce7673e10a8ff98f",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        },
+        {
           "name": "cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
-          "key": "python3.9",
+          "key": "python3.9-linux-x86_64",
           "size": 26765574,
           "hash": "cdc3a4cfddcd63b6cebdd75b14970e02d8ef0ac5be4d350e57ab5df56c19e85e",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        },
+        {
+          "name": "cpython-3.9.15+20221106-aarch64-apple-darwin-install_only.tar.gz",
+          "key": "python3.9-macos-aarch64",
+          "size": 16748283,
+          "hash": "64dc7e1013481c9864152c3dd806c41144c79d5e9cd3140e185c6a5060bdc9ab",
+          "type": "tar.gz",
+          "source": "ptex-fetch"
+        },
+        {
+          "name": "cpython-3.9.15+20221106-x86_64-apple-darwin-install_only.tar.gz",
+          "key": "python3.9-macos-x86_64",
+          "size": 17148635,
+          "hash": "f2bcade6fc976c472f18f2b3204d67202d43ae55cf6f9e670f95e488f780da08",
           "type": "tar.gz",
           "source": "ptex-fetch"
         }
@@ -73,7 +121,7 @@
             "env": {
               "=PEX_ROOT": "{scie.bindings}/pex_root"
             },
-            "exe": "{scie.files.{scie.env.PYTHON}}/python/bin/{scie.env.PYTHON}",
+            "exe": "{scie.files.{scie.env.PYTHON}-{scie.platform}}/python/bin/{scie.env.PYTHON}",
             "args": [
               "{tools.pex}",
               "bootstrap-tools",
@@ -112,7 +160,7 @@
             "env": {
               "=PEX_ROOT": "{scie.bindings}/pex_root"
             },
-            "exe": "{scie.files.{scie.env.PYTHON}}/python/bin/{scie.env.PYTHON}",
+            "exe": "{scie.files.{scie.env.PYTHON}-{scie.platform}}/python/bin/{scie.env.PYTHON}",
             "args": [
               "{tools.pex}",
               "install-pants",
@@ -136,7 +184,13 @@
     }
   },
   "ptex": {
+    "cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz",
     "cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
-    "cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz"
+    "cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz",
+    "cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz",
+    "cpython-3.9.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz",
+    "cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
+    "cpython-3.9.15+20221106-aarch64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-aarch64-apple-darwin-install_only.tar.gz",
+    "cpython-3.9.15+20221106-x86_64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-x86_64-apple-darwin-install_only.tar.gz"
   }
 }

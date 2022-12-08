@@ -1,7 +1,6 @@
 // Copyright 2022 Pants project contributors.
 // Licensed under the Apache License, Version 2.0 (see LICENSE).
 
-use std::collections::HashMap;
 use std::env;
 use std::fmt::{Display, Formatter};
 use std::fs::Permissions;
@@ -11,8 +10,8 @@ use std::process::Command;
 
 use clap::Parser;
 use lazy_static::lazy_static;
+use log::info;
 use proc_exit::{Code, Exit, ExitResult};
-use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 const BINARY: &str = "scie-pants";
@@ -66,6 +65,7 @@ fn prepare_exe(path: &Path) -> ExitResult {
 }
 
 fn execute(command: &mut Command) -> ExitResult {
+    info!("Executing {command:#?}");
     let mut child = command
         .spawn()
         .map_err(|e| Code::FAILURE.with_message(format!("{e}")))?;
@@ -90,6 +90,11 @@ fn path_as_str(path: &Path) -> Result<&str, Exit> {
 }
 
 fn rename(src: &Path, dst: &Path) -> ExitResult {
+    info!(
+        "Renaming {src} -> {dst}",
+        src = src.display(),
+        dst = dst.display()
+    );
     std::fs::rename(src, dst).map_err(|e| {
         Code::FAILURE.with_message(format!(
             "Failed to rename {src} -> {dst}: {e}",
@@ -126,16 +131,6 @@ fn fetch_scie_jump(ptex: &Path, dest_dir: &Path) -> ExitResult {
             ])
             .current_dir(dest_dir),
     )
-}
-
-#[derive(Deserialize)]
-struct Package {
-    python_exe: HashMap<String, String>,
-}
-
-#[derive(Deserialize)]
-struct Config {
-    package: Package,
 }
 
 #[derive(Clone)]
@@ -197,11 +192,7 @@ struct Args {
         default_value_t = false
     )]
     update_lock: bool,
-    #[arg(
-        long,
-        help = "Run smoke test.",
-        default_value_t = false
-    )]
+    #[arg(long, help = "Run smoke test.", default_value_t = false)]
     smoke_test: bool,
 }
 
@@ -214,6 +205,8 @@ fn binary_full_name(name: &str) -> String {
 }
 
 fn main() -> ExitResult {
+    pretty_env_logger::init();
+
     let args = Args::parse();
     let dest_dir = args.dest_dir;
     if dest_dir.is_file() {
@@ -282,7 +275,7 @@ fn main() -> ExitResult {
                 vec![output_bin_dir.to_str().unwrap(), env!("PATH")].join(PATHSEP),
             ),
     )?;
-    let bootstrap_ptex = PathBuf::from(OUT_DIR).join("bin").join("ptex");
+    let bootstrap_ptex = PathBuf::from(&output_root).join("bin").join("ptex");
 
     let pbt_dir = package_crate_root.join("pbt");
 
@@ -312,42 +305,10 @@ fn main() -> ExitResult {
         fetch_scie_jump(&bootstrap_ptex, &pbt_dir)?;
     }
 
-    // 4. Retrieve PYTHON_EXE from our custom lift manifest metadata.
-    let lift = pbt_dir.join("lift.json");
-    let data = std::fs::read(&lift).map_err(|e| {
-        Code::FAILURE.with_message(format!(
-            "Failed to read contents of {lift}: {e}",
-            lift = lift.display()
-        ))
-    })?;
-    let config: Config = serde_json::from_slice(data.as_slice()).map_err(|e| {
-        Code::FAILURE.with_message({
-            format!(
-                "Failed to parse package config from {lift}: {e}",
-                lift = lift.display()
-            )
-        })
-    })?;
-    let python_exe = config
-        .package
-        .python_exe
-        .get(OS_ARCH.as_str())
-        .ok_or_else(|| {
-            Code::FAILURE.with_message(format!(
-                "The lift manifest at {lift} is missing a package.python_exe entry for {os_arch}",
-                lift = lift.display(),
-                os_arch = *OS_ARCH
-            ))
-        })?;
-
-    // 5. Execute scie-jump to boot-pack the `pbt` binary.
+    // 4. Execute scie-jump to boot-pack the `pbt` binary.
+    info!("Execute scie-jump to boot-pack the `pbt` binary");
     let scie_jump_exe = pbt_dir.join(binary_full_name("scie-jump"));
     prepare_exe(&scie_jump_exe)?;
-    let pbt_env = [
-        ("OS", env::consts::OS),
-        ("ARCH", env::consts::ARCH),
-        ("PYTHON_EXE", python_exe),
-    ];
     let pbt_exe = pbt_dir.join("pbt");
     if pbt_exe.exists() {
         std::fs::remove_file(&pbt_exe).map_err(|e| {
@@ -357,13 +318,9 @@ fn main() -> ExitResult {
             ))
         })?;
     }
-    execute(
-        Command::new(&scie_jump_exe)
-            .envs(pbt_env)
-            .current_dir(&pbt_dir),
-    )?;
+    execute(Command::new(&scie_jump_exe).current_dir(&pbt_dir))?;
 
-    // 6. Build the scie-pants tools wheel.
+    // 5. Build the scie-pants tools wheel.
     let tools_path = workspace_root.join("tools");
     let tools = path_as_str(&tools_path)?;
     let find_links_dir = tempfile::tempdir().map_err(|e| {
@@ -383,7 +340,6 @@ fn main() -> ExitResult {
     execute(
         Command::new(&pbt_exe)
             .env("SOURCE_DATE_EPOCH", "315532800")
-            .envs(pbt_env)
             .args([
                 "pip",
                 "wheel",
@@ -395,12 +351,12 @@ fn main() -> ExitResult {
             ]),
     )?;
 
-    // 7. Run `pbt pex ...` on the scie-pants wheel to get tools.pex
+    // 6. Run `pbt pex ...` on the scie-pants wheel to get tools.pex
     let lock_path = tools_path.join("lock.json");
     let lock = path_as_str(&lock_path)?;
 
     if args.update_lock {
-        execute(Command::new(&pbt_exe).envs(pbt_env).args([
+        execute(Command::new(&pbt_exe).args([
             "pex3",
             "lock",
             "create",
@@ -426,7 +382,7 @@ fn main() -> ExitResult {
     let scie_pants_package_dir = package_crate_root.join("scie-pants");
     let tools_pex_path = scie_pants_package_dir.join("tools.pex");
     let tools_pex = path_as_str(&tools_pex_path)?;
-    execute(Command::new(&pbt_exe).envs(pbt_env).args([
+    execute(Command::new(&pbt_exe).args([
         "pex",
         "--no-emit-warnings",
         "--lock",
@@ -442,7 +398,7 @@ fn main() -> ExitResult {
         "--venv",
     ]))?;
 
-    // 8. Setup the scie-pants boot-pack.
+    // 7. Setup the scie-pants boot-pack.
     let file_name = binary_full_name(BINARY);
     let scie_base_dst = scie_pants_package_dir.join(&file_name);
     let scie_jump_dst = scie_pants_package_dir.join(binary_full_name("scie-jump"));
@@ -451,7 +407,7 @@ fn main() -> ExitResult {
     rename(&scie_jump_exe, &scie_jump_dst)?;
     rename(&ptex_exe, &ptex_dst)?;
 
-    // 9. Run the boot-pack.
+    // 8. Run the boot-pack.
     let scie_pants_lift =
         scie_pants_package_dir.join(format!("lift.{os_arch}.json", os_arch = *OS_ARCH));
     let scie_pants_scie = scie_pants_package_dir.join("scie-pants");
@@ -469,12 +425,12 @@ fn main() -> ExitResult {
             .current_dir(&scie_pants_package_dir),
     )?;
 
-    // 10. Test the scie-pants.
+    // 9. Smoke test the scie-pants.
     if args.smoke_test {
         execute(Command::new(&scie_pants_scie).args(["fmt", "lint", "check", "test", "::"]))?;
     }
 
-    // 11. Deliver the packaged and tested scie-pants to dest.
+    // 10. Deliver the packaged and tested scie-pants to dest.
     std::fs::create_dir_all(&dest_dir).map_err(|e| {
         Code::FAILURE.with_message(format!(
             "Failed to create dest_dir {dest_dir}: {e}",
