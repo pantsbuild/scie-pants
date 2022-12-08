@@ -124,6 +124,7 @@ def main() -> NoReturn:
         help="Show this help.",
     )
     help_parser.set_defaults(func=lambda _: parser.print_help())
+    parser.set_defaults(func=lambda _: parser.print_help())
 
     options = parser.parse_args()
     subcommand = options.func

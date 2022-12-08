@@ -75,7 +75,7 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "102d6755e2b5d3db86727f75c97086b6b39215e341fc2a02649f0047742e6428",
+              "hash": "4a8c7e80198347052731baa206b899f94a8af6710aa10931d93768ecec950fa9",
               "url": "file://${FIND_LINKS}/scie_pants-2-py3-none-any.whl"
             }
           ],
@@ -85,7 +85,7 @@
             "conscript==0.1.5",
             "tomlkit==0.11.6"
           ],
-          "requires_python": "<3.12,>=3.8",
+          "requires_python": "<3.10,>=3.8",
           "version": "2"
         },
         {

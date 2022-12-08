@@ -243,62 +243,39 @@ fn main() -> ExitResult {
             ),
     )?;
 
-    let src = output_bin_dir
+    let scie_pants_exe = output_bin_dir
         .join(BINARY)
         .with_extension(env::consts::EXE_EXTENSION);
-    let mut reader = std::fs::File::open(&src).map_err(|e| {
+    let mut reader = std::fs::File::open(&scie_pants_exe).map_err(|e| {
         Code::FAILURE.with_message(format!(
             "Failed to open {src} for hashing: {e}",
-            src = src.display()
+            src = scie_pants_exe.display()
         ))
     })?;
     let mut hasher = Sha256::new();
     std::io::copy(&mut reader, &mut hasher)
         .map_err(|e| Code::FAILURE.with_message(format!("Failed to digest stream: {e}")))?;
-    let digest = hasher.finalize();
-
-    // TODO(John Sirois): XXX: dest dir should only be applied to final scie.
-    let file_name = binary_full_name(BINARY);
-    let dst = dest_dir.join(&file_name);
-
-    std::fs::create_dir_all(&dest_dir).map_err(|e| {
-        Code::FAILURE.with_message(format!(
-            "Failed to create dest_dir {dest_dir}: {e}",
-            dest_dir = dest_dir.display()
-        ))
-    })?;
-    std::fs::copy(&src, &dst).map_err(|e| {
-        Code::FAILURE.with_message(format!(
-            "Failed to copy {src} to {dst}: {e}",
-            src = src.display(),
-            dst = dst.display()
-        ))
-    })?;
-
-    let fingerprint_file = dst.with_file_name(format!("{file_name}.sha256"));
-    std::fs::write(&fingerprint_file, format!("{digest:x} *{file_name}\n")).map_err(|e| {
-        Code::FAILURE.with_message(format!(
-            "Failed to write fingerprint file {fingerprint_file}: {e}",
-            fingerprint_file = fingerprint_file.display()
-        ))
-    })?;
-
-    eprintln!(
-        "Wrote the {BINARY} (target: {target}) to {dst}",
-        dst = dst.display()
-    );
+    let scie_pants_digest = hasher.finalize();
 
     // 1. Get a bootstrap ptex to use to download the rest of the pre-built binary releases:
-    execute(Command::new(CARGO).args([
-        "install",
-        "--git",
-        "https://github.com/a-scie/ptex",
-        "--tag",
-        PTEX_TAG,
-        "--root",
-        OUT_DIR,
-        "ptex",
-    ]))?;
+    execute(
+        Command::new(CARGO)
+            .args([
+                "install",
+                "--git",
+                "https://github.com/a-scie/ptex",
+                "--tag",
+                PTEX_TAG,
+                "--root",
+                path_as_str(&output_root)?,
+                "ptex",
+            ])
+            // N.B.: This just suppresses a warning about adding this bin dir to your PATH.
+            .env(
+                "PATH",
+                vec![output_bin_dir.to_str().unwrap(), env!("PATH")].join(PATHSEP),
+            ),
+    )?;
     let bootstrap_ptex = PathBuf::from(OUT_DIR).join("bin").join("ptex");
 
     let pbt_dir = package_crate_root.join("pbt");
@@ -319,8 +296,8 @@ fn main() -> ExitResult {
     )?;
     let ptex_exe_path = pbt_dir.join(ptex_exe_full_name);
     prepare_exe(&ptex_exe_path)?;
-    let ptex_dest = pbt_dir.join("ptex");
-    rename(&ptex_exe_path, &ptex_dest)?;
+    let ptex_exe = pbt_dir.join("ptex");
+    rename(&ptex_exe_path, &ptex_exe)?;
 
     // 3. Fetch the production scie-jump for the current platform:
     if let Some(scie_jump_from) = args.scie_jump {
@@ -375,7 +352,7 @@ fn main() -> ExitResult {
         })?;
     }
     execute(
-        Command::new(scie_jump_exe)
+        Command::new(&scie_jump_exe)
             .envs(pbt_env)
             .current_dir(&pbt_dir),
     )?;
@@ -390,6 +367,10 @@ fn main() -> ExitResult {
     })?;
     let find_links = path_as_str(find_links_dir.path())?;
 
+    // N.B.: We set SOURCE_DATE_EPOCH so that we get a reproducible wheel build here via the flit
+    // build backend we have set up in pyproject.toml.
+    // See: https://flit.pypa.io/en/stable/reproducible.html
+    //
     // We use the start of MS-DOS time: 1/1/1980 00:00:0.0, which is what zipfiles use (see section
     // 4.4.6 of https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT). The value 315532800 is
     // the number of seconds from the start of UNIX time (1/1/1970 00:00:0.0) until then.
@@ -411,10 +392,7 @@ fn main() -> ExitResult {
     // 7. Run `pbt pex ...` on the scie-pants wheel to get tools.pex
 
     let lock_path = tools_src_path.join("lock.json");
-    let scie_pants_package_dir = package_crate_root.join("scie-pants");
-    let tools_pex_path = scie_pants_package_dir.join("tools.pex");
     let lock = path_as_str(&lock_path)?;
-    let tools_pex = path_as_str(&tools_pex_path)?;
 
     if args.update_lock {
         execute(Command::new(&pbt_exe).envs(pbt_env).args([
@@ -440,6 +418,9 @@ fn main() -> ExitResult {
         ]))?;
     }
 
+    let scie_pants_package_dir = package_crate_root.join("scie-pants");
+    let tools_pex_path = scie_pants_package_dir.join("tools.pex");
+    let tools_pex = path_as_str(&tools_pex_path)?;
     execute(Command::new(&pbt_exe).envs(pbt_env).args([
         "pex",
         "--no-emit-warnings",
@@ -459,13 +440,67 @@ fn main() -> ExitResult {
         tools_pex,
     ]))?;
 
-    // 8. Run `pbt python tools.pex package ...` to finish the packaging of the scie-pants scie.
-    // TODO(John Sirois): XXX: Implement package-scie-pants console script.
+    // 8. Setup the scie-pants boot-pack.
+    let file_name = binary_full_name(BINARY);
+    let scie_base_dst = scie_pants_package_dir.join(&file_name);
+    let scie_jump_dst = scie_pants_package_dir.join(binary_full_name("scie-jump"));
+    let ptex_dst = scie_pants_package_dir.join(binary_full_name("ptex"));
+    rename(&scie_pants_exe, &scie_base_dst)?;
+    rename(&scie_jump_exe, &scie_jump_dst)?;
+    rename(&ptex_exe, &ptex_dst)?;
+
+    // 9. Run the boot-pack and ...
+    let scie_pants_lift =
+        scie_pants_package_dir.join(format!("lift.{os_arch}.json", os_arch = *OS_ARCH));
+    let src = scie_pants_package_dir.join("scie-pants");
+    if src.exists() {
+        std::fs::remove_file(&src).map_err(|e| {
+            Code::FAILURE.with_message(format!(
+                "Failed to remove existing {src}: {e}",
+                src = src.display()
+            ))
+        })?;
+    }
     execute(
-        Command::new(pbt_exe)
-            .envs(pbt_env)
-            .args(["python", tools_pex, "--help"]),
+        Command::new(&scie_jump_dst)
+            .arg(&scie_pants_lift)
+            .current_dir(&scie_pants_package_dir),
     )?;
 
-    Code::SUCCESS.ok()
+    //
+
+    std::fs::create_dir_all(&dest_dir).map_err(|e| {
+        Code::FAILURE.with_message(format!(
+            "Failed to create dest_dir {dest_dir}: {e}",
+            dest_dir = dest_dir.display()
+        ))
+    })?;
+
+    let dst = dest_dir.join(&file_name);
+    std::fs::copy(&src, &dst).map_err(|e| {
+        Code::FAILURE.with_message(format!(
+            "Failed to copy {src} to {dst}: {e}",
+            src = src.display(),
+            dst = dst.display()
+        ))
+    })?;
+
+    let fingerprint_file = dst.with_file_name(format!("{file_name}.sha256"));
+    std::fs::write(
+        &fingerprint_file,
+        format!("{scie_pants_digest:x} *{file_name}\n"),
+    )
+    .map_err(|e| {
+        Code::FAILURE.with_message(format!(
+            "Failed to write fingerprint file {fingerprint_file}: {e}",
+            fingerprint_file = fingerprint_file.display()
+        ))
+    })?;
+
+    eprintln!(
+        "Wrote the {BINARY} (target: {target}) to {dst}",
+        dst = dst.display()
+    );
+
+    Ok(())
 }

@@ -124,25 +124,25 @@ def main() -> NoReturn:
 
     finalizers = []
     find_links = None
-    if options.sha:
+    if options.pants_sha:
         if not options.ptex:
             fatal("The --ptex-path option must be set when --pants-sha is set.")
-        find_links, version = determine_sha_version(ptex=options.ptex, sha=options.sha)
-    elif options.version:
-        version = options.version
+        find_links, version = determine_sha_version(ptex=options.ptex, sha=options.pants_sha)
+    elif options.pants_version:
+        version = options.pants_version
     else:
-        if not options.ptex:
+        if not options.ptex_path:
             fatal(
                 "The --ptex-path option must be set when neither --pants-sha nor --pants-version "
                 "is set."
             )
-        if not options.config:
+        if not options.pants_config:
             fatal(
                 "The --pants-config option must be set when neither --pants-sha nor "
                 "--pants-version is set."
             )
         configure_version, version = determine_latest_stable_version(
-            ptex=options.ptex, pants_config=Path(options.config)
+            ptex=options.ptex_path, pants_config=Path(options.pants_config)
         )
         finalizers.append(configure_version)
 

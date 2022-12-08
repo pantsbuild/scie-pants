@@ -15,7 +15,7 @@
           "executable": true
         },
         {
-          "name": "installer.pex"
+          "name": "tools.pex"
         },
         {
           "name": "cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
@@ -73,11 +73,11 @@
             "env": {
               "PEX_ROOT": "{scie.bindings}/pex_root"
             },
-            "exe": "{scie.files.{scie.env.PYTHON}/python/bin/{scie.env.PYTHON}",
+            "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/python",
             "args": [
-              "{installer.pex}",
+              "{tools.pex}",
               "bootstrap-tools",
-              "--pants-venv-base-path",
+              "--scie-base",
               "{scie.base}",
               "--pants-venv-full-path",
               "{scie.bindings.install:VIRTUAL_ENV}"
@@ -88,9 +88,9 @@
             "env": {
               "PEX_ROOT": "{scie.bindings}/pex_root"
             },
-            "exe": "{scie.files.{scie.env.PYTHON}/python/bin/{scie.env.PYTHON}",
+            "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/python",
             "args": [
-              "{installer.pex}",
+              "{tools.pex}",
               "update-scie-pants",
               "--ptex-path",
               "{ptex}",
@@ -114,7 +114,7 @@
             },
             "exe": "{scie.files.{scie.env.PYTHON}}/python/bin/{scie.env.PYTHON}",
             "args": [
-              "{installer.pex}",
+              "{tools.pex}",
               "install-pants",
               "--ptex-path",
               "{ptex}",
