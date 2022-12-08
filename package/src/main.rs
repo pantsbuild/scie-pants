@@ -197,6 +197,12 @@ struct Args {
         default_value_t = false
     )]
     update_lock: bool,
+    #[arg(
+        long,
+        help = "Run smoke test.",
+        default_value_t = false
+    )]
+    smoke_test: bool,
 }
 
 fn binary_full_name(name: &str) -> String {
@@ -358,8 +364,8 @@ fn main() -> ExitResult {
     )?;
 
     // 6. Build the scie-pants tools wheel.
-    let tools_src_path = workspace_root.join("tools").join("src");
-    let tools_src = path_as_str(&tools_src_path)?;
+    let tools_path = workspace_root.join("tools");
+    let tools = path_as_str(&tools_path)?;
     let find_links_dir = tempfile::tempdir().map_err(|e| {
         Code::FAILURE.with_message(format!(
             "Failed to create temporary find-links directory for the scie-jump wheel: {e}"
@@ -385,13 +391,12 @@ fn main() -> ExitResult {
                 "--no-deps",
                 "--wheel-dir",
                 find_links,
-                tools_src,
+                tools,
             ]),
     )?;
 
     // 7. Run `pbt pex ...` on the scie-pants wheel to get tools.pex
-
-    let lock_path = tools_src_path.join("lock.json");
+    let lock_path = tools_path.join("lock.json");
     let lock = path_as_str(&lock_path)?;
 
     if args.update_lock {
@@ -446,15 +451,15 @@ fn main() -> ExitResult {
     rename(&scie_jump_exe, &scie_jump_dst)?;
     rename(&ptex_exe, &ptex_dst)?;
 
-    // 9. Run the boot-pack and ...
+    // 9. Run the boot-pack.
     let scie_pants_lift =
         scie_pants_package_dir.join(format!("lift.{os_arch}.json", os_arch = *OS_ARCH));
-    let src = scie_pants_package_dir.join("scie-pants");
-    if src.exists() {
-        std::fs::remove_file(&src).map_err(|e| {
+    let scie_pants_scie = scie_pants_package_dir.join("scie-pants");
+    if scie_pants_scie.exists() {
+        std::fs::remove_file(&scie_pants_scie).map_err(|e| {
             Code::FAILURE.with_message(format!(
                 "Failed to remove existing {src}: {e}",
-                src = src.display()
+                src = scie_pants_scie.display()
             ))
         })?;
     }
@@ -464,8 +469,12 @@ fn main() -> ExitResult {
             .current_dir(&scie_pants_package_dir),
     )?;
 
-    //
+    // 10. Test the scie-pants.
+    if args.smoke_test {
+        execute(Command::new(&scie_pants_scie).args(["fmt", "lint", "check", "test", "::"]))?;
+    }
 
+    // 11. Deliver the packaged and tested scie-pants to dest.
     std::fs::create_dir_all(&dest_dir).map_err(|e| {
         Code::FAILURE.with_message(format!(
             "Failed to create dest_dir {dest_dir}: {e}",
@@ -474,10 +483,10 @@ fn main() -> ExitResult {
     })?;
 
     let dst = dest_dir.join(&file_name);
-    std::fs::copy(&src, &dst).map_err(|e| {
+    std::fs::copy(&scie_pants_scie, &dst).map_err(|e| {
         Code::FAILURE.with_message(format!(
             "Failed to copy {src} to {dst}: {e}",
-            src = src.display(),
+            src = scie_pants_scie.display(),
             dst = dst.display()
         ))
     })?;

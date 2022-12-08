@@ -65,7 +65,15 @@ def install_pants(
     find_links: str | None = None,
 ) -> str:
     subprocess.run(
-        args=[sys.executable, "-m", "venv", "--clear", "--prompt", prompt, str(venv_dir)],
+        args=[
+            sys.executable,
+            "-m",
+            "venv",
+            "--clear",
+            "--prompt",
+            prompt,
+            str(venv_dir),
+        ],
         check=True,
     )
     python = venv_dir / "bin" / "python"
@@ -147,7 +155,9 @@ def main() -> NoReturn:
         finalizers.append(configure_version)
 
     python_version = ".".join(map(str, sys.version_info[:3]))
-    info(f"Bootstrapping Pants {version} using {sys.implementation.name} {python_version}")
+    info(
+        f"Bootstrapping Pants {version} using {sys.implementation.name} {python_version} at {sys.executable}"
+    )
 
     base_dir = Path(options.base_dir[0])
     pants_requirements = [f"pantsbuild.pants=={version}"]

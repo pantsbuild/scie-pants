@@ -62,7 +62,8 @@ def main() -> NoReturn:
     parser = ArgumentParser(prog=PROG)
     parser.add_argument("-V", "--version", action="version", version=f"{VERSION}")
     parser.add_argument(
-        "--python-distribution-hash", help="The content hash of the Python distribution being used."
+        "--python-distribution-hash",
+        help="The content hash of the Python distribution being used.",
     )
     parser.add_argument("--pants-version", help="The version of Pants being used.")
 

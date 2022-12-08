@@ -8,3 +8,8 @@
 
 # Packaging output.
 /dist/
+
+# Pants control dirs.
+/.pants.d/
+/.pids/
+

@@ -1,0 +1,42 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "scie-pants"
+version = "0.1.0"
+description = "Support tools for scie-pants."
+license = "Apache-2.0"
+authors = [
+    "The Pants Developers <pantsbuild@gmail.com>"
+]
+packages = [
+    { include = "scie_pants", from="src" },
+]
+include = ["LICENSE"]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.10"
+
+ansicolors = "1.1.8"
+conscript = "0.1.5"
+tomlkit = "0.11.6"
+
+[tool.poetry.dev-dependencies]
+pytest = "7.2.0"
+
+[tool.poetry.scripts]
+bootstrap-tools = "scie_pants.bootstrap_tools:main"
+install-pants = "scie_pants.install_pants:main"
+update-scie-pants = "scie_pants.update_scie_pants:main"
+
+[tool.black]
+line-length = 100
+target-version = ["py38"]
+
+[tool.isort]
+profile = "black"
+
+[[tool.mypy.overrides]]
+module = "colors"
+ignore_missing_imports = true

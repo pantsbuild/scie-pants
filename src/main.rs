@@ -117,6 +117,7 @@ fn get_pants_process() -> Result<Process> {
         build_root = build_root.display()
     );
     info!("The required Pants version is {pants_version:?}");
+    info!("Selected {python}");
 
     let scie =
         env::var_os("SCIE").context("Failed to retrieve SCIE location from the environment.")?;

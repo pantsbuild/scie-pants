@@ -71,7 +71,7 @@
           "bootstrap-tools": {
             "description": "Introspection tools for the Pants bootstrap process.",
             "env": {
-              "PEX_ROOT": "{scie.bindings}/pex_root"
+              "=PEX_ROOT": "{scie.bindings}/pex_root"
             },
             "exe": "{scie.files.{scie.env.PYTHON}}/python/bin/{scie.env.PYTHON}",
             "args": [
@@ -86,7 +86,7 @@
           "update": {
             "description": "Update scie-pants.",
             "env": {
-              "PEX_ROOT": "{scie.bindings}/pex_root"
+              "=PEX_ROOT": "{scie.bindings}/pex_root"
             },
             "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/python",
             "args": [
@@ -110,7 +110,7 @@
           "install": {
             "description": "Installs a hermetic Pants environment from PyPI or binaries.pantsbuild.org with optional debug support.",
             "env": {
-              "PEX_ROOT": "{scie.bindings}/pex_root"
+              "=PEX_ROOT": "{scie.bindings}/pex_root"
             },
             "exe": "{scie.files.{scie.env.PYTHON}}/python/bin/{scie.env.PYTHON}",
             "args": [
