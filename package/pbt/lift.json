@@ -2,7 +2,7 @@
   "scie": {
     "lift": {
       "name": "pbt",
-      "description": "Python Build Tool: A BusyBox that provides `python` and `pex` subcommands.",
+      "description": "Python Build Tool: A BusyBox that provides `python`, `pip`, `pex`, `pex3` and `pex-tools`.",
       "files": [
         {
           "name": "ptex",
@@ -62,6 +62,31 @@
             "exe": "{scie.files.python-{scie.env.OS}-{scie.env.ARCH}}/{scie.env.PYTHON_EXE}",
             "args": [
               "{pex}"
+            ]
+          },
+          "pex3": {
+            "env": {
+              "PEX_SCRIPT": "pex3"
+            },
+            "exe": "{scie.files.python-{scie.env.OS}-{scie.env.ARCH}}/{scie.env.PYTHON_EXE}",
+            "args": [
+              "{pex}"
+            ]
+          },
+          "pex-tools": {
+            "env": {
+              "PEX_SCRIPT": "pex-tools"
+            },
+            "exe": "{scie.files.python-{scie.env.OS}-{scie.env.ARCH}}/{scie.env.PYTHON_EXE}",
+            "args": [
+              "{pex}"
+            ]
+          },
+          "pip": {
+            "exe": "{scie.files.python-{scie.env.OS}-{scie.env.ARCH}}/{scie.env.PYTHON_EXE}",
+            "args": [
+              "-m",
+              "pip"
             ]
           },
           "python": {

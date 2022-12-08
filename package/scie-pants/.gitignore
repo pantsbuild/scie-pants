@@ -1,0 +1,6 @@
+# Input binaries for the pbt boot-pack.
+/ptex*
+/scie-jump*
+
+# Any PEXes used in the scie-boot.
+/*.pex

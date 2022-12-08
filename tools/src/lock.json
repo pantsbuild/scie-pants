@@ -214,7 +214,7 @@
   "pip_version": "22.3",
   "prefer_older_binary": false,
   "requirements": [
-    "scie_pants"
+    "scie-pants"
   ],
   "requires_python": [],
   "resolver_version": "pip-2020-resolver",

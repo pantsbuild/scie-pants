@@ -18,6 +18,10 @@ strip = "symbols"
 lto = "fat"
 codegen-units = 1
 
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+tempfile = "3.3"
+
 [dependencies]
 anyhow = "1.0"
 dirs = "4.0"
@@ -26,6 +30,6 @@ log = "0.4"
 logging_timer = "1.1"
 nix = "0.26"
 pyver = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-tempfile = "3.3"
+serde = { workspace = true }
+tempfile = { workspace = true }
 toml = "0.5"
