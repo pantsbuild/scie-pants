@@ -126,7 +126,7 @@
               "{tools.pex}",
               "bootstrap-tools",
               "--python-distribution-hash",
-              "{scie.files:hash.{scie.env.PYTHON}}",
+              "{scie.files:hash.{scie.env.PYTHON}-{scie.platform}}",
               "--pants-version",
               "{scie.env.PANTS_VERSION}"
             ]

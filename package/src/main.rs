@@ -428,6 +428,11 @@ fn main() -> ExitResult {
     // 9. Smoke test the scie-pants.
     if args.smoke_test {
         execute(Command::new(&scie_pants_scie).args(["fmt", "lint", "check", "test", "::"]))?;
+        execute(
+            Command::new(&scie_pants_scie)
+                .env("PANTS_BOOTSTRAP_TOOLS", "1")
+                .args(["bootstrap-cache-key"]),
+        )?;
     }
 
     // 10. Deliver the packaged and tested scie-pants to dest.
