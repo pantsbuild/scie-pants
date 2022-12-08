@@ -1,6 +1,6 @@
 # Copyright 2022 Pants project contributors.
 # Licensed under the Apache License, Version 2.0 (see LICENSE).
-
+import hashlib
 import os
 import sys
 from argparse import ArgumentParser, Namespace
@@ -42,60 +42,29 @@ def versioned(func) -> Callable:
 
 @versioned
 def bootstrap_cache_key(options: Namespace) -> None:
-    scie_base = options.scie_base
-    if not scie_base:
-        fatal("The --scie-base option is required for the bootstrap-cache-key command.")
 
-    pants_venv_full_path = options.pants_venv_full_path
-    if not pants_venv_full_path:
-        fatal("The --pants-venv-full-path option is required for the bootstrap-cache-key command.")
+    def require(option: str) -> str:
+        if option not in options:
+            fatal(
+                f"The --{option.replace('_', '-')} option is required for the bootstrap-cache-key "
+                "command."
+            )
+        return str(getattr(options, option))
 
-    if scie_base != os.path.commonpath(
-        (
-            scie_base,
-            pants_venv_full_path,
-        )
-    ):
-        fatal(
-            "The given --pants-venv-full-path is not a subdirectory of --pants-venv-base-path.\n"
-            "Given:\n"
-            f"--scie-base={scie_base}\n"
-            f"--pants-venv-full-path={pants_venv_full_path}"
-        )
-
-    # The Pants venvs the installer creates mix the following into their path:
-    # + The content hash of the python distribution used to install and run Pants, which includes
-    #   the Python version, operating system and chip architecture implicitly by definition.
-    # + The Pants version.
-    # + The debug mode, which includes the debugpy version.
-    #
-    # As such, this satisfies the criteria for a bootstrap cache key that will be invalidated at
-    # least as often as needed. We relativize away the SCIE_BASE since install location should not
-    # contribute to the cache key, just install contents.
-    print(
-        os.path.relpath(
-            pants_venv_full_path,
-            scie_base,
-        )
-    )
+    cache_key = [
+        f"python_distribution_hash={require('python_distribution_hash')}",
+        f"pants_version={require('pants_version')}",
+    ]
+    print(" ".join(cache_key))
 
 
 def main() -> NoReturn:
     parser = ArgumentParser(prog=PROG)
+    parser.add_argument("-V", "--version", action="version", version=f"{VERSION}")
     parser.add_argument(
-        "-V",
-        "--version",
-        action="version",
-        version=f"{VERSION}",
+        "--python-distribution-hash", help="The content hash of the Python distribution being used."
     )
-    parser.add_argument(
-        "--scie-base",
-        help="The absolute path of the SCIE_BASE installs are inside.",
-    )
-    parser.add_argument(
-        "--pants-venv-full-path",
-        help="The absolute path of the active Pants configuration's venv",
-    )
+    parser.add_argument("--pants-version", help="The version of Pants being used.")
 
     sub_commands = parser.add_subparsers()
     cache_key_parser = sub_commands.add_parser(

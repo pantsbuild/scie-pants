@@ -424,10 +424,6 @@ fn main() -> ExitResult {
     execute(Command::new(&pbt_exe).envs(pbt_env).args([
         "pex",
         "--no-emit-warnings",
-        "--venv",
-        "--venv-site-packages-copies",
-        "-D",
-        tools_src,
         "--lock",
         lock,
         "--find-links",
@@ -438,6 +434,7 @@ fn main() -> ExitResult {
         "conscript",
         "-o",
         tools_pex,
+        "--venv",
     ]))?;
 
     // 8. Setup the scie-pants boot-pack.

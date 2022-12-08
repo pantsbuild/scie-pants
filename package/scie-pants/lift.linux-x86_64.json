@@ -73,14 +73,14 @@
             "env": {
               "PEX_ROOT": "{scie.bindings}/pex_root"
             },
-            "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/python",
+            "exe": "{scie.files.{scie.env.PYTHON}}/python/bin/{scie.env.PYTHON}",
             "args": [
               "{tools.pex}",
               "bootstrap-tools",
-              "--scie-base",
-              "{scie.base}",
-              "--pants-venv-full-path",
-              "{scie.bindings.install:VIRTUAL_ENV}"
+              "--python-distribution-hash",
+              "{scie.files:hash.{scie.env.PYTHON}}",
+              "--pants-version",
+              "{scie.env.PANTS_VERSION}"
             ]
           },
           "update": {
