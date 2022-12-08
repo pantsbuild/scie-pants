@@ -18,36 +18,23 @@ def test_bootstrap_cache_key_no_env() -> None:
 PANTS_BOOTSTRAP_TOOLS_ENV = {**os.environ, "PANTS_BOOTSTRAP_TOOLS": f"{VERSION}"}
 
 
-def test_bootstrap_cache_key_no_base() -> None:
+def test_bootstrap_cache_key_no_python_distribution_hash() -> None:
     with pytest.raises(subprocess.CalledProcessError):
         run_tool(
             "bootstrap-tools",
-            "--pants-venv-full-path",
-            "/a",
+            "--pants-version",
+            "2.14.0",
             "bootstrap-cache-key",
             env=PANTS_BOOTSTRAP_TOOLS_ENV,
         )
 
 
-def test_bootstrap_cache_key_no_full() -> None:
+def test_bootstrap_cache_key_no_pants_version() -> None:
     with pytest.raises(subprocess.CalledProcessError):
         run_tool(
             "bootstrap-tools",
-            "--scie-base",
-            "/a",
-            "bootstrap-cache-key",
-            env=PANTS_BOOTSTRAP_TOOLS_ENV,
-        )
-
-
-def test_bootstrap_cache_key_full_not_subdir_of_base() -> None:
-    with pytest.raises(subprocess.CalledProcessError):
-        run_tool(
-            "bootstrap-tools",
-            "--scie-base",
-            "/a",
-            "--pants-venv-full-path",
-            "/b",
+            "--python-distribution-hash",
+            "abcd1234",
             "bootstrap-cache-key",
             env=PANTS_BOOTSTRAP_TOOLS_ENV,
         )
@@ -55,13 +42,13 @@ def test_bootstrap_cache_key_full_not_subdir_of_base() -> None:
 
 def test_bootstrap_cache_key() -> None:
     assert (
-        "abcd1234/bindings/venvs/2.14.0"
+        "python_distribution_hash=abcd1234 pants_version=2.14.0"
         == run_tool(
             "bootstrap-tools",
-            "--scie-base",
-            "/root",
-            "--pants-venv-full-path",
-            "/root/abcd1234/bindings/venvs/2.14.0",
+            "--python-distribution-hash",
+            "abcd1234",
+            "--pants-version",
+            "2.14.0",
             "bootstrap-cache-key",
             env=PANTS_BOOTSTRAP_TOOLS_ENV,
             stdout=subprocess.PIPE,

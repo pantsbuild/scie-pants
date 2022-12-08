@@ -42,14 +42,14 @@ def versioned(func) -> Callable:
 
 @versioned
 def bootstrap_cache_key(options: Namespace) -> None:
-
     def require(option: str) -> str:
-        if option not in options:
+        value = getattr(options, option, None)
+        if not value:
             fatal(
                 f"The --{option.replace('_', '-')} option is required for the bootstrap-cache-key "
                 "command."
             )
-        return str(getattr(options, option))
+        return str(value)
 
     cache_key = [
         f"python_distribution_hash={require('python_distribution_hash')}",

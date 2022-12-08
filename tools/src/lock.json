@@ -75,7 +75,7 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "e55a49bf93e7ba1a22ff635f390980f7f01a553c988105d8512a4389bc1bf609",
+              "hash": "40563e51953b658b6b61508592a1468a7290057bd8bbd29d11013c4c8ce5e8f0",
               "url": "file://${FIND_LINKS}/scie_pants-2-py3-none-any.whl"
             }
           ],
@@ -85,7 +85,7 @@
             "conscript==0.1.5",
             "tomlkit==0.11.6"
           ],
-          "requires_python": "<3.10,>=3.8",
+          "requires_python": "<3.11,>=3.8",
           "version": "2"
         },
         {
@@ -214,7 +214,7 @@
   "pip_version": "22.3",
   "prefer_older_binary": false,
   "requirements": [
-    "scie-pants"
+    "scie_pants"
   ],
   "requires_python": [],
   "resolver_version": "pip-2020-resolver",
