@@ -222,7 +222,7 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "89c0c5cb7b33b990c4e3706220dcc2723b5d504eb3fb27588641bc82e89b2b5a",
+              "hash": "35f74556ee6d89785c86fdd067da025c1345e6898ebb6573d5444c59c21b5ad1",
               "url": "file://${FIND_LINKS}/scie_pants-0.1.0-py3-none-any.whl"
             }
           ],

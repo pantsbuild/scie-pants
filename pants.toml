@@ -14,29 +14,29 @@ repo_id = "e0b99427-9bc2-4f6a-b197-f5f378849b15"
 
 [black]
 version = "black==22.10.0"
-lockfile = "pants/tool-locks/black.lock"
+lockfile = "pants-support/tool-locks/black.lock"
 
 [isort]
 version = "isort==5.10.1"
-lockfile = "pants/tool-locks/isort.lock"
+lockfile = "pants-support/tool-locks/isort.lock"
 
 [mypy]
 version = "mypy==0.991"
 config = "tools/pyproject.toml"
-lockfile = "pants/tool-locks/mypy.lock"
+lockfile = "pants-support/tool-locks/mypy.lock"
 
 [pex-cli]
-version = "v2.1.117"
+version = "v2.1.118"
 known_versions = [
-    "v2.1.117|linux_arm64|2b7be27e945d932241c30027e8ad08a83f61b7370586d75b1e4f35e510478490|4068526",
-    "v2.1.117|linux_x86_64|2b7be27e945d932241c30027e8ad08a83f61b7370586d75b1e4f35e510478490|4068526",
-    "v2.1.117|macos_arm64|2b7be27e945d932241c30027e8ad08a83f61b7370586d75b1e4f35e510478490|4068526",
-    "v2.1.117|macos_x86_64|2b7be27e945d932241c30027e8ad08a83f61b7370586d75b1e4f35e510478490|4068526",
+    "v2.1.118|linux_arm64|a0633d2d84a20908c4ada92e01d4cd3e4ae76497a83f2bf0f2e6f0d5ca0098d5|4068845",
+    "v2.1.118|linux_x86_64|a0633d2d84a20908c4ada92e01d4cd3e4ae76497a83f2bf0f2e6f0d5ca0098d5|4068845",
+    "v2.1.118|macos_arm64|a0633d2d84a20908c4ada92e01d4cd3e4ae76497a83f2bf0f2e6f0d5ca0098d5|4068845",
+    "v2.1.118|macos_x86_64|a0633d2d84a20908c4ada92e01d4cd3e4ae76497a83f2bf0f2e6f0d5ca0098d5|4068845",
 ]
 
 [pytest]
 version = "pytest==7.2.0"
-lockfile = "pants/tool-locks/pytest.lock"
+lockfile = "pants-support/tool-locks/pytest.lock"
 
 [python]
 enable_resolves = true

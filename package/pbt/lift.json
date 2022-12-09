@@ -59,7 +59,7 @@
       "boot": {
         "commands": {
           "pex": {
-            "exe": "{scie.files.python-{scie.platform}}/python/bin/python3.8",
+            "exe": "{python-{scie.platform}}/python/bin/python3.8",
             "args": [
               "{pex}"
             ]
@@ -68,7 +68,7 @@
             "env": {
               "PEX_SCRIPT": "pex3"
             },
-            "exe": "{scie.files.python-{scie.platform}}/python/bin/python3.8",
+            "exe": "{python-{scie.platform}}/python/bin/python3.8",
             "args": [
               "{pex}"
             ]
@@ -77,20 +77,20 @@
             "env": {
               "PEX_SCRIPT": "pex-tools"
             },
-            "exe": "{scie.files.python-{scie.platform}}/python/bin/python3.8",
+            "exe": "{python-{scie.platform}}/python/bin/python3.8",
             "args": [
               "{pex}"
             ]
           },
           "pip": {
-            "exe": "{scie.files.python-{scie.platform}}/python/bin/python3.8",
+            "exe": "{python-{scie.platform}}/python/bin/python3.8",
             "args": [
               "-m",
               "pip"
             ]
           },
           "python": {
-            "exe": "{scie.files.python-{scie.platform}}/python/bin/python3.8"
+            "exe": "{python-{scie.platform}}/python/bin/python3.8"
           }
         },
         "bindings": {

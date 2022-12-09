@@ -68,7 +68,9 @@ fn execute(command: &mut Command) -> ExitResult {
     info!("Executing {command:#?}");
     let mut child = command
         .spawn()
-        .map_err(|e| Code::FAILURE.with_message(format!("{e}")))?;
+        .map_err(|e| {
+            Code::FAILURE.with_message(format!("Failed to spawn command: {command:?}: {e}"))
+        })?;
     let exit_status = child.wait().map_err(|e| {
         Code::FAILURE.with_message(format!(
             "Failed to gather exit status of command: {command:?}: {e}"
@@ -447,8 +449,9 @@ fn main() -> ExitResult {
         // Max Python supported is 3.8.
         execute(
             Command::new(&scie_pants_scie)
-                .env("PANTS_VERSION", "2.4.0")
-                .args(["--no-verify-config", "-V"]),
+                .env("PANTS_VERSION", "1.30.5rc1")
+                .env("PANTS_BACKEND_PACKAGES", "-['pants.backend.python.typecheck.mypy']")
+                .args(["--no-verify-config", "--version"]),
         )?;
     }
 

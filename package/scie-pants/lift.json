@@ -90,6 +90,9 @@
           },
           "pants": {
             "description": "Runs a hermetic Pants installation.",
+            "env": {
+              "=PATH": "{scie.env.PATH}:{scie.bindings.install:VIRTUAL_ENV}/bin"
+            },
             "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/pants",
             "args": [
               "--pants-bin-name={scie.env.PANTS_BIN_NAME}",
@@ -99,6 +102,9 @@
           },
           "pants-debug": {
             "description": "Runs a hermetic Pants installation with a debug server for debugging Pants code.",
+            "env": {
+              "=PATH": "{scie.env.PATH}:{scie.bindings.install:VIRTUAL_ENV}/bin"
+            },
             "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/python",
             "args": [
               "-c",
@@ -125,21 +131,6 @@
               "{scie.files:hash.{scie.env.PYTHON}-{scie.platform}}",
               "--pants-version",
               "{scie.env.PANTS_VERSION}"
-            ]
-          },
-          "update": {
-            "description": "Update scie-pants.",
-            "env": {
-              "=PEX_ROOT": "{scie.bindings}/pex_root"
-            },
-            "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/python",
-            "args": [
-              "{tools.pex}",
-              "update-scie-pants",
-              "--ptex-path",
-              "{ptex}",
-              "--pants-config",
-              "{scie.env.PANTS_BUILDROOT_OVERRIDE}/pants.toml"
             ]
           }
         },

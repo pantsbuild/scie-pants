@@ -109,7 +109,9 @@ def install_pants(
     pip_install("-U", "pip", "setuptools<58")
     pip_install("--progress-bar", "off", *pants_requirements)
 
-    find_links_option = "repos" if pants_version in SpecifierSet("<2.14.0") else "find-links"
+    find_links_option = (
+        "repos" if pants_version in SpecifierSet("<2.14.0", prereleases=True) else "find-links"
+    )
     return f"--python-repos-{find_links_option}={find_links_repo}"
 
 
