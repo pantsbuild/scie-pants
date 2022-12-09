@@ -408,8 +408,7 @@ fn main() -> ExitResult {
     rename(&ptex_exe, &ptex_dst)?;
 
     // 8. Run the boot-pack.
-    let scie_pants_lift =
-        scie_pants_package_dir.join(format!("lift.{os_arch}.json", os_arch = *OS_ARCH));
+    let scie_pants_lift = scie_pants_package_dir.join("lift.json");
     let scie_pants_scie = scie_pants_package_dir.join("scie-pants");
     if scie_pants_scie.exists() {
         std::fs::remove_file(&scie_pants_scie).map_err(|e| {
@@ -432,6 +431,24 @@ fn main() -> ExitResult {
             Command::new(&scie_pants_scie)
                 .env("PANTS_BOOTSTRAP_TOOLS", "1")
                 .args(["bootstrap-cache-key"]),
+        )?;
+        // Before --python-repos-repos deprecation warning for --python-repos-find-links alternative.
+        execute(
+            Command::new(&scie_pants_scie)
+                .env("PANTS_VERSION", "2.12.1")
+                .args(["--no-verify-config", "-V"]),
+        )?;
+        // PANTS_SHA handling.
+        execute(
+            Command::new(&scie_pants_scie)
+                .env("PANTS_SHA", "298409b3a4d7914c29a3bea5098b55698967f658")
+                .args(["--no-verify-config", "-V"]),
+        )?;
+        // Max Python supported is 3.8.
+        execute(
+            Command::new(&scie_pants_scie)
+                .env("PANTS_VERSION", "2.4.0")
+                .args(["--no-verify-config", "-V"]),
         )?;
     }
 

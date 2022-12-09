@@ -103,7 +103,9 @@ fn get_pants_process() -> Result<Process> {
     if let (Some(pants_sha), Some(pants_version)) = (&env_pants_sha, &env_pants_version) {
         bail!(
             "Both PANTS_SHA={pants_sha} and PANTS_VERSION={pants_version} were set. \
-            Please choose one.", pants_sha=pants_sha.original, pants_version=pants_version.original
+            Please choose one.",
+            pants_sha = pants_sha.original,
+            pants_version = pants_version.original
         )
     }
 
