@@ -4,7 +4,7 @@
 use std::env;
 use std::ffi::OsString;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use build_root::BuildRoot;
 use log::{info, trace};
 use logging_timer::{time, timer, Level};
@@ -73,6 +73,22 @@ impl Process {
     }
 }
 
+fn env_version(env_var_name: &str) -> Result<Option<PackageVersion>> {
+    let version = if let Some(raw_version) = env::var_os(env_var_name) {
+        Some(PackageVersion::new(
+            raw_version
+                .into_string()
+                .map_err(|raw| {
+                    anyhow!("Failed to interpret {env_var_name} {raw:?} as UTF-8 string.")
+                })?
+                .as_str(),
+        )?)
+    } else {
+        None
+    };
+    Ok(version)
+}
+
 #[time("debug", "ptex::{}")]
 fn get_pants_process() -> Result<Process> {
     let build_root = BuildRoot::find(None)?;
@@ -82,22 +98,21 @@ fn get_pants_process() -> Result<Process> {
     let pants_config = PantsConfig::parse(build_root)?;
     let build_root = pants_config.build_root().to_path_buf();
 
-    let env_version = if let Some(raw_version) = env::var_os("PANTS_VERSION") {
-        Some(PackageVersion::new(
-            raw_version
-                .into_string()
-                .map_err(|raw| {
-                    anyhow!("Failed to interpret PANTS_VERSION {raw:?} as UTF-8 string.")
-                })?
-                .as_str(),
-        )?)
+    let env_pants_sha = env_version("PANTS_SHA")?;
+    let env_pants_version = env_version("PANTS_VERSION")?;
+    if let (Some(pants_sha), Some(pants_version)) = (&env_pants_sha, &env_pants_version) {
+        bail!(
+            "Both PANTS_SHA={pants_sha} and PANTS_VERSION={pants_version} were set. \
+            Please choose one.", pants_sha=pants_sha.original, pants_version=pants_version.original
+        )
+    }
+
+    let pants_version = if let Some(ref env_version) = env_pants_version {
+        Some(env_version)
+    } else if env_pants_sha.is_none() {
+        pants_config.package_version()
     } else {
         None
-    };
-    let pants_version = if let Some(ref env_version) = env_version {
-        Some(env_version)
-    } else {
-        pants_config.package_version()
     };
 
     let debugpy_version = pants_config.debugpy_version().unwrap_or_default();
@@ -136,29 +151,27 @@ fn get_pants_process() -> Result<Process> {
         }
     };
 
+    let mut env = vec![
+        ("SCIE_BOOT".into(), scie_boot.into()),
+        ("PANTS_BIN_NAME".into(), scie_argv0),
+        (
+            "PANTS_BUILDROOT_OVERRIDE".into(),
+            build_root.into_os_string(),
+        ),
+        (
+            "PANTS_DEBUG".into(),
+            if pants_debug { "1" } else { "" }.into(),
+        ),
+        ("PANTS_DEBUGPY_VERSION".into(), debugpy_version.into()),
+        ("PYTHON".into(), python.into()),
+    ];
+    if let Some(version) = pants_version {
+        env.push(("PANTS_VERSION".into(), version.original.clone().into()));
+    }
+
     Ok(Process {
         exe: scie,
-        env: vec![
-            ("SCIE_BOOT".into(), scie_boot.into()),
-            ("PANTS_BIN_NAME".into(), scie_argv0),
-            (
-                "PANTS_BUILDROOT_OVERRIDE".into(),
-                build_root.into_os_string(),
-            ),
-            (
-                "PANTS_DEBUG".into(),
-                if pants_debug { "1" } else { "" }.into(),
-            ),
-            ("PANTS_DEBUGPY_VERSION".into(), debugpy_version.into()),
-            (
-                "PANTS_VERSION".into(),
-                pants_version
-                    .map(|pv| pv.original.clone())
-                    .unwrap_or_default()
-                    .into(),
-            ),
-            ("PYTHON".into(), python.into()),
-        ],
+        env,
         ..Default::default()
     })
 }

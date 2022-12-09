@@ -13,31 +13,33 @@ from pathlib import Path
 from typing import Callable, Iterable, NoReturn
 
 import tomlkit
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version
 
 from scie_pants.log import fatal, info, warn
 
 
-def determine_sha_version(ptex: str, sha: str) -> tuple[str, str]:
+def determine_sha_version(ptex: str, sha: str) -> tuple[str, Version]:
     version_file_url = (
         f"https://raw.githubusercontent.com/pantsbuild/pants/{sha}/src/python/pants/VERSION"
     )
     result = subprocess.run(args=[ptex, version_file_url], stdout=subprocess.PIPE, check=True)
     pants_version = result.stdout.decode().strip()
-    version = f"{pants_version}+git{sha[:8]}"
+    version = Version(f"{pants_version}+git{sha[:8]}")
     find_links = (
         "https://binaries.pantsbuild.org/wheels/pantsbuild.pants/"
-        f"{sha}/{urllib.parse.quote(version)}/index.html"
+        f"{sha}/{urllib.parse.quote(str(version))}/index.html"
     )
     return find_links, version
 
 
 def determine_latest_stable_version(
     ptex: str, pants_config: Path
-) -> tuple[Callable[[], None], str]:
+) -> tuple[Callable[[], None], Version]:
     info(f"Fetching latest stable Pants version since none is configured")
     data_url = "https://pypi.org/pypi/pantsbuild.pants/json"
     result = subprocess.run(args=[ptex, data_url], stdout=subprocess.PIPE, check=True)
-    version = json.loads(result.stdout)["info"]["version"]
+    version = Version(json.loads(result.stdout)["info"]["version"])
 
     def configure_version():
         backup = None
@@ -49,7 +51,7 @@ def determine_latest_stable_version(
             info(f"Creating {pants_config} and configuring it to use Pants {version}")
             config = tomlkit.document()
         global_section = config.setdefault("GLOBAL", {})
-        global_section["pants_version"] = version
+        global_section["pants_version"] = str(version)
         if backup:
             warn(f"Backing up {pants_config} to {backup}")
             pants_config.replace(backup)
@@ -59,6 +61,7 @@ def determine_latest_stable_version(
 
 
 def install_pants(
+    pants_version: Version,
     venv_dir: Path,
     prompt: str,
     pants_requirements: Iterable[str],
@@ -106,13 +109,14 @@ def install_pants(
     pip_install("-U", "pip", "setuptools<58")
     pip_install("--progress-bar", "off", *pants_requirements)
 
-    return find_links_repo
+    find_links_option = "repos" if pants_version in SpecifierSet("<2.14.0") else "find-links"
+    return f"--python-repos-{find_links_option}={find_links_repo}"
 
 
 def main() -> NoReturn:
     parser = ArgumentParser()
     parser.add_argument("--pants-sha", help="The Pants sha to install (trumps --version)")
-    parser.add_argument("--pants-version", help="The Pants version to install")
+    parser.add_argument("--pants-version", type=str, help="The Pants version to install")
     parser.add_argument(
         "--ptex-path",
         help=(
@@ -133,11 +137,11 @@ def main() -> NoReturn:
     finalizers = []
     find_links = None
     if options.pants_sha:
-        if not options.ptex:
+        if not options.ptex_path:
             fatal("The --ptex-path option must be set when --pants-sha is set.")
-        find_links, version = determine_sha_version(ptex=options.ptex, sha=options.pants_sha)
+        find_links, version = determine_sha_version(ptex=options.ptex_path, sha=options.pants_sha)
     elif options.pants_version:
-        version = options.pants_version
+        version = Version(options.pants_version)
     else:
         if not options.ptex_path:
             fatal(
@@ -155,9 +159,7 @@ def main() -> NoReturn:
         finalizers.append(configure_version)
 
     python_version = ".".join(map(str, sys.version_info[:3]))
-    info(
-        f"Bootstrapping Pants {version} using {sys.implementation.name} {python_version} at {sys.executable}"
-    )
+    info(f"Bootstrapping Pants {version} using {sys.implementation.name} {python_version}")
 
     base_dir = Path(options.base_dir[0])
     pants_requirements = [f"pantsbuild.pants=={version}"]
@@ -167,11 +169,12 @@ def main() -> NoReturn:
         venv_dir = base_dir / f"{version}-{debugpy_requirement}"
         prompt = f"Pants {version} [{debugpy_requirement}]"
     else:
-        venv_dir = base_dir / version
+        venv_dir = base_dir / str(version)
         prompt = f"Pants {version}"
 
     info(f"Installing {' '.join(pants_requirements)} into a virtual environment at {venv_dir}")
     find_links = install_pants(
+        pants_version=version,
         venv_dir=venv_dir,
         prompt=prompt,
         pants_requirements=pants_requirements,
@@ -183,7 +186,7 @@ def main() -> NoReturn:
 
     with open(env_file, "a") as fp:
         print(f"PANTS_VERSION={version}", file=fp)
-        print(f"PANTS_PYTHON_REPOS_REPOS={find_links}", file=fp)
+        print(f"PANTS_SHA_FIND_LINKS={find_links}", file=fp)
         print(f"VIRTUAL_ENV={venv_dir}", file=fp)
 
     sys.exit(0)

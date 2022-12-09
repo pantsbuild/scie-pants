@@ -90,20 +90,15 @@
           },
           "pants": {
             "description": "Runs a hermetic Pants installation.",
-            "env": {
-              "PANTS_VERSION": "{scie.bindings.install:PANTS_VERSION}"
-            },
             "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/pants",
             "args": [
               "--pants-bin-name={scie.env.PANTS_BIN_NAME}",
-              "--python-repos-repos={scie.bindings.install:PANTS_PYTHON_REPOS_REPOS}"
+              "--pants-version={scie.env.PANTS_VERSION={scie.bindings.install:PANTS_VERSION}}",
+              "{scie.bindings.install:PANTS_SHA_FIND_LINKS}"
             ]
           },
           "pants-debug": {
             "description": "Runs a hermetic Pants installation with a debug server for debugging Pants code.",
-            "env": {
-              "PANTS_VERSION": "{scie.bindings.install:PANTS_VERSION}"
-            },
             "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/python",
             "args": [
               "-c",
@@ -113,7 +108,8 @@
               "--wait-for-client",
               "{scie.bindings.install:VIRTUAL_ENV}/bin/pants",
               "--pants-bin-name={scie.env.PANTS_BIN_NAME}",
-              "--python-repos-repos={scie.bindings.install:PANTS_PYTHON_REPOS_REPOS}"
+              "--pants-version={scie.env.PANTS_VERSION={scie.bindings.install:PANTS_VERSION}}",
+              "{scie.bindings.install:PANTS_SHA_FIND_LINKS}"
             ]
           },
           "bootstrap-tools": {

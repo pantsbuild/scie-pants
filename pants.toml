@@ -8,6 +8,10 @@ backend_packages = [
     "pants.backend.python.typecheck.mypy",
 ]
 
+[anonymous-telemetry]
+enabled = true
+repo_id = "e0b99427-9bc2-4f6a-b197-f5f378849b15"
+
 [black]
 version = "black==22.10.0"
 lockfile = "pants/tool-locks/black.lock"
@@ -21,17 +25,31 @@ version = "mypy==0.991"
 config = "tools/pyproject.toml"
 lockfile = "pants/tool-locks/mypy.lock"
 
+[pex-cli]
+version = "v2.1.117"
+known_versions = [
+    "v2.1.117|linux_arm64|2b7be27e945d932241c30027e8ad08a83f61b7370586d75b1e4f35e510478490|4068526",
+    "v2.1.117|linux_x86_64|2b7be27e945d932241c30027e8ad08a83f61b7370586d75b1e4f35e510478490|4068526",
+    "v2.1.117|macos_arm64|2b7be27e945d932241c30027e8ad08a83f61b7370586d75b1e4f35e510478490|4068526",
+    "v2.1.117|macos_x86_64|2b7be27e945d932241c30027e8ad08a83f61b7370586d75b1e4f35e510478490|4068526",
+]
+
 [pytest]
 version = "pytest==7.2.0"
 lockfile = "pants/tool-locks/pytest.lock"
 
 [python]
-tailor_pex_binary_targets = true
+enable_resolves = true
 interpreter_constraints = [">=3.8,<3.10"]
-resolves = { default = "tools/lock.json" }
 
 # We generate these via cargo run -p package -- --update-lock.
 resolves_generate_lockfiles = false
+
+[python.resolves]
+python-default = "tools/lock.json"
+
+[python-repos]
+path_mappings = ["FIND_LINKS|%(buildroot)s/tools"]
 
 [source]
 root_patterns = [

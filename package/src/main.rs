@@ -375,7 +375,7 @@ fn main() -> ExitResult {
             lock,
             "--indent",
             "2",
-            "scie-pants",
+            "scie-pants[test]",
         ]))?;
     }
 

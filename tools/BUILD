@@ -25,6 +25,7 @@ pex_binary(
     script="conscript",
     dependencies=[
         ":reqs#conscript",
+        ":reqs#packaging",
         ":wheel",
     ]
 )
