@@ -1,6 +1,0 @@
-/.mypy_cache/
-/.tox/
-
-__pycache__/
-*.pyc
-*.pex

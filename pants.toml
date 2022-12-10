@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.14.0"
+pants_version = "2.15.0rc0"
 
 backend_packages = [
     "pants.backend.python",
@@ -42,14 +42,11 @@ lockfile = "pants-support/tool-locks/pytest.lock"
 enable_resolves = true
 interpreter_constraints = [">=3.8,<3.10"]
 
-# We generate these via cargo run -p package -- --update-lock.
+# We generate this via cargo run -p package -- --update-lock.
 resolves_generate_lockfiles = false
 
 [python.resolves]
 python-default = "tools/lock.json"
-
-[python-repos]
-path_mappings = ["FIND_LINKS|%(buildroot)s/tools"]
 
 [source]
 root_patterns = [

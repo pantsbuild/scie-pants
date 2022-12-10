@@ -1,0 +1,3 @@
+[console_scripts]
+bootstrap-tools = scie_pants.bootstrap_tools:main
+install-pants = scie_pants.install_pants:main
