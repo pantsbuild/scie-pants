@@ -690,27 +690,26 @@ fn test(
         )?;
     }
 
-    if matches!(*CURRENT_PLATFORM, Platform::LinuxX86_64) {
-        // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
+    // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
+    if matches!(
+        *CURRENT_PLATFORM,
+        Platform::LinuxX86_64 | Platform::MacOSX86_64
+    ) {
         integration_test!("Verifying Python 3.8 is selected for Pants older than 2.5.0");
-        execute(
-            Command::new(scie_pants_scie)
-                .env("PANTS_VERSION", "1.30.5rc1")
-                .env(
-                    "PANTS_BACKEND_PACKAGES",
-                    "-['pants.backend.python.typecheck.mypy']",
-                )
-                .args(["--no-verify-config", "--version"]),
-        )?;
-    } else if matches!(*CURRENT_PLATFORM, Platform::MacOSX86_64) {
-        // The 1.30.5rc1 release hangs after printing out the version on Mac in CI; so choose a bit
-        // newer Pants version and whistle past the graveyard.
-        integration_test!("Verifying Python 3.8 is selected for Pants older than 2.5.0");
-        execute(
-            Command::new(scie_pants_scie)
-                .env("PANTS_VERSION", "2.0.2")
-                .args(["--no-verify-config", "-V"]),
-        )?;
+        let mut command = Command::new(scie_pants_scie);
+        command
+            .env("PANTS_VERSION", "1.30.5rc1")
+            .env(
+                "PANTS_BACKEND_PACKAGES",
+                "-['pants.backend.python.typecheck.mypy']",
+            )
+            .args(["--no-verify-config", "--version"]);
+        if Platform::MacOSX86_64 == *CURRENT_PLATFORM {
+            // For unknown reasons, macOS x86_64 hangs in CI if this last test, like all prior tests
+            // nonetheless!, is run with pantsd enabled mode.
+            command.arg("--no-pantsd");
+        }
+        execute(&mut command)?;
     }
 
     Ok(())
