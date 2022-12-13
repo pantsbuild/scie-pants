@@ -747,7 +747,9 @@ impl Display for SpecifiedPath {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Builds the `tools.pex` used by the scie-pants scie to perform Pants installs.
     Tools,
+    /// Builds the `scie-pants` scie.
     Scie {
         #[arg(
             long,
@@ -756,6 +758,7 @@ enum Commands {
         )]
         tools_pex: Option<PathBuf>,
     },
+    /// Builds the `scie-pants` scie and runs it through a series of integration tests.
     Test {
         #[arg(
             long,
@@ -808,7 +811,7 @@ struct Args {
     update_lock: bool,
     #[arg(
         long,
-        help = "The destination directory for the ptex binary and checksum file.",
+        help = "The destination directory for the chosen binary and its checksum file.",
         default_value_t = SpecifiedPath::new("dist")
     )]
     dest_dir: SpecifiedPath,
