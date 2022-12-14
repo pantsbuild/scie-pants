@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import importlib.resources
 import json
 import os
 import subprocess
@@ -10,7 +11,7 @@ import sys
 import urllib.parse
 from argparse import ArgumentParser
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePath
 from subprocess import CompletedProcess
 from typing import Any, BinaryIO, Callable, Iterable, Iterator, NoReturn
 from xml.etree import ElementTree
@@ -116,17 +117,39 @@ def determine_find_links(
 def determine_tag_version(
     ptex: Ptex, pants_version: str, find_links_dir: Path, github_api_bearer_token: str | None = None
 ) -> ResolveInfo:
-    github_api_url = (
-        "https://api.github.com/repos/pantsbuild/pants/git/refs/tags/"
-        f"release_{urllib.parse.quote(pants_version)}"
-    )
-    headers = (
-        {"Authorization": f"Bearer {github_api_bearer_token}"} if github_api_bearer_token else {}
-    )
-    github_api_tag_url = ptex.fetch_json(github_api_url, **headers)["object"]["url"]
-    sha = ptex.fetch_json(github_api_tag_url, **headers)["object"]["sha"]
+    tag = f"release_{pants_version}"
+
+    # N.B.: The tag database was created with the following in a Pants clone:
+    # git tag --list release_* | \
+    #   xargs -I@ bash -c 'jq --arg T @ --arg C $(git rev-parse @^{commit}) -n "{(\$T): \$C}"' | \
+    #   jq -s 'add' > pants_release_tags.json
+    tags = json.loads(importlib.resources.read_text("scie_pants", "pants_release_tags.json"))
+    commit_sha = tags.get(tag, "")
+
+    # The GitHub API requests are rate limited to 60 per hour un-authenticated; so we guard
+    # these with the database of old releases above.
+    if not commit_sha:
+        # TODO(John Sirois): Replace GitHub API use with a lookup of
+        #  https://binaries.pantsbuild.org/tags/pantsbuild.pants/{release_tag} which is getting
+        #  incorporated into the Pants release process in
+        #  https://github.com/pantsbuild/pants/pull/17801 and will have a 1-time back-fill run with
+        #  mainly redundant contents to the json tag database used above.
+        github_api_url = (
+            f"https://api.github.com/repos/pantsbuild/pants/git/refs/tags/{urllib.parse.quote(tag)}"
+        )
+        headers = (
+            {"Authorization": f"Bearer {github_api_bearer_token}"}
+            if github_api_bearer_token
+            else {}
+        )
+        github_api_tag_url = ptex.fetch_json(github_api_url, **headers)["object"]["url"]
+        commit_sha = ptex.fetch_json(github_api_tag_url, **headers)["object"]["sha"]
     return determine_find_links(
-        ptex, pants_version, sha, find_links_dir, include_pants_distributions_in_findlinks=False
+        ptex,
+        pants_version,
+        commit_sha,
+        find_links_dir,
+        include_pants_distributions_in_findlinks=False,
     )
 
 
