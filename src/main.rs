@@ -25,13 +25,13 @@ struct Process {
 }
 
 impl Process {
-    #[cfg(not(target_family = "unix"))]
+    #[cfg(windows)]
     fn exec(self) -> Result<i32> {
         use std::process::Command;
 
         let exit_status = Command::new(&self.exe)
             .args(&self.args)
-            .args(std::env::args().skip(1))
+            .args(env::args().skip(1))
             .envs(self.env.clone())
             .spawn()?
             .wait()
@@ -41,7 +41,7 @@ impl Process {
             .unwrap_or_else(|| if exit_status.success() { 0 } else { 1 }))
     }
 
-    #[cfg(target_family = "unix")]
+    #[cfg(unix)]
     fn exec(self) -> Result<i32> {
         use std::ffi::CString;
         use std::os::unix::ffi::OsStringExt;
@@ -55,7 +55,7 @@ impl Process {
         c_args.extend(
             self.args
                 .into_iter()
-                .chain(std::env::args().skip(1).map(OsString::from))
+                .chain(env::args().skip(1).map(OsString::from))
                 .map(|arg| {
                     CString::new(arg.into_vec())
                         .context("Failed to convert argument to a C string.")
@@ -64,7 +64,7 @@ impl Process {
         );
 
         for (name, value) in self.env {
-            std::env::set_var(name, value);
+            env::set_var(name, value);
         }
 
         execv(&c_exe, &c_args)
@@ -138,8 +138,6 @@ fn get_pants_process() -> Result<Process> {
 
     let scie =
         env::var_os("SCIE").context("Failed to retrieve SCIE location from the environment.")?;
-    let scie_argv0 = env::var_os("SCIE_ARGV0")
-        .context("Failed to retrieve SCIE_ARGV0 location from the environment.")?;
 
     let pants_debug = matches!(env::var_os("PANTS_DEBUG"), Some(value) if !value.is_empty());
     let scie_boot = match env::var_os("PANTS_BOOTSTRAP_TOOLS") {
@@ -155,7 +153,7 @@ fn get_pants_process() -> Result<Process> {
 
     let mut env = vec![
         ("SCIE_BOOT".into(), scie_boot.into()),
-        ("PANTS_BIN_NAME".into(), scie_argv0),
+        ("PANTS_BIN_NAME".into(), scie.as_os_str().into()),
         (
             "PANTS_BUILDROOT_OVERRIDE".into(),
             build_root.into_os_string(),

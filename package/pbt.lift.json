@@ -50,8 +50,8 @@
         },
         {
           "name": "pex",
-          "size": 4068526,
-          "hash": "2b7be27e945d932241c30027e8ad08a83f61b7370586d75b1e4f35e510478490",
+          "size": 4068845,
+          "hash": "a0633d2d84a20908c4ada92e01d4cd3e4ae76497a83f2bf0f2e6f0d5ca0098d5",
           "type": "blob",
           "source": "ptex-fetch"
         }
@@ -110,6 +110,6 @@
     "cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz",
     "cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz",
     "cpython-3.8.15+20221106-x86_64-pc-windows-msvc-static-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-x86_64-pc-windows-msvc-static-install_only.tar.gz",
-    "pex": "https://github.com/pantsbuild/pex/releases/download/v2.1.117/pex"
+    "pex": "https://github.com/pantsbuild/pex/releases/download/v2.1.118/pex"
   }
 }

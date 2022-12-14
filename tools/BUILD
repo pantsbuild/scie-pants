@@ -1,26 +1,13 @@
 # Copyright 2020 Pants project contributors.
 # Licensed under the Apache License, Version 2.0 (see LICENSE).
 
-poetry_requirements(
+python_requirements(
     name="reqs",
 )
 
-resource(
-    name="pyproject",
-    source="pyproject.toml"
-)
-
-python_distribution(
-    name="wheel",
-    provides=python_artifact(
-        name="scie_pants",
-    ),
-    sdist=False,
-    dependencies=[
-        ":pyproject",
-        "//tools/src/scie_pants",
-    ],
-    generate_setup = False,
+python_requirements(
+    name="test-reqs",
+    source="test-requirements.txt",
 )
 
 pex_binary(
@@ -28,7 +15,9 @@ pex_binary(
     script="conscript",
     dependencies=[
         ":reqs#conscript",
-        ":reqs#packaging",
-        ":wheel",
-    ]
+        "//tools/src/scie_pants",
+        "//tools/src/scie_pants.dist-info",
+    ],
+    execution_mode="venv",
+    emit_warnings=False,
 )

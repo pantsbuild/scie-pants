@@ -1,23 +1,76 @@
-# This is bogus, just getting CI initialized on main.
-name: Rust
-
+name: CI
 on:
   push:
-    branches: [ "main" ]
+    branches-ignore:
+    - dependabot/**
   pull_request:
-    branches: [ "main" ]
-
+defaults:
+  run:
+    shell: bash
+concurrency:
+  group: CI-${{ github.ref }}
+  # Queue on all branches and tags, but only cancel overlapping PR burns.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' || !startsWith(github.ref, 'refs/tags/') }}
 env:
   CARGO_TERM_COLOR: always
-
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  org-check:
+    name: Check GitHub Organization
+    if: github.repository_owner == 'pantsbuild'
+    runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - name: Noop
+        run: "true"
+  ci:
+    name: (${{ matrix.os }}) CI
+    needs: org-check
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, macos-11, macOS-11-ARM64, windows-2022]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check Formatting
+        run: |
+          rustup toolchain add nightly -c rustfmt
+          cargo +nightly fmt --check --all
+      - name: Lint
+        run: cargo clippy --all
+      - name: Unit Tests
+        run: cargo test --all
+      - name: Build, Package & Integration Tests
+        if: ${{ matrix.os == 'macOS-11-ARM64' }}
+        run: |
+          # TODO(John Sirois): Kill --tools-pex-mismatch-warn:
+          #   https://github.com/pantsbuild/scie-pants/issues/2
+          #
+          # N.B.: Our self-hosted runner does not clean the work directory between runs like the
+          # GitHub hosted runners do; as such, the ~/.cache/pants, etc sticks around. This exposes
+          # a bug in Pants / Pex reproducibility when building PEXes where the
+          # PEX_ROOT/installed_wheels that get packaged up into a PEX may (or may not) contain
+          # bytecode if the particular wheel was ever run against in the past. This leads to varying
+          # final PEX content.
+          #
+          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+            cargo run -p package -- test --tools-pex-mismatch-warn
+      - name: Build, Package & Integration Tests
+        if: ${{ matrix.os == 'macos-11' }}
+        run: |
+          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+            cargo run -p package -- test
+      - name: Build, Package & Integration Tests
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        run: |
+          mkdir dist
+          cargo run -p package -- --dest-dir dist/ tools
+          docker run --rm \
+            -v $PWD:/code \
+            -w /code \
+            rust:1.65.0-alpine3.15 \
+              sh -c '
+                apk add cmake make musl-dev perl && \
+                cargo run -p package -- --dest-dir dist/ scie --tools-pex dist/tools.pex \
+              '
+          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+            cargo run -p package -- test \
+              --tools-pex dist/tools.pex --scie-pants dist/scie-pants-linux-x86_64 \

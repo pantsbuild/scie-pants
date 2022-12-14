@@ -5,13 +5,12 @@
       "description": "Isolates your Pants from the elements.",
       "files": [
         {
-          "name": "scie-pants-linux-x86_64",
+          "name": "scie-pants.bin",
           "key": "scie-pants",
           "executable": true
         },
         {
-          "name": "ptex-linux-x86_64",
-          "key": "ptex",
+          "name": "ptex",
           "executable": true
         },
         {
@@ -91,19 +90,20 @@
           "pants": {
             "description": "Runs a hermetic Pants installation.",
             "env": {
-              "=PATH": "{scie.env.PATH}:{scie.bindings.install:VIRTUAL_ENV}/bin"
+              "=PATH": "{scie.env.PATH}:{scie.bindings.install:VIRTUAL_ENV}/bin",
+              "=PANTS_VERSION": "{scie.bindings.install:PANTS_VERSION}"
             },
             "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/pants",
             "args": [
               "--pants-bin-name={scie.env.PANTS_BIN_NAME}",
-              "--pants-version={scie.env.PANTS_VERSION={scie.bindings.install:PANTS_VERSION}}",
               "{scie.bindings.install:PANTS_SHA_FIND_LINKS}"
             ]
           },
           "pants-debug": {
             "description": "Runs a hermetic Pants installation with a debug server for debugging Pants code.",
             "env": {
-              "=PATH": "{scie.env.PATH}:{scie.bindings.install:VIRTUAL_ENV}/bin"
+              "=PATH": "{scie.env.PATH}:{scie.bindings.install:VIRTUAL_ENV}/bin",
+              "=PANTS_VERSION": "{scie.bindings.install:PANTS_VERSION}"
             },
             "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/python",
             "args": [
@@ -114,14 +114,14 @@
               "--wait-for-client",
               "{scie.bindings.install:VIRTUAL_ENV}/bin/pants",
               "--pants-bin-name={scie.env.PANTS_BIN_NAME}",
-              "--pants-version={scie.env.PANTS_VERSION={scie.bindings.install:PANTS_VERSION}}",
               "{scie.bindings.install:PANTS_SHA_FIND_LINKS}"
             ]
           },
           "bootstrap-tools": {
             "description": "Introspection tools for the Pants bootstrap process.",
             "env": {
-              "=PEX_ROOT": "{scie.bindings}/pex_root"
+              "=PEX_ROOT": "{scie.bindings}/pex_root",
+              "=PEX_PYTHON_PATH": "{scie.files.{scie.env.PYTHON}-{scie.platform}}/python/bin/{scie.env.PYTHON}"
             },
             "exe": "{scie.files.{scie.env.PYTHON}-{scie.platform}}/python/bin/{scie.env.PYTHON}",
             "args": [
@@ -145,7 +145,8 @@
           "install": {
             "description": "Installs a hermetic Pants environment from PyPI or binaries.pantsbuild.org with optional debug support.",
             "env": {
-              "=PEX_ROOT": "{scie.bindings}/pex_root"
+              "=PEX_ROOT": "{scie.bindings}/pex_root",
+              "=PEX_PYTHON_PATH": "{scie.files.{scie.env.PYTHON}-{scie.platform}}/python/bin/{scie.env.PYTHON}"
             },
             "exe": "{scie.files.{scie.env.PYTHON}-{scie.platform}}/python/bin/{scie.env.PYTHON}",
             "args": [
@@ -159,11 +160,13 @@
               "{scie.env.PANTS_VERSION}",
               "--pants-sha",
               "{scie.env.PANTS_SHA}",
+              "--github-api-bearer-token",
+              "{scie.env.PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN}",
               "--debug",
               "{scie.env.PANTS_DEBUG}",
               "--debugpy-requirement",
               "{scie.env.PANTS_DEBUGPY_VERSION}",
-              "{scie.bindings}/venvs"
+              "{scie.bindings}"
             ]
           }
         }

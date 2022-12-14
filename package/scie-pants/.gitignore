@@ -1,7 +1,0 @@
-# Input binaries for the scie-pants boot-pack.
-/ptex*
-/scie-pants*
-/scie-jump*
-
-# Any PEXes used in the scie-pants.
-/*.pex
