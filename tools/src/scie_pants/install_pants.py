@@ -5,14 +5,15 @@ from __future__ import annotations
 
 import importlib.resources
 import json
+import logging
 import os
 import subprocess
 import sys
 import urllib.parse
 from argparse import ArgumentParser
 from dataclasses import dataclass
-from pathlib import Path, PurePath
-from subprocess import CompletedProcess
+from pathlib import Path
+from subprocess import CalledProcessError, CompletedProcess
 from typing import Any, BinaryIO, Callable, Iterable, Iterator, NoReturn
 from xml.etree import ElementTree
 
@@ -20,7 +21,9 @@ import tomlkit
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
-from scie_pants.log import fatal, info, warn
+from scie_pants.log import fatal, info, init_logging, warn
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -126,14 +129,23 @@ def determine_tag_version(
     tags = json.loads(importlib.resources.read_text("scie_pants", "pants_release_tags.json"))
     commit_sha = tags.get(tag, "")
 
-    # The GitHub API requests are rate limited to 60 per hour un-authenticated; so we guard
-    # these with the database of old releases above.
     if not commit_sha:
-        # TODO(John Sirois): Replace GitHub API use with a lookup of
-        #  https://binaries.pantsbuild.org/tags/pantsbuild.pants/{release_tag} which is getting
-        #  incorporated into the Pants release process in
-        #  https://github.com/pantsbuild/pants/pull/17801 and will have a 1-time back-fill run with
-        #  mainly redundant contents to the json tag database used above.
+        mapping_file_url = f"https://binaries.pantsbuild.org/tags/pantsbuild.pants/{tag}"
+        log.debug(
+            f"Failed to look up the commit for Pants {tag} in the local database, trying a lookup "
+            f"at {mapping_file_url} next."
+        )
+        try:
+            commit_sha = ptex.fetch_text(mapping_file_url).strip()
+        except CalledProcessError as e:
+            log.debug(
+                f"Failed to look up the commit for Pants {tag} at binaries.pantsbuild.org, trying "
+                f"GitHub API requests next: {e}"
+            )
+
+    # The GitHub API requests are rate limited to 60 per hour un-authenticated; so we guard
+    # these with the database of old releases and then the binaries.pantsbuild.org lookups above.
+    if not commit_sha:
         github_api_url = (
             f"https://api.github.com/repos/pantsbuild/pants/git/refs/tags/{urllib.parse.quote(tag)}"
         )
@@ -144,6 +156,7 @@ def determine_tag_version(
         )
         github_api_tag_url = ptex.fetch_json(github_api_url, **headers)["object"]["url"]
         commit_sha = ptex.fetch_json(github_api_tag_url, **headers)["object"]["sha"]
+
     return determine_find_links(
         ptex,
         pants_version,
@@ -253,11 +266,13 @@ def main() -> NoReturn:
     parser.add_argument("base_dir", nargs=1, help="The base directory to create Pants venvs in.")
     options = parser.parse_args()
 
+    base_dir = Path(options.base_dir[0])
+    init_logging(install_log=base_dir / "logs" / "install.log")
+
     env_file = os.environ.get("SCIE_BINDING_ENV")
     if not env_file:
         fatal("Expected SCIE_BINDING_ENV to be set in the environment")
 
-    base_dir = Path(options.base_dir[0])
     venvs_dir = base_dir / "venvs"
     find_links_dir = base_dir / "find_links"
 
