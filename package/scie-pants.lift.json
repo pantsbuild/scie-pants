@@ -152,7 +152,9 @@
               "--scie",
               "{scie}",
               "--current-version",
-              "{scie.bindings.scie-pants-info:VERSION}"
+              "{scie.bindings.scie-pants-info:VERSION}",
+              "--github-api-bearer-token",
+              "{scie.env.PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN}"
             ]
           }
         },

@@ -69,14 +69,26 @@ class Release:
         return None
 
 
+def fetch_github_api(ptex: Ptex, path: str, github_api_bearer_token: str | None = None) -> Any:
+    headers = (
+        {"Authorization": f"Bearer {github_api_bearer_token}"} if github_api_bearer_token else {}
+    )
+    return ptex.fetch_json(f"{GITHUB_API_BASE_URL}/{path}", **headers)
+
+
 class ReleaseNotFoundError(Exception):
     pass
 
 
-def get_release(ptex: Ptex, platform: str, version: str) -> Release:
+def get_release(
+    ptex: Ptex, platform: str, version: str, github_api_bearer_token: str | None = None
+) -> Release:
     try:
         release_data = cast(
-            dict[str, Any], ptex.fetch_json(f"{GITHUB_API_BASE_URL}/releases/tags/v{version}")
+            dict[str, Any],
+            fetch_github_api(
+                ptex, f"releases/tags/v{version}", github_api_bearer_token=github_api_bearer_token
+            ),
         )
     except (CalledProcessError, OSError) as e:
         raise ReleaseNotFoundError(str(e))
@@ -88,8 +100,13 @@ def get_release(ptex: Ptex, platform: str, version: str) -> Release:
     return release
 
 
-def find_latest_production_release(ptex: Ptex, platform: str) -> Release | None:
-    releases = cast(list[dict[str, Any]], ptex.fetch_json(f"{GITHUB_API_BASE_URL}/releases"))
+def find_latest_production_release(
+    ptex: Ptex, platform: str, github_api_bearer_token: str | None = None
+) -> Release | None:
+    releases = cast(
+        list[dict[str, Any]],
+        fetch_github_api(ptex, "releases", github_api_bearer_token=github_api_bearer_token),
+    )
 
     latest_releases = []
     for release_data in releases:
@@ -208,6 +225,11 @@ def main() -> NoReturn:
         help=argparse.SUPPRESS,
     )
     parser.add_argument(
+        "--github-api-bearer-token",
+        # The GITHUB_TOKEN to use if running in CI context.
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
         "version",
         nargs="?",
         type=str,
@@ -223,11 +245,18 @@ def main() -> NoReturn:
     ptex = get_ptex(options)
     if options.version is not None:
         try:
-            release = get_release(ptex, version=options.version, platform=options.platform)
+            release = get_release(
+                ptex,
+                version=options.version,
+                platform=options.platform,
+                github_api_bearer_token=options.github_api_bearer_token,
+            )
         except ReleaseNotFoundError as e:
             fatal(f"Failed to find {BINARY_NAME} release for version {options.version}: {e}")
     else:
-        maybe_release = find_latest_production_release(ptex, platform=options.platform)
+        maybe_release = find_latest_production_release(
+            ptex, platform=options.platform, github_api_bearer_token=options.github_api_bearer_token
+        )
         if not maybe_release or maybe_release.version < options.current_version:
             info(f"No new releases of {BINARY_NAME} were found.")
             sys.exit(0)

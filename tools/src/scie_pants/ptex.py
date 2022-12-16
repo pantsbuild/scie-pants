@@ -39,7 +39,7 @@ class Ptex:
         args.append(url)
         return subprocess.run(args=args, stdout=stdout, check=True)
 
-    def fetch_json(self, url: str, **headers: str) -> dict[str, Any]:
+    def fetch_json(self, url: str, **headers: str) -> Any:
         return json.loads(self._fetch(url, stdout=subprocess.PIPE, **headers).stdout)
 
     def fetch_text(self, url: str, **headers: str) -> str:
