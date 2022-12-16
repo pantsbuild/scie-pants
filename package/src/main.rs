@@ -21,7 +21,7 @@ use url::Url;
 const BINARY: &str = "scie-pants";
 
 const PTEX_TAG: &str = "v0.6.0";
-const SCIE_JUMP_TAG: &str = "v0.6.0";
+const SCIE_JUMP_TAG: &str = "v0.7.0";
 
 const CARGO: &str = env!("CARGO");
 const CARGO_MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
@@ -635,7 +635,9 @@ fn test(
     ) {
         integration_test!("Linting, testing and packaging the tools codebase");
         execute(
-            Command::new(scie_pants_scie).args(["fmt", "lint", "check", "test", "package", "::"]),
+            Command::new(scie_pants_scie)
+                .args(["fmt", "lint", "check", "test", "package", "::"])
+                .env("PEX_SCRIPT", "Does not exist!"),
         )?;
 
         integration_test!(
