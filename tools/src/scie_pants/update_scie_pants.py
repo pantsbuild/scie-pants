@@ -33,12 +33,10 @@ log = logging.getLogger(__name__)
 RELEASE_TAG_MATCHER = re.compile(r"^v(?P<version>\d+\.\d+\.\d+)$")
 EXE_EXTENSION = sysconfig.get_config_var("EXE") or ""
 
-# This type is not accurate, release data can contain bool values we test, namely "draft" and
-# "prerelease" fields, but here Python truthiness lets things typecheck.
-ReleaseData = Dict[str, Any]
-
 GITHUB_API_BASE_URL = "https://api.github.com/repos/pantsbuild/scie-pants"
 BINARY_NAME = "scie-pants"
+
+ReleaseData = Dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -231,7 +229,7 @@ def main() -> NoReturn:
     else:
         maybe_release = find_latest_production_release(ptex, platform=options.platform)
         if not maybe_release or maybe_release.version < options.current_version:
-            info("No new releases of scie-pants were found.")
+            info(f"No new releases of {BINARY_NAME} were found.")
             sys.exit(0)
         release = maybe_release
 
@@ -240,22 +238,22 @@ def main() -> NoReturn:
     try:
         version = verify_release(scie)
     except (CalledProcessError, OSError):
-        warn(f"Failed to verify scie-pants {release.version} installation at {scie}.")
+        warn(f"Failed to verify {BINARY_NAME} {release.version} installation at {scie}.")
         warn(f"A backup is saved in {backup}")
         raise
 
     if release.version != Version(version):
         warn(f"A backup is saved in {backup}")
         fatal(
-            f"Installed scie-pants {release.version} to {scie} but the installation reports "
+            f"Installed {BINARY_NAME} {release.version} to {scie} but the installation reports "
             f"version {version}."
         )
 
-    info(f"Successfully installed sie=pants {version} to {scie}")
+    info(f"Successfully installed {BINARY_NAME} {version} to {scie}")
     try:
         backup.unlink(missing_ok=True)
     except OSError as e:
-        warn(f"Failed to remove old version of scie-pants at {backup}: {e}")
+        warn(f"Failed to remove old version of {BINARY_NAME} at {backup}: {e}")
     sys.exit(0)
 
 
