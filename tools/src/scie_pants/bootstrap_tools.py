@@ -1,6 +1,7 @@
 # Copyright 2022 Pants project contributors.
 # Licensed under the Apache License, Version 2.0 (see LICENSE).
 
+import argparse
 import os
 import sys
 from argparse import ArgumentParser, Namespace
@@ -63,9 +64,14 @@ def main() -> NoReturn:
     parser.add_argument("-V", "--version", action="version", version=f"{VERSION}")
     parser.add_argument(
         "--python-distribution-hash",
-        help="The content hash of the Python distribution being used.",
+        # The content hash of the Python distribution being used.
+        help=argparse.SUPPRESS,
     )
-    parser.add_argument("--pants-version", help="The version of Pants being used.")
+    parser.add_argument(
+        "--pants-version",
+        # The version of Pants being used.
+        help=argparse.SUPPRESS,
+    )
 
     sub_commands = parser.add_subparsers()
     cache_key_parser = sub_commands.add_parser(
