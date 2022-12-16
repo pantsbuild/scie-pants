@@ -120,6 +120,7 @@
           "bootstrap-tools": {
             "description": "Introspection tools for the Pants bootstrap process.",
             "env": {
+              "PEX_.*": null,
               "=PEX_ROOT": "{scie.bindings}/pex_root",
               "=PEX_PYTHON_PATH": "{scie.files.{scie.env.PYTHON}-{scie.platform}}/python/bin/{scie.env.PYTHON}"
             },
@@ -145,6 +146,7 @@
           "install": {
             "description": "Installs a hermetic Pants environment from PyPI or binaries.pantsbuild.org with optional debug support.",
             "env": {
+              "PEX_.*": null,
               "=PEX_ROOT": "{scie.bindings}/pex_root",
               "=PEX_PYTHON_PATH": "{scie.files.{scie.env.PYTHON}-{scie.platform}}/python/bin/{scie.env.PYTHON}"
             },
