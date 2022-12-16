@@ -670,7 +670,6 @@ fn test(
                 .args(["bootstrap-cache-key"]),
         )?;
 
-        // Before --python-repos-repos deprecation warning for --python-repos-find-links alternative.
         integration_test!(
             "Verifying --python-repos-repos is used prior to Pants 2.13 (no warnings should be \
             issued by Pants)"
@@ -711,6 +710,13 @@ fn test(
         }
         execute(&mut command)?;
     }
+
+    // TODO(John Sirois): When more than release becomes available, do a downgrade here to an older
+    // release as the last test.
+    integration_test!("Verifying self update works");
+    // N.B.: There should never be a newer release in CI; so this should always gracefully noop
+    // noting no newer release was available.
+    execute(Command::new(scie_pants_scie).env("SCIE_BOOT", "update"))?;
 
     Ok(())
 }

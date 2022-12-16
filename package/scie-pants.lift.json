@@ -132,6 +132,28 @@
               "--pants-version",
               "{scie.env.PANTS_VERSION}"
             ]
+          },
+          "update": {
+            "description": "Update scie-pants.",
+            "env": {
+              "=PEX_ROOT": "{scie.bindings}/pex_root",
+              "=PEX_PYTHON_PATH": "{scie.files.python3.9-{scie.platform}}/python/bin/python3.9"
+            },
+            "exe": "{scie.files.python3.9-{scie.platform}}/python/bin/python3.9",
+            "args": [
+              "{tools.pex}",
+              "update-scie-pants",
+              "--ptex-path",
+              "{ptex}",
+              "--platform",
+              "{scie.platform}",
+              "--base-dir",
+              "{scie.bindings}",
+              "--scie",
+              "{scie}",
+              "--current-version",
+              "{scie.bindings.scie-pants-info:VERSION}"
+            ]
           }
         },
         "bindings": {
@@ -140,6 +162,22 @@
             "exe": "{ptex}",
             "args": [
               "{scie.lift}"
+            ]
+          },
+          "scie-pants-info": {
+            "description": "Records information about the current scie-pants binary.",
+            "env": {
+              "=PEX_ROOT": "{scie.bindings}/pex_root",
+              "=PEX_PYTHON_PATH": "{scie.files.python3.9-{scie.platform}}/python/bin/python3.9"
+            },
+            "exe": "{scie.files.python3.9-{scie.platform}}/python/bin/python3.9",
+            "args": [
+              "{tools.pex}",
+              "record-scie-pants-info",
+              "--base-dir",
+              "{scie.bindings}",
+              "--scie",
+              "{scie}"
             ]
           },
           "install": {

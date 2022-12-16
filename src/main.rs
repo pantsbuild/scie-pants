@@ -195,6 +195,17 @@ impl<T> OrExit<T> for Result<T> {
 fn main() {
     env_logger::init();
     let _timer = timer!(Level::Debug; "MAIN");
+
+    // N.B.: The bogus version of `report` is used to signal scie-pants should report version
+    // information for the update tool to use in determining if there are newer versions of
+    // scie-pants available.
+    if let Ok(value) = env::var("PANTS_BOOTSTRAP_VERSION") {
+        if "report" == value.as_str() {
+            println!(env!("CARGO_PKG_VERSION"));
+            std::process::exit(0);
+        }
+    }
+
     let pants_process = get_pants_process().or_exit();
     trace!("Launching: {pants_process:#?}");
     let exit_code = pants_process.exec().or_exit();

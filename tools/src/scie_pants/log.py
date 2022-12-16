@@ -35,13 +35,15 @@ def exception(message: str, exc_info=None) -> NoReturn:
     sys.exit(red(message))
 
 
-def init_logging(install_log: Path):
+def init_logging(base_dir: Path, log_name: str):
     logging.root.setLevel(level=logging.DEBUG)
 
-    install_log.parent.mkdir(parents=True, exist_ok=True)
+    log_file = base_dir / "logs" / f"{log_name}.log"
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+
     # This gets us ~5MB of logs max per version of the scie-jump (since we're writing these under
     # the scie.bindings dir which is keyed to our lift manifest hash).
-    debug_handler = RotatingFileHandler(filename=install_log, maxBytes=1_000_000, backupCount=4)
+    debug_handler = RotatingFileHandler(filename=log_file, maxBytes=1_000_000, backupCount=4)
     debug_handler.setFormatter(
         logging.Formatter(fmt="{asctime} {levelname}] {name}: {message}", style="{")
     )
@@ -52,7 +54,7 @@ def init_logging(install_log: Path):
             f"""\
             Install failed: {exc}
             More information can be found in the installation log:
-            {install_log}
+            {log_file}
             """
         ),
         exc_info=(exc_type, exc, tb),
