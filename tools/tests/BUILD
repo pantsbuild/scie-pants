@@ -10,6 +10,7 @@ python_tests(
         "//tools"
     ],
     extra_env_vars=[
+        "GIT_COMMIT",
         "TOOLS_PEX=tools/tools.pex",
     ],
 )

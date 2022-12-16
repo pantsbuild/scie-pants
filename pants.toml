@@ -48,6 +48,11 @@ resolves_generate_lockfiles = false
 [python.resolves]
 python-default = "tools/lock.json"
 
+[subprocess-environment]
+env_vars = [
+    "BUILDROOT=%(buildroot)s"
+]
+
 [source]
 root_patterns = [
     "/tools",

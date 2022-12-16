@@ -1,0 +1,3 @@
+# Ensure GIT_COMMIT is set
+: ${GIT_COMMIT:=$(git rev-parse HEAD)}
+
