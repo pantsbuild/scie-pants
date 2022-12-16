@@ -53,8 +53,7 @@ def init_logging(base_dir: Path, log_name: str):
         dedent(
             f"""\
             Install failed: {exc}
-            More information can be found in the installation log:
-            {log_file}
+            More information can be found in the log at: {log_file}
             """
         ),
         exc_info=(exc_type, exc, tb),

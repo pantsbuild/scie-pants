@@ -713,8 +713,8 @@ fn test(
         execute(&mut command)?;
     }
 
-    // TODO(John Sirois): When more than release becomes available, do a downgrade here to an older
-    // release as the last test.
+    // TODO(John Sirois): When more than one release becomes available, do a downgrade here to an
+    // older release as the last test.
     integration_test!("Verifying self update works");
     // N.B.: There should never be a newer release in CI; so this should always gracefully noop
     // noting no newer release was available.

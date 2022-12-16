@@ -36,8 +36,6 @@ EXE_EXTENSION = sysconfig.get_config_var("EXE") or ""
 GITHUB_API_BASE_URL = "https://api.github.com/repos/pantsbuild/scie-pants"
 BINARY_NAME = "scie-pants"
 
-ReleaseData = Dict[str, Any]
-
 
 @dataclass(frozen=True)
 class Release:
@@ -185,7 +183,7 @@ def verify_release(scie: PurePath) -> str:
     return (
         subprocess.run(
             args=[str(scie)],
-            env={**os.environ, "SCIE_BOOT": "version"},
+            env={**os.environ, "PANTS_BOOTSTRAP_VERSION": "report"},
             stdout=subprocess.PIPE,
             check=True,
         )
