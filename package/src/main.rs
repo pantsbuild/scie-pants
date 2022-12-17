@@ -686,7 +686,7 @@ fn test(
         integration_test!("Verifying PANTS_SHA is respected");
         execute(
             Command::new(scie_pants_scie)
-                .env("PANTS_SHA", "298409b3a4d7914c29a3bea5098b55698967f658")
+                .env("PANTS_SHA", "8e381dbf90cae57c5da2b223c577b36ca86cace9")
                 .args(["--no-verify-config", "-V"]),
         )?;
     }
