@@ -255,7 +255,7 @@ def main() -> NoReturn:
         maybe_release = find_latest_production_release(
             ptex, platform=options.platform, github_api_bearer_token=options.github_api_bearer_token
         )
-        if not maybe_release or maybe_release.version < options.current_version:
+        if not maybe_release or maybe_release.version <= options.current_version:
             info(f"No new releases of {BINARY_NAME} were found.")
             sys.exit(0)
         release = maybe_release
