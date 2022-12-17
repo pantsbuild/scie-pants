@@ -70,17 +70,9 @@ jobs:
                 apk add cmake make musl-dev perl && \
                 cargo run -p package -- --dest-dir dist/ scie --tools-pex dist/tools.pex \
               '
-      - name: Prepare macOS-11-ARM64 Python
-        if: ${{ matrix.os == 'macOS-11-ARM64' }}
-        run: |
-          # The changelog action below uses the python shell to run Python 3 code in its steps and
-          # the default `python` on our self-hosted macOS-11-ARM64 runner is Python 2.7. We
-          # re-jigger the path to get the pyenv `python` 1st on the PATH. That python is currently
-          # Python 3.9
-          echo "PATH=~/.pyenv/shims:$PATH" >> $GITHUB_ENV
       - name: Prepare Changelog
         id: prepare-changelog
-        uses: a-scie/actions/changelog@v1.3
+        uses: a-scie/actions/changelog@v1.4
         with:
           changelog-file: ${{ github.workspace }}/CHANGES.md
           version: ${{ needs.determine-tag.outputs.release-version }}
