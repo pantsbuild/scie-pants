@@ -21,7 +21,7 @@ use url::Url;
 const BINARY: &str = "scie-pants";
 
 const PTEX_TAG: &str = "v0.6.0";
-const SCIE_JUMP_TAG: &str = "v0.7.0";
+const SCIE_JUMP_TAG: &str = "v0.7.1";
 
 const CARGO: &str = env!("CARGO");
 const CARGO_MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
