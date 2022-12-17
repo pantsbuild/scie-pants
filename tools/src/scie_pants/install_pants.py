@@ -22,33 +22,9 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
 from scie_pants.log import fatal, info, init_logging, warn
+from scie_pants.ptex import Ptex
 
 log = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class Ptex:
-    @classmethod
-    def from_exe(cls, exe: str) -> Ptex:
-        return cls(exe)
-
-    _exe: str
-
-    def _fetch(self, url: str, stdout: int, **headers: str) -> CompletedProcess:
-        args = [self._exe]
-        for header, value in headers.items():
-            args.extend(("-H", f"{header}: {value}"))
-        args.append(url)
-        return subprocess.run(args=args, stdout=stdout, check=True)
-
-    def fetch_json(self, url: str, **headers: str) -> dict[str, Any]:
-        return json.loads(self._fetch(url, stdout=subprocess.PIPE, **headers).stdout)
-
-    def fetch_text(self, url: str, **headers: str) -> str:
-        return self._fetch(url, stdout=subprocess.PIPE, **headers).stdout.decode()
-
-    def fetch_to_fp(self, url: str, fp: BinaryIO, **headers: str) -> None:
-        self._fetch(url, stdout=fp.fileno(), **headers)
 
 
 @dataclass(frozen=True)
@@ -247,16 +223,7 @@ def main() -> NoReturn:
     parser = ArgumentParser()
     parser.add_argument("--pants-sha", help="The Pants sha to install (trumps --version)")
     parser.add_argument("--pants-version", type=str, help="The Pants version to install")
-    parser.add_argument(
-        "--ptex-path",
-        dest="ptex",
-        required=True,
-        type=Ptex.from_exe,
-        help=(
-            "The path of a ptex binary for performing lookups of the latest stable Pants version "
-            "as well as lookups of PANTS_SHA information."
-        ),
-    )
+    get_ptex = Ptex.add_options(parser)
     parser.add_argument("--pants-config", help="The path of the pants.toml file")
     parser.add_argument(
         "--github-api-bearer-token", help="The GITHUB_TOKEN to use if running in CI context."
@@ -267,11 +234,13 @@ def main() -> NoReturn:
     options = parser.parse_args()
 
     base_dir = Path(options.base_dir[0])
-    init_logging(install_log=base_dir / "logs" / "install.log")
+    init_logging(base_dir=base_dir, log_name="install")
 
     env_file = os.environ.get("SCIE_BINDING_ENV")
     if not env_file:
         fatal("Expected SCIE_BINDING_ENV to be set in the environment")
+
+    ptex = get_ptex(options)
 
     venvs_dir = base_dir / "venvs"
     find_links_dir = base_dir / "find_links"
@@ -279,12 +248,12 @@ def main() -> NoReturn:
     finalizers = []
     if options.pants_sha:
         resolve_info = determine_sha_version(
-            ptex=options.ptex, sha=options.pants_sha, find_links_dir=find_links_dir
+            ptex=ptex, sha=options.pants_sha, find_links_dir=find_links_dir
         )
         version = resolve_info.sha_version
     elif options.pants_version:
         resolve_info = determine_tag_version(
-            ptex=options.ptex,
+            ptex=ptex,
             pants_version=options.pants_version,
             find_links_dir=find_links_dir,
             github_api_bearer_token=options.github_api_bearer_token,
@@ -297,7 +266,7 @@ def main() -> NoReturn:
                 "--pants-version is set."
             )
         configure_version, resolve_info = determine_latest_stable_version(
-            ptex=options.ptex,
+            ptex=ptex,
             pants_config=Path(options.pants_config),
             find_links_dir=find_links_dir,
             github_api_bearer_token=options.github_api_bearer_token,
