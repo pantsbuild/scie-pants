@@ -89,7 +89,7 @@ fn env_version(env_var_name: &str) -> Result<Option<PackageVersion>> {
     Ok(version)
 }
 
-#[time("debug", "ptex::{}")]
+#[time("debug", "scie-pants::{}")]
 fn get_pants_process() -> Result<Process> {
     let build_root = BuildRoot::find(None)?;
     if let Some(pants_bootstrap) = PantsBootstrap::load(&build_root)? {
