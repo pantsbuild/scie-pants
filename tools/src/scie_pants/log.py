@@ -41,8 +41,8 @@ def init_logging(base_dir: Path, log_name: str):
     log_file = base_dir / "logs" / f"{log_name}.log"
     log_file.parent.mkdir(parents=True, exist_ok=True)
 
-    # This gets us ~5MB of logs max per version of the scie-jump (since we're writing these under
-    # the scie.bindings dir which is keyed to our lift manifest hash).
+    # This gets us ~5MB of logs max per version of scie-pants (since we're writing these under the
+    # scie.bindings dir which is keyed to our lift manifest hash).
     debug_handler = RotatingFileHandler(filename=log_file, maxBytes=1_000_000, backupCount=4)
     debug_handler.setFormatter(
         logging.Formatter(fmt="{asctime} {levelname}] {name}: {message}", style="{")
