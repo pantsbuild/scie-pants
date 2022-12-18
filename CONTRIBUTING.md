@@ -10,7 +10,7 @@ Unlike the current `./pants` bash script, the `scie-pants` binary:
 + Is intended for use globally as a binary installed on the `PATH`.
 
 When invoked, the `scie-pants` binary searches from the `CWD` of its invocation up through ancestor
-directories to find the `pants.toml` signalling a Pants-using project. It then parses `pnats.toml`
+directories to find the `pants.toml` signalling a Pants-using project. It then parses `pants.toml`
 to discover the Pants version required and launches that Pants version. Since the `scie-pants`
 launcher is a native binary, this process is very fast, typically ~one millisecond, in the hot path
 where the needed Pants version is already installed.
@@ -60,8 +60,8 @@ and re-packages the scie-pants [tools](tools) Python support code.
 You can also just package the `scie-pants` scie binary via `cargo run -p package -- scie`. That will
 build the `scie-pants` binary for the current machine to the `dist/` directory by default (run
 `cargo run -p package -- --help` to find out more options). Two files will be produced there:
-1. The scie jump binary: `scie-pants-<os>-<arch>(.<ext>)`
-2. The scie jump fingerprint file: `scie-pants-<os>-<arch>(.<ext>).sha256`
+1. The `scie-pants` binary: `scie-pants-<os>-<arch>(.<ext>)`
+2. The `scie-pants` fingerprint file: `scie-pants-<os>-<arch>(.<ext>).sha256`
 
 You can then run `dist/scie-pants-<os>-<arch>(.<ext>) <pants goals>` to run Pants against the tools
 code when iterating on it.
