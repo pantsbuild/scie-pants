@@ -730,7 +730,6 @@ fn test(
                 .args(["bootstrap-cache-key"]),
         )?;
 
-        integration_test!("Verifying PANTS_SHA is respected");
         // TODO(John Sirois): The --no-pantsd here works around a fairly prevalent Pants crash on
         // Linux x86_64 along the lines of the following, but sometimes varying:
         // >> Verifying PANTS_SHA is respected
@@ -746,10 +745,16 @@ fn test(
         // Thread 0x00007efe30b75540 (most recent call first):
         // <no Python frame>
         // Error: Command "/home/runner/work/scie-pants/scie-pants/dist/scie-pants-linux-x86_64" "--no-verify-config" "-V" failed with exit code: None
+        if matches!(*CURRENT_PLATFORM, Platform::LinuxX86_64) {
+            log!(Color::Yellow, "Turning off pantsd for remaining tests.");
+            env::set_var("PANTS_PANTSD", "False");
+        }
+
+        integration_test!("Verifying PANTS_SHA is respected");
         execute(
             Command::new(scie_pants_scie)
                 .env("PANTS_SHA", "8e381dbf90cae57c5da2b223c577b36ca86cace9")
-                .args(["--no-pantsd", "--no-verify-config", "-V"]),
+                .args(["--no-verify-config", "-V"]),
         )?;
 
         integration_test!(
