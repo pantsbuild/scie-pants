@@ -77,3 +77,5 @@ jobs:
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             cargo run -p package -- test \
               --tools-pex dist/tools.pex --scie-pants dist/scie-pants-linux-x86_64 \
+              --tools-pex-mismatch-warn
+
