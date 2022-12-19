@@ -36,7 +36,7 @@ libraries like httpx for this, it behooves `scie-pants` to provide the end user 
 configuration for network options: proxies, credentials and the like.
 
 The other useful feature of a scie is the ability to run pre-requisite binding commands as install
-steps needed to support user-facing commands. These commands will only ever one once and they can
+steps needed to support user-facing commands. These commands will only ever run once and they can
 record result information in the form of `<key>=<value>` pairs for future invocations to learn the
 one-time binding results. The `"pants"` command in the `scie-pants` binary depends on an `install`
 binding to learn the Path of the Pants venv and that in turn depends on a `configuration` binding 
