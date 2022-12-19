@@ -17,7 +17,7 @@ project describing how scies work and how they are packaged and configured here:
 The most complex flow in `scie-pants` is its main function - the execution of Pants. Once the
 appropriate version of Pants is installed, this is a fairly simple flow that executes in ~1ms, but
 on those occasions where a new version of Pants is encountered that has not been installed before,
-the Python tools come in to play and we discuss that flow here as illustrative of the scie
+the Python tools come in to play, and we discuss that flow here as illustrative of the scie
 programming model
 
 ### Scie Concepts

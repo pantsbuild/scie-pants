@@ -40,11 +40,11 @@ In the course of development you'll probably only be interested in two invocatio
 ## Goals
 
 The primary goal of the package crate as build system is to support development of the `scie-pants`
-binary with an install of Rust as the ~only requirement (SMake is currently needed as well). This
+binary with an install of Rust as the ~only requirement (CMake is currently needed as well). This
 necessitates dogfooding the same scie mechanism the final `scie-pants` binary uses in production in
-order to bootstrap a [Python tool chain](pbt.lift.json) to build the `tools.pex` embedded in the
-final `scie-pants` for use in all the slow-path / high-logic steps like Pants configuration, Pants
-installation and self-update.
+order to bootstrap a [Python tool chain](pbt.lift.json). This is used build the [`tools.pex`](
+../tools/README.md) embedded in the final `scie-pants` for use in all the slow-path / high-logic
+steps like Pants configuration, Pants installation and self-update.
 
 ## Structure
 
