@@ -15,6 +15,7 @@ use lazy_static::lazy_static;
 use log::{info, warn};
 use proc_exit::{Code, Exit, ExitResult};
 use sha2::{Digest, Sha256};
+use tempfile::TempDir;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 use url::Url;
 
@@ -158,11 +159,34 @@ fn prepare_exe(path: &Path) -> ExitResult {
     Ok(())
 }
 
+fn execute_with_input(command: &mut Command, stdin_data: &[u8]) -> Result<Output, Exit> {
+    _execute_with_input(command, Some(stdin_data))
+}
+
 fn execute(command: &mut Command) -> Result<Output, Exit> {
+    _execute_with_input(command, None)
+}
+
+fn _execute_with_input(command: &mut Command, stdin_data: Option<&[u8]>) -> Result<Output, Exit> {
     info!("Executing {command:#?}");
-    let child = command.spawn().map_err(|e| {
+    if stdin_data.is_some() {
+        command.stdin(std::process::Stdio::piped());
+    }
+    let mut child = command.spawn().map_err(|e| {
         Code::FAILURE.with_message(format!("Failed to spawn command: {command:?}: {e}"))
     })?;
+    if let Some(stdin_data) = stdin_data {
+        child
+            .stdin
+            .as_mut()
+            .expect("We just set a stdin pipe above")
+            .write(stdin_data)
+            .map_err(|e| {
+                Code::FAILURE.with_message(format!(
+                    "Failed to write {stdin_data:?} to sub-process stdin: {e}"
+                ))
+            })?;
+    }
     let output = child.wait_with_output().map_err(|e| {
         Code::FAILURE.with_message(format!(
             "Failed to gather exit status of command: {command:?}: {e}"
@@ -242,6 +266,31 @@ fn ensure_directory(path: &Path, clean: bool) -> ExitResult {
     std::fs::create_dir_all(path).map_err(|e| {
         Code::FAILURE.with_message(format!(
             "Failed to create directory at {path}: {e}",
+            path = path.display()
+        ))
+    })
+}
+
+fn create_tempdir() -> Result<TempDir, Exit> {
+    tempfile::tempdir().map_err(|e| {
+        Code::FAILURE.with_message(format!("Failed to create a new temporary directory: {e}"))
+    })
+}
+
+fn touch(path: &Path) -> ExitResult {
+    if let Some(parent) = path.parent() {
+        ensure_directory(parent, false)?;
+    }
+    let mut fd = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .map_err(|e| {
+            Code::FAILURE.with_message(format!("Failed to open {path}: {e}", path = path.display()))
+        })?;
+    fd.write_all(&[]).map_err(|e| {
+        Code::FAILURE.with_message(format!(
+            "Failed to touch {path}: {e}",
             path = path.display()
         ))
     })
@@ -713,12 +762,44 @@ fn test(
         execute(&mut command)?;
     }
 
-    // TODO(John Sirois): When more than one release becomes available, do a downgrade here to an
-    // older release as the last test.
+    integration_test!("Verifying initializing a new Pants project works");
+    let new_project_dir = create_tempdir()?;
+    execute(
+        Command::new("git")
+            .arg("init")
+            .arg(new_project_dir.path()),
+    )?;
+    let project_subdir = new_project_dir.path().join("subdir").join("sub-subdir");
+    ensure_directory(&project_subdir, false)?;
+    execute_with_input(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .current_dir(project_subdir),
+        "yes".as_bytes(),
+    )?;
+    assert!(new_project_dir.path().join("pants.toml").is_file());
+
+    integration_test!("Verifying setting the Pants version on an existing Pants project works");
+    let existing_project_dir = create_tempdir()?;
+    touch(&existing_project_dir.path().join("pants.toml"))?;
+    execute_with_input(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .current_dir(existing_project_dir.path()),
+        "Y".as_bytes(),
+    )?;
+
     integration_test!("Verifying self update works");
     // N.B.: There should never be a newer release in CI; so this should always gracefully noop
     // noting no newer release was available.
     execute(Command::new(scie_pants_scie).env("SCIE_BOOT", "update"))?;
+
+    integration_test!("Verifying downgrade works");
+    execute(
+        Command::new(scie_pants_scie)
+            .env("SCIE_BOOT", "update")
+            .arg("0.1.8"),
+    )?;
 
     Ok(())
 }

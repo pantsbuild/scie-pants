@@ -8,7 +8,7 @@ use anyhow::{anyhow, bail, Context, Result};
 use build_root::BuildRoot;
 use log::{info, trace};
 use logging_timer::{time, timer, Level};
-use pyver::PackageVersion;
+use uuid::Uuid;
 
 use crate::config::PantsConfig;
 use crate::pants_bootstrap::PantsBootstrap;
@@ -73,30 +73,40 @@ impl Process {
     }
 }
 
-fn env_version(env_var_name: &str) -> Result<Option<PackageVersion>> {
-    let version = if let Some(raw_version) = env::var_os(env_var_name) {
-        Some(PackageVersion::new(
-            raw_version
-                .into_string()
-                .map_err(|raw| {
-                    anyhow!("Failed to interpret {env_var_name} {raw:?} as UTF-8 string.")
-                })?
-                .as_str(),
-        )?)
+fn env_version(env_var_name: &str) -> Result<Option<String>> {
+    if let Some(raw_version) = env::var_os(env_var_name) {
+        Ok(Some(raw_version.into_string().map_err(|raw| {
+            anyhow!("Failed to interpret {env_var_name} {raw:?} as UTF-8 string.")
+        })?))
     } else {
-        None
-    };
-    Ok(version)
+        Ok(None)
+    }
+}
+
+fn find_pants_installation() -> Result<Option<PantsConfig>> {
+    if let Ok(build_root) = BuildRoot::find(None) {
+        if let Some(pants_bootstrap) = PantsBootstrap::load(&build_root)? {
+            pants_bootstrap.export_env();
+        }
+        let pants_config = PantsConfig::parse(build_root)?;
+        return Ok(Some(pants_config));
+    }
+    Ok(None)
 }
 
 #[time("debug", "scie-pants::{}")]
 fn get_pants_process() -> Result<Process> {
-    let build_root = BuildRoot::find(None)?;
-    if let Some(pants_bootstrap) = PantsBootstrap::load(&build_root)? {
-        pants_bootstrap.export_env();
-    }
-    let pants_config = PantsConfig::parse(build_root)?;
-    let build_root = pants_config.build_root().to_path_buf();
+    let pants_installation = find_pants_installation()?;
+    let (build_root, configured_pants_version, debugpy_version) =
+        if let Some(ref pants_config) = pants_installation {
+            (
+                Some(pants_config.build_root().to_path_buf()),
+                pants_config.package_version(),
+                pants_config.debugpy_version(),
+            )
+        } else {
+            (None, None, None)
+        };
 
     let env_pants_sha = env_version("PANTS_SHA")?;
     let env_pants_version = env_version("PANTS_VERSION")?;
@@ -104,37 +114,19 @@ fn get_pants_process() -> Result<Process> {
         bail!(
             "Both PANTS_SHA={pants_sha} and PANTS_VERSION={pants_version} were set. \
             Please choose one.",
-            pants_sha = pants_sha.original,
-            pants_version = pants_version.original
         )
     }
 
-    let pants_version = if let Some(ref env_version) = env_pants_version {
+    let pants_version = if let Some(env_version) = env_pants_version {
         Some(env_version)
     } else if env_pants_sha.is_none() {
-        pants_config.package_version()
+        configured_pants_version
     } else {
         None
     };
 
-    let debugpy_version = pants_config.debugpy_version().unwrap_or_default();
-
-    let python = if let Some(version) = pants_version {
-        match (version.release.major, version.release.minor) {
-            (1, _) => "python3.8",
-            (2, minor) if minor < 5 => "python3.8",
-            _ => "python3.9",
-        }
-    } else {
-        "python3.9"
-    };
-
-    info!(
-        "Found Pants build root at {build_root}",
-        build_root = build_root.display()
-    );
+    info!("Found Pants build root at {build_root:?}");
     info!("The required Pants version is {pants_version:?}");
-    info!("Selected {python}");
 
     let scie =
         env::var_os("SCIE").context("Failed to retrieve SCIE location from the environment.")?;
@@ -155,18 +147,33 @@ fn get_pants_process() -> Result<Process> {
         ("SCIE_BOOT".into(), scie_boot.into()),
         ("PANTS_BIN_NAME".into(), scie.as_os_str().into()),
         (
-            "PANTS_BUILDROOT_OVERRIDE".into(),
-            build_root.into_os_string(),
-        ),
-        (
             "PANTS_DEBUG".into(),
             if pants_debug { "1" } else { "" }.into(),
         ),
-        ("PANTS_DEBUGPY_VERSION".into(), debugpy_version.into()),
-        ("PYTHON".into(), python.into()),
+        (
+            "PANTS_DEBUGPY_VERSION".into(),
+            debugpy_version.unwrap_or_default().into(),
+        ),
     ];
+    if let Some(build_root) = build_root {
+        env.push((
+            "PANTS_BUILDROOT_OVERRIDE".into(),
+            build_root.as_os_str().to_os_string(),
+        ));
+        env.push((
+            "PANTS_TOML".into(),
+            build_root.join("pants.toml").into_os_string(),
+        ));
+    }
     if let Some(version) = pants_version {
-        env.push(("PANTS_VERSION".into(), version.original.clone().into()));
+        env.push(("PANTS_VERSION".into(), version.into()));
+    } else {
+        // Ensure the install binding always re-runs when no Pants version is found so that the
+        // the user can be prompted with configuration options.
+        env.push((
+            "PANTS_VERSION_PROMPT_SALT".into(),
+            Uuid::new_v4().simple().to_string().into(),
+        ))
     }
 
     Ok(Process {
