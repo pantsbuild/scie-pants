@@ -1,5 +1,9 @@
 # scie-pants
 
+[![GitHub](https://img.shields.io/github/license/pantsbuild/scie-pants)](LICENSE)
+[![Github Actions CI (x86_64 Linux / MacOS / Windows)](https://github.com/pantsbuild/scie-pants/actions/workflows/ci.yml/badge.svg)](https://github.com/pantsbuild/scie-pants/actions/workflows/ci.yml)
+[![CircleCI (Linux aarch64)](https://circleci.com/gh/pantsbuild/scie-pants.svg?style=svg)](https://circleci.com/gh/pantsbuild/scie-pants)
+
 The scie-pants binary is intended to be the next-generation `./pants` script.
 
 It's currently in a phase of development suitable for trying out in any existing Pants-using

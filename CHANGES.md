@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.1.10
+
+This release folds [one step setup](
+https://github.com/pantsbuild/setup/blob/gh-pages/one_step_setup.sh)
+functionality into `scie-pants`.
+
 ## 0.1.9
 
 This release fixes a bug using `SCIE_BOOT=update scie-pants` to have
