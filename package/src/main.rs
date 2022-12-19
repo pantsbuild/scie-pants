@@ -296,6 +296,15 @@ fn touch(path: &Path) -> ExitResult {
     })
 }
 
+fn canonicalize(path: &Path) -> Result<PathBuf, Exit> {
+    path.canonicalize().map_err(|e| {
+        Code::FAILURE.with_message(format!(
+            "Failed to canonicalize {path} to an absolute, resolved path: {e}",
+            path = path.display()
+        ))
+    })
+}
+
 fn binary_full_name(name: &str) -> String {
     format!(
         "{name}-{platform}{exe}",
@@ -918,8 +927,8 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
         } => {
             test(
                 &build_context.workspace_root,
-                tools_pex,
-                scie_pants,
+                &canonicalize(tools_pex)?,
+                &canonicalize(scie_pants)?,
                 *tools_pex_mismatch_warn,
             )?;
             Ok(None)
@@ -934,7 +943,7 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
             test(
                 &build_context.workspace_root,
                 &tools_pex,
-                scie_pants,
+                &canonicalize(scie_pants)?,
                 *tools_pex_mismatch_warn,
             )?;
             Ok(None)
@@ -948,7 +957,7 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
             let scie_pants = build_scie_pants_scie(build_context, &skinny_scie_tools, tools_pex)?;
             test(
                 &build_context.workspace_root,
-                tools_pex,
+                &canonicalize(tools_pex)?,
                 &scie_pants,
                 *tools_pex_mismatch_warn,
             )?;
