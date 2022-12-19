@@ -15,6 +15,7 @@ use lazy_static::lazy_static;
 use log::{info, warn};
 use proc_exit::{Code, Exit, ExitResult};
 use sha2::{Digest, Sha256};
+use tempfile::TempDir;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 use url::Url;
 
@@ -158,11 +159,34 @@ fn prepare_exe(path: &Path) -> ExitResult {
     Ok(())
 }
 
+fn execute_with_input(command: &mut Command, stdin_data: &[u8]) -> Result<Output, Exit> {
+    _execute_with_input(command, Some(stdin_data))
+}
+
 fn execute(command: &mut Command) -> Result<Output, Exit> {
+    _execute_with_input(command, None)
+}
+
+fn _execute_with_input(command: &mut Command, stdin_data: Option<&[u8]>) -> Result<Output, Exit> {
     info!("Executing {command:#?}");
-    let child = command.spawn().map_err(|e| {
+    if stdin_data.is_some() {
+        command.stdin(std::process::Stdio::piped());
+    }
+    let mut child = command.spawn().map_err(|e| {
         Code::FAILURE.with_message(format!("Failed to spawn command: {command:?}: {e}"))
     })?;
+    if let Some(stdin_data) = stdin_data {
+        child
+            .stdin
+            .as_mut()
+            .expect("We just set a stdin pipe above")
+            .write(stdin_data)
+            .map_err(|e| {
+                Code::FAILURE.with_message(format!(
+                    "Failed to write {stdin_data:?} to sub-process stdin: {e}"
+                ))
+            })?;
+    }
     let output = child.wait_with_output().map_err(|e| {
         Code::FAILURE.with_message(format!(
             "Failed to gather exit status of command: {command:?}: {e}"
@@ -242,6 +266,40 @@ fn ensure_directory(path: &Path, clean: bool) -> ExitResult {
     std::fs::create_dir_all(path).map_err(|e| {
         Code::FAILURE.with_message(format!(
             "Failed to create directory at {path}: {e}",
+            path = path.display()
+        ))
+    })
+}
+
+fn create_tempdir() -> Result<TempDir, Exit> {
+    tempfile::tempdir().map_err(|e| {
+        Code::FAILURE.with_message(format!("Failed to create a new temporary directory: {e}"))
+    })
+}
+
+fn touch(path: &Path) -> ExitResult {
+    if let Some(parent) = path.parent() {
+        ensure_directory(parent, false)?;
+    }
+    let mut fd = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .map_err(|e| {
+            Code::FAILURE.with_message(format!("Failed to open {path}: {e}", path = path.display()))
+        })?;
+    fd.write_all(&[]).map_err(|e| {
+        Code::FAILURE.with_message(format!(
+            "Failed to touch {path}: {e}",
+            path = path.display()
+        ))
+    })
+}
+
+fn canonicalize(path: &Path) -> Result<PathBuf, Exit> {
+    path.canonicalize().map_err(|e| {
+        Code::FAILURE.with_message(format!(
+            "Failed to canonicalize {path} to an absolute, resolved path: {e}",
             path = path.display()
         ))
     })
@@ -672,6 +730,33 @@ fn test(
                 .args(["bootstrap-cache-key"]),
         )?;
 
+        // TODO(John Sirois): The --no-pantsd here works around a fairly prevalent Pants crash on
+        // Linux x86_64 along the lines of the following, but sometimes varying:
+        // >> Verifying PANTS_SHA is respected
+        // Bootstrapping Pants 2.14.0a0+git8e381dbf using cpython 3.9.15
+        // Installing pantsbuild.pants==2.14.0a0+git8e381dbf into a virtual environment at /home/runner/.cache/nce/67f27582b3729c677922eb30c5c6e210aa54badc854450e735ef41cf25ac747f/bindings/venvs/2.14.0a0+git8e381dbf
+        // New virtual environment successfully created at /home/runner/.cache/nce/67f27582b3729c677922eb30c5c6e210aa54badc854450e735ef41cf25ac747f/bindings/venvs/2.14.0a0+git8e381dbf.
+        // 18:11:53.75 [INFO] Initializing scheduler...
+        // 18:11:53.97 [INFO] Scheduler initialized.
+        // 2.14.0a0+git8e381dbf
+        // Fatal Python error: PyGILState_Release: thread state 0x7efe18001140 must be current when releasing
+        // Python runtime state: finalizing (tstate=0x1f4b810)
+        //
+        // Thread 0x00007efe30b75540 (most recent call first):
+        // <no Python frame>
+        // Error: Command "/home/runner/work/scie-pants/scie-pants/dist/scie-pants-linux-x86_64" "--no-verify-config" "-V" failed with exit code: None
+        if matches!(*CURRENT_PLATFORM, Platform::LinuxX86_64) {
+            log!(Color::Yellow, "Turning off pantsd for remaining tests.");
+            env::set_var("PANTS_PANTSD", "False");
+        }
+
+        integration_test!("Verifying PANTS_SHA is respected");
+        execute(
+            Command::new(scie_pants_scie)
+                .env("PANTS_SHA", "8e381dbf90cae57c5da2b223c577b36ca86cace9")
+                .args(["--no-verify-config", "-V"]),
+        )?;
+
         integration_test!(
             "Verifying --python-repos-repos is used prior to Pants 2.13 (no warnings should be \
             issued by Pants)"
@@ -682,12 +767,27 @@ fn test(
                 .args(["--no-verify-config", "-V"]),
         )?;
 
-        // PANTS_SHA handling.
-        integration_test!("Verifying PANTS_SHA is respected");
-        execute(
+        integration_test!("Verifying initializing a new Pants project works");
+        let new_project_dir = create_tempdir()?;
+        execute(Command::new("git").arg("init").arg(new_project_dir.path()))?;
+        let project_subdir = new_project_dir.path().join("subdir").join("sub-subdir");
+        ensure_directory(&project_subdir, false)?;
+        execute_with_input(
             Command::new(scie_pants_scie)
-                .env("PANTS_SHA", "8e381dbf90cae57c5da2b223c577b36ca86cace9")
-                .args(["--no-verify-config", "-V"]),
+                .arg("-V")
+                .current_dir(project_subdir),
+            "yes".as_bytes(),
+        )?;
+        assert!(new_project_dir.path().join("pants.toml").is_file());
+
+        integration_test!("Verifying setting the Pants version on an existing Pants project works");
+        let existing_project_dir = create_tempdir()?;
+        touch(&existing_project_dir.path().join("pants.toml"))?;
+        execute_with_input(
+            Command::new(scie_pants_scie)
+                .arg("-V")
+                .current_dir(existing_project_dir.path()),
+            "Y".as_bytes(),
         )?;
     }
 
@@ -713,12 +813,17 @@ fn test(
         execute(&mut command)?;
     }
 
-    // TODO(John Sirois): When more than one release becomes available, do a downgrade here to an
-    // older release as the last test.
     integration_test!("Verifying self update works");
     // N.B.: There should never be a newer release in CI; so this should always gracefully noop
     // noting no newer release was available.
     execute(Command::new(scie_pants_scie).env("SCIE_BOOT", "update"))?;
+
+    integration_test!("Verifying downgrade works");
+    execute(
+        Command::new(scie_pants_scie)
+            .env("SCIE_BOOT", "update")
+            .arg("0.1.8"),
+    )?;
 
     Ok(())
 }
@@ -841,8 +946,8 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
         } => {
             test(
                 &build_context.workspace_root,
-                tools_pex,
-                scie_pants,
+                &canonicalize(tools_pex)?,
+                &canonicalize(scie_pants)?,
                 *tools_pex_mismatch_warn,
             )?;
             Ok(None)
@@ -857,7 +962,7 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
             test(
                 &build_context.workspace_root,
                 &tools_pex,
-                scie_pants,
+                &canonicalize(scie_pants)?,
                 *tools_pex_mismatch_warn,
             )?;
             Ok(None)
@@ -871,7 +976,7 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
             let scie_pants = build_scie_pants_scie(build_context, &skinny_scie_tools, tools_pex)?;
             test(
                 &build_context.workspace_root,
-                tools_pex,
+                &canonicalize(tools_pex)?,
                 &scie_pants,
                 *tools_pex_mismatch_warn,
             )?;
