@@ -738,6 +738,29 @@ fn test(
                 .env("PANTS_SHA", "8e381dbf90cae57c5da2b223c577b36ca86cace9")
                 .args(["--no-verify-config", "-V"]),
         )?;
+
+        integration_test!("Verifying initializing a new Pants project works");
+        let new_project_dir = create_tempdir()?;
+        execute(Command::new("git").arg("init").arg(new_project_dir.path()))?;
+        let project_subdir = new_project_dir.path().join("subdir").join("sub-subdir");
+        ensure_directory(&project_subdir, false)?;
+        execute_with_input(
+            Command::new(scie_pants_scie)
+                .arg("-V")
+                .current_dir(project_subdir),
+            "yes".as_bytes(),
+        )?;
+        assert!(new_project_dir.path().join("pants.toml").is_file());
+
+        integration_test!("Verifying setting the Pants version on an existing Pants project works");
+        let existing_project_dir = create_tempdir()?;
+        touch(&existing_project_dir.path().join("pants.toml"))?;
+        execute_with_input(
+            Command::new(scie_pants_scie)
+                .arg("-V")
+                .current_dir(existing_project_dir.path()),
+            "Y".as_bytes(),
+        )?;
     }
 
     // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
@@ -761,29 +784,6 @@ fn test(
         }
         execute(&mut command)?;
     }
-
-    integration_test!("Verifying initializing a new Pants project works");
-    let new_project_dir = create_tempdir()?;
-    execute(Command::new("git").arg("init").arg(new_project_dir.path()))?;
-    let project_subdir = new_project_dir.path().join("subdir").join("sub-subdir");
-    ensure_directory(&project_subdir, false)?;
-    execute_with_input(
-        Command::new(scie_pants_scie)
-            .arg("-V")
-            .current_dir(project_subdir),
-        "yes".as_bytes(),
-    )?;
-    assert!(new_project_dir.path().join("pants.toml").is_file());
-
-    integration_test!("Verifying setting the Pants version on an existing Pants project works");
-    let existing_project_dir = create_tempdir()?;
-    touch(&existing_project_dir.path().join("pants.toml"))?;
-    execute_with_input(
-        Command::new(scie_pants_scie)
-            .arg("-V")
-            .current_dir(existing_project_dir.path()),
-        "Y".as_bytes(),
-    )?;
 
     integration_test!("Verifying self update works");
     // N.B.: There should never be a newer release in CI; so this should always gracefully noop
