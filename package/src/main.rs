@@ -730,12 +730,26 @@ fn test(
                 .args(["bootstrap-cache-key"]),
         )?;
 
-        // PANTS_SHA handling.
         integration_test!("Verifying PANTS_SHA is respected");
+        // TODO(John Sirois): The --no-pantsd here works around a fairly prevalent Pants crash on
+        // Linux x86_64 along the lines of the following, but sometimes varying:
+        // >> Verifying PANTS_SHA is respected
+        // Bootstrapping Pants 2.14.0a0+git8e381dbf using cpython 3.9.15
+        // Installing pantsbuild.pants==2.14.0a0+git8e381dbf into a virtual environment at /home/runner/.cache/nce/67f27582b3729c677922eb30c5c6e210aa54badc854450e735ef41cf25ac747f/bindings/venvs/2.14.0a0+git8e381dbf
+        // New virtual environment successfully created at /home/runner/.cache/nce/67f27582b3729c677922eb30c5c6e210aa54badc854450e735ef41cf25ac747f/bindings/venvs/2.14.0a0+git8e381dbf.
+        // 18:11:53.75 [INFO] Initializing scheduler...
+        // 18:11:53.97 [INFO] Scheduler initialized.
+        // 2.14.0a0+git8e381dbf
+        // Fatal Python error: PyGILState_Release: thread state 0x7efe18001140 must be current when releasing
+        // Python runtime state: finalizing (tstate=0x1f4b810)
+        //
+        // Thread 0x00007efe30b75540 (most recent call first):
+        // <no Python frame>
+        // Error: Command "/home/runner/work/scie-pants/scie-pants/dist/scie-pants-linux-x86_64" "--no-verify-config" "-V" failed with exit code: None
         execute(
             Command::new(scie_pants_scie)
                 .env("PANTS_SHA", "8e381dbf90cae57c5da2b223c577b36ca86cace9")
-                .args(["--no-verify-config", "-V"]),
+                .args(["--no-pantsd", "--no-verify-config", "-V"]),
         )?;
 
         integration_test!(
