@@ -49,7 +49,7 @@ provides the following:
   This is of limited utility since Pants internals don't support this well at the moment, but as
   soon as they do, `scie-pants` will allow you to work in the style you prefer.
 
-+ Built in ability to set up a new Pants project:
++ Built-in ability to set up a new Pants project:
 
   If you run `scie-pants` in a directory where Pants is not already set up, it will prompt you, and
   you can let it set up the latest Pants stable version for your project.
