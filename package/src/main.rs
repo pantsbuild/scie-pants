@@ -764,11 +764,7 @@ fn test(
 
     integration_test!("Verifying initializing a new Pants project works");
     let new_project_dir = create_tempdir()?;
-    execute(
-        Command::new("git")
-            .arg("init")
-            .arg(new_project_dir.path()),
-    )?;
+    execute(Command::new("git").arg("init").arg(new_project_dir.path()))?;
     let project_subdir = new_project_dir.path().join("subdir").join("sub-subdir");
     ensure_directory(&project_subdir, false)?;
     execute_with_input(
