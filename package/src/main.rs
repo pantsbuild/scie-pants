@@ -730,6 +730,14 @@ fn test(
                 .args(["bootstrap-cache-key"]),
         )?;
 
+        // PANTS_SHA handling.
+        integration_test!("Verifying PANTS_SHA is respected");
+        execute(
+            Command::new(scie_pants_scie)
+                .env("PANTS_SHA", "8e381dbf90cae57c5da2b223c577b36ca86cace9")
+                .args(["--no-verify-config", "-V"]),
+        )?;
+
         integration_test!(
             "Verifying --python-repos-repos is used prior to Pants 2.13 (no warnings should be \
             issued by Pants)"
@@ -737,14 +745,6 @@ fn test(
         execute(
             Command::new(scie_pants_scie)
                 .env("PANTS_VERSION", "2.12.1")
-                .args(["--no-verify-config", "-V"]),
-        )?;
-
-        // PANTS_SHA handling.
-        integration_test!("Verifying PANTS_SHA is respected");
-        execute(
-            Command::new(scie_pants_scie)
-                .env("PANTS_SHA", "8e381dbf90cae57c5da2b223c577b36ca86cace9")
                 .args(["--no-verify-config", "-V"]),
         )?;
 
