@@ -17,7 +17,7 @@ jobs:
   org-check:
     name: Check GitHub Organization
     if: github.repository_owner == 'pantsbuild'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Noop
         run: "true"
@@ -59,7 +59,7 @@ jobs:
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             cargo run -p package -- test
       - name: Build, Package & Integration Tests
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: |
           mkdir dist
           cargo run -p package -- --dest-dir dist/ tools
