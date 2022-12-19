@@ -27,7 +27,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-11, macOS-11-ARM64, windows-2022]
+        os: [ubuntu-22.04, macos-11, macOS-11-ARM64, windows-2022]
     steps:
       - uses: actions/checkout@v3
       - name: Check Formatting
@@ -71,6 +71,9 @@ jobs:
                 apk add cmake make musl-dev perl && \
                 cargo run -p package -- --dest-dir dist/ scie --tools-pex dist/tools.pex \
               '
+          echo
+          echo "Running under: $(uname -a)"
+          echo
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             cargo run -p package -- test \
               --tools-pex dist/tools.pex --scie-pants dist/scie-pants-linux-x86_64 \
