@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.1.11
+
+This release fixes `SCIE_BOOT=update ./scie-pants`; i.e.: updating `scie-pants` when invoking
+`scie-pants` vis a relative path. It also fixes `scie-pants` to work when on the `PATH` as `pants`
+in any repo that already contains the `./pants` bash script.
+
 ## 0.1.10
 
 This release folds [one step setup](
