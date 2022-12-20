@@ -167,7 +167,7 @@
             "description": "Fetches hermetic CPython distributions for Pants internal use.",
             "exe": "{ptex}",
             "args": [
-              "{scie.lift}"
+              "{scie.env.PANTS_BOOTSTRAP_URLS={scie.lift}}"
             ]
           },
           "scie-pants-info": {

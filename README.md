@@ -58,6 +58,40 @@ provides the following:
   If you run `scie-pants` in a directory where Pants is not already set up, it will prompt you, and
   you can let it set up the latest Pants stable version for your project.
 
++ Partial support for firewalls:
+
+  Currently, you can only re-direct the URLs scie-pants uses to fetch [Python Build Standalone](
+  https://python-build-standalone.readthedocs.io/en/latest/) CPython distributions it uses to
+  bootstrap Pants with. This is done by exporting a `PANTS_BOOTSTRAP_URLS` environment variable
+  specifying the path to a JSON file containing a mapping of file names to URLS to fetch them from
+  under a top-level `"ptex"` key. For example:
+  ```json
+  {
+    "ptex": {
+      "cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz",
+      "cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
+      "cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz",
+      "cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz",
+      "cpython-3.9.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz",
+      "cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
+      "cpython-3.9.15+20221106-aarch64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-aarch64-apple-darwin-install_only.tar.gz",
+      "cpython-3.9.15+20221106-x86_64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-x86_64-apple-darwin-install_only.tar.gz"
+    }
+  }
+  ```
+  To see the current mapping used by your version of `scie-pants` you can run:
+  ```
+  $ SCIE=inspect scie-pants | jq .ptex
+  ```
+  The keys in your re-mapping must match, but the URLs, of course will be different; presumably from
+  a private network server or file share. You can omit keys for files you know you won't use. For
+  example, for these CPython distributions, you can omit The 2 Linux aarch64 entries if you have no
+  such machines. The full output of the inspect command can be used to examine the expected file
+  size and hash of each of these. Your re-directed URLs must provide the same content; if the hashes
+  of downloaded files do not match those recorded in scie-pants, install will fail fast and let you
+  know about the hash mismatch. Once Pants itself starts shipping scies, those will also be able to
+  redirected using the same file.
+
 ## Caveats
 
 The `scie-pants` binary will re-install versions of Pants you have already installed. The underlying
