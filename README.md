@@ -65,9 +65,6 @@ The `scie-pants` binary will re-install versions of Pants you have already insta
 directory that is different from the `~/.cache/pants/setup` directory used by the `./pants` script.
 This is a one-time event per Pants version.
 
-Naming the `scie-pants` binary `pants` will lead to an obscure error currently in a repo with an
-existing `./pants`. That is tracked [here](https://github.com/pantsbuild/scie-pants/issues/28).
-
 The `scie-pants` does not work in the Pants repo itself. That repo has a special `./pants` script
 and declares no `pants_version`. As such, if you run `scie-pants` in the Pants repo, you'll be
 prompted to set up the latest stable version of Pants. You can just answer no and remember not to
