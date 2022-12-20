@@ -802,7 +802,7 @@ fn test(
         )?;
         let bin_dir = clone_root.path().join("bin");
         ensure_directory(&bin_dir, false)?;
-        hardlink(scie_pants_scie, bin_dir.join("pants").as_path())?;
+        copy(scie_pants_scie, bin_dir.join("pants").as_path())?;
         let new_path = if let Ok(existing_path) = env::var("PATH") {
             format!(
                 "{bin_dir}{path_sep}{existing_path}",
