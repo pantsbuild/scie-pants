@@ -34,6 +34,7 @@ def install_pants(
         check=True,
     )
     python = venv_dir / "bin" / "python"
+    install_log = venv_dir / "pants-install.log"
 
     find_links_options = ("--find-links", find_links) if find_links else ()
 
@@ -44,6 +45,8 @@ def install_pants(
                 "-sE",
                 "-m",
                 "pip",
+                "--log",
+                install_log,
                 "install",
                 "--quiet",
                 *find_links_options,
@@ -52,9 +55,14 @@ def install_pants(
             check=True,
         )
 
-    # Grab the latest pip, but don't advance setuptools past 58 which drops support for the
-    # `setup` kwarg `use_2to3` which Pants 1.x sdist dependencies (pystache) use.
-    pip_install("-U", "pip", "setuptools<58", "wheel")
+    # Pin Pip to 22.3.1 (currently latest). The key semantic that should be preserved by the Pip
+    # we use is that --find-links are used as a fallback only and PyPI is preferred. This saves us
+    # money by avoiding fetching wheels from our S3 bucket at https://binaries.pantsbuild.org unless
+    # absolutely needed.
+    #
+    # Also, we don't advance setuptools past 58 which drops support for the `setup` kwarg `use_2to3`
+    # which Pants 1.x sdist dependencies (pystache) use.
+    pip_install("-U", "pip==22.3.1", "setuptools<58", "wheel")
     pip_install("--progress-bar", "off", *pants_requirements)
 
 
