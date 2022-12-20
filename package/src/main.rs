@@ -22,7 +22,7 @@ use url::Url;
 const BINARY: &str = "scie-pants";
 
 const PTEX_TAG: &str = "v0.6.0";
-const SCIE_JUMP_TAG: &str = "v0.7.1";
+const SCIE_JUMP_TAG: &str = "v0.7.2";
 
 const CARGO: &str = env!("CARGO");
 const CARGO_MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
@@ -789,6 +789,35 @@ fn test(
                 .current_dir(existing_project_dir.path()),
             "Y".as_bytes(),
         )?;
+
+        integration_test!(
+            "Verify scie-pants can be used as `pants` in a repo with the `pants` script"
+        );
+        // This verifies a fix for https://github.com/pantsbuild/scie-pants/issues/28.
+        let clone_root = create_tempdir()?;
+        execute(
+            Command::new("git")
+                .args(["clone", "https://github.com/pantsbuild/example-django"])
+                .current_dir(clone_root.path()),
+        )?;
+        let bin_dir = clone_root.path().join("bin");
+        ensure_directory(&bin_dir, false)?;
+        copy(scie_pants_scie, bin_dir.join("pants").as_path())?;
+        let new_path = if let Ok(existing_path) = env::var("PATH") {
+            format!(
+                "{bin_dir}{path_sep}{existing_path}",
+                bin_dir = bin_dir.display(),
+                path_sep = PATHSEP
+            )
+        } else {
+            format!("{bin_dir}", bin_dir = bin_dir.display())
+        };
+        execute(
+            Command::new("pants")
+                .arg("-V")
+                .env("PATH", new_path)
+                .current_dir(clone_root.path().join("example-django")),
+        )?;
     }
 
     // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
@@ -819,10 +848,13 @@ fn test(
     execute(Command::new(scie_pants_scie).env("SCIE_BOOT", "update"))?;
 
     integration_test!("Verifying downgrade works");
+    // Additionally, we exercise using a relative path to the scie-jump binary which triggered
+    // https://github.com/pantsbuild/scie-pants/issues/38 in the past.
     execute(
-        Command::new(scie_pants_scie)
+        Command::new(PathBuf::from(".").join(scie_pants_scie.file_name().unwrap()))
             .env("SCIE_BOOT", "update")
-            .arg("0.1.8"),
+            .arg("0.1.8")
+            .current_dir(scie_pants_scie.parent().unwrap()),
     )?;
 
     Ok(())
