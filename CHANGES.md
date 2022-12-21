@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.2.0
+
+This release brings support for loading environment variables into Pants (and `scie-pants`)
+environment via the `.env` file convention.
+
 ## 0.1.11
 
 This release fixes `SCIE_BOOT=update ./scie-pants`; i.e.: updating `scie-pants` when invoking
