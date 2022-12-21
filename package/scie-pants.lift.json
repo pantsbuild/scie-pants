@@ -3,6 +3,7 @@
     "lift": {
       "name": "scie-pants",
       "description": "Isolates your Pants from the elements.",
+      "load_dotenv": true,
       "files": [
         {
           "name": "scie-pants.bin",

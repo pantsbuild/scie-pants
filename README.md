@@ -48,6 +48,11 @@ provides the following:
   are self-contained from the [Python Build Standalone](
   https://python-build-standalone.readthedocs.io/en/latest/) project.
 
++ Support for `.env` files:
+
+  The first `.env` file found in the current directory or any of its parent directories is loaded
+  and exported into Pants (and scie-pants) environment.
+
 + The ability to run Pants in a subdirectory of your project:
 
   This is of limited utility since Pants internals don't support this well at the moment, but as

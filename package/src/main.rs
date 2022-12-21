@@ -22,7 +22,7 @@ use url::Url;
 const BINARY: &str = "scie-pants";
 
 const PTEX_TAG: &str = "v0.6.0";
-const SCIE_JUMP_TAG: &str = "v0.7.2";
+const SCIE_JUMP_TAG: &str = "v0.8.0";
 
 const CARGO: &str = env!("CARGO");
 const CARGO_MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
@@ -278,6 +278,10 @@ fn create_tempdir() -> Result<TempDir, Exit> {
 }
 
 fn touch(path: &Path) -> ExitResult {
+    write_file(path, [])
+}
+
+fn write_file<C: AsRef<[u8]>>(path: &Path, content: C) -> ExitResult {
     if let Some(parent) = path.parent() {
         ensure_directory(parent, false)?;
     }
@@ -288,7 +292,7 @@ fn touch(path: &Path) -> ExitResult {
         .map_err(|e| {
             Code::FAILURE.with_message(format!("Failed to open {path}: {e}", path = path.display()))
         })?;
-    fd.write_all(&[]).map_err(|e| {
+    fd.write_all(content.as_ref()).map_err(|e| {
         Code::FAILURE.with_message(format!(
             "Failed to touch {path}: {e}",
             path = path.display()
@@ -816,6 +820,16 @@ fn test(
             Command::new("pants")
                 .arg("-V")
                 .env("PATH", new_path)
+                .current_dir(clone_root.path().join("example-django")),
+        )?;
+
+        integration_test!(
+            "Verify `.env` loading works (example-django should down grade to Pants 2.12.1)"
+        );
+        write_file(&clone_root.path().join(".env"), "PANTS_VERSION=2.12.1")?;
+        execute(
+            Command::new(scie_pants_scie)
+                .arg("-V")
                 .current_dir(clone_root.path().join("example-django")),
         )?;
     }
