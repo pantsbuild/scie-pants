@@ -444,33 +444,27 @@ fn fetch_a_scie_project(
         .join("scie-pants")
         .join("dev")
         .join("downloads")
-        .join(project_name)
-        .join(tag);
+        .join(project_name);
     ensure_directory(&cache_dir, false)?;
 
-    let cached_binary = cache_dir.join(&file_name);
+    // We proceed with single-checked locking, contention is not a concern in this build process!
+    // We only care about correctness.
+    let target_dir = cache_dir.join(tag);
+    let lock_file = cache_dir.join(format!("{tag}.lck"));
     let lock_fd = std::fs::OpenOptions::new()
         .create(true)
         .truncate(false)
         .write(true)
-        .open(&cached_binary)
+        .open(&lock_file)
         .map_err(|e| {
             Code::FAILURE.with_message(format!(
                 "Failed to open {path} for locking: {e}",
-                path = cached_binary.display()
+                path = lock_file.display()
             ))
         })?;
     let mut lock = fd_lock::RwLock::new(lock_fd);
     let _write_lock = lock.write();
-    if 0 == std::fs::metadata(&cached_binary)
-        .map_err(|e| {
-            Code::FAILURE.with_message(format!(
-                "Failed to retrieve metadata for {path}: {e}",
-                path = cached_binary.display()
-            ))
-        })?
-        .len()
-    {
+    if !target_dir.exists() {
         let bootstrap_ptex = BOOTSTRAP_PTEX.get_or_try_init(|| {
             build_step!("Bootstrapping a `ptex` binary");
             execute(
@@ -501,20 +495,23 @@ fn fetch_a_scie_project(
         })?;
 
         build_step!(format!("Fetching the `{project_name}` {tag} binary"));
+        let work_dir = cache_dir.join(format!("{tag}.work"));
+        ensure_directory(&work_dir, true)?;
         fetch_and_check_trusted_sha256(
             bootstrap_ptex,
             format!(
                 "https://github.com/a-scie/{project_name}/releases/download/{tag}/{file_name}",
             )
                 .as_str(),
-            &cache_dir,
+            &work_dir,
         )?;
+        rename(&work_dir, &target_dir)?;
     } else {
         build_step!(format!(
             "Loading the `{project_name}` {tag} binary from the cache"
         ));
     }
-    copy(&cached_binary, &dest_dir.join(file_name))
+    copy(&target_dir.join(&file_name), &dest_dir.join(file_name))
 }
 
 fn fetch_skinny_scie_tools(build_context: &BuildContext) -> Result<SkinnyScieTools, Exit> {
