@@ -451,17 +451,12 @@ fn fetch_a_scie_project(
     // We only care about correctness.
     let target_dir = cache_dir.join(tag);
     let lock_file = cache_dir.join(format!("{tag}.lck"));
-    let lock_fd = std::fs::OpenOptions::new()
-        .create(true)
-        .truncate(false)
-        .write(true)
-        .open(&lock_file)
-        .map_err(|e| {
-            Code::FAILURE.with_message(format!(
-                "Failed to open {path} for locking: {e}",
-                path = lock_file.display()
-            ))
-        })?;
+    let lock_fd = std::fs::File::create(&lock_file).map_err(|e| {
+        Code::FAILURE.with_message(format!(
+            "Failed to open {path} for locking: {e}",
+            path = lock_file.display()
+        ))
+    })?;
     let mut lock = fd_lock::RwLock::new(lock_fd);
     let _write_lock = lock.write();
     if !target_dir.exists() {
