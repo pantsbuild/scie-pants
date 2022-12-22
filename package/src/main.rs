@@ -13,6 +13,7 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use clap::{arg, command, Parser, Subcommand};
 use lazy_static::lazy_static;
 use log::{info, warn};
+use once_cell::sync::OnceCell;
 use proc_exit::{Code, Exit, ExitResult};
 use sha2::{Digest, Sha256};
 use tempfile::TempDir;
@@ -425,22 +426,87 @@ fn build_a_scie_project(a_scie_project_repo: &Path, target: &str, dest_dir: &Pat
 }
 
 fn fetch_a_scie_project(
-    bootstrap_ptex: &Path,
+    build_context: &BuildContext,
     project_name: &str,
     tag: &str,
     binary_name: &str,
     dest_dir: &Path,
 ) -> ExitResult {
-    // TODO(John Sirois): Use a cache.
-    fetch_and_check_trusted_sha256(
-        bootstrap_ptex,
-        format!(
-            "https://github.com/a-scie/{project_name}/releases/download/{tag}/{file}",
-            file = binary_full_name(binary_name)
-        )
-        .as_str(),
-        dest_dir,
-    )
+    static BOOTSTRAP_PTEX: OnceCell<PathBuf> = OnceCell::new();
+
+    let file_name = binary_full_name(binary_name);
+    let cache_dir = dirs::cache_dir()
+        .ok_or_else(|| {
+            Code::FAILURE.with_message(
+                "Failed to look up user cache dir for caching scie project downloads".to_string(),
+            )
+        })?
+        .join("scie-pants")
+        .join("dev")
+        .join("downloads")
+        .join(project_name);
+    ensure_directory(&cache_dir, false)?;
+
+    // We proceed with single-checked locking, contention is not a concern in this build process!
+    // We only care about correctness.
+    let target_dir = cache_dir.join(tag);
+    let lock_file = cache_dir.join(format!("{tag}.lck"));
+    let lock_fd = std::fs::File::create(&lock_file).map_err(|e| {
+        Code::FAILURE.with_message(format!(
+            "Failed to open {path} for locking: {e}",
+            path = lock_file.display()
+        ))
+    })?;
+    let mut lock = fd_lock::RwLock::new(lock_fd);
+    let _write_lock = lock.write();
+    if !target_dir.exists() {
+        let bootstrap_ptex = BOOTSTRAP_PTEX.get_or_try_init(|| {
+            build_step!("Bootstrapping a `ptex` binary");
+            execute(
+                Command::new(CARGO)
+                    .args([
+                        "install",
+                        "--git",
+                        "https://github.com/a-scie/ptex",
+                        "--tag",
+                        PTEX_TAG,
+                        "--root",
+                        path_as_str(&build_context.cargo_output_root)?,
+                        "--target",
+                        &build_context.target,
+                        "ptex",
+                    ])
+                    // N.B.: This just suppresses a warning about adding this bin dir to your PATH.
+                    .env(
+                        "PATH",
+                        vec![
+                            build_context.cargo_output_bin_dir.to_str().unwrap(),
+                            env!("PATH"),
+                        ]
+                        .join(PATHSEP),
+                    ),
+            )?;
+            Ok(build_context.cargo_output_bin_dir.join("ptex"))
+        })?;
+
+        build_step!(format!("Fetching the `{project_name}` {tag} binary"));
+        let work_dir = cache_dir.join(format!("{tag}.work"));
+        ensure_directory(&work_dir, true)?;
+        fetch_and_check_trusted_sha256(
+            bootstrap_ptex,
+            format!(
+                "https://github.com/a-scie/{project_name}/releases/download/{tag}/{file_name}",
+            )
+                .as_str(),
+            &work_dir,
+        )?;
+        rename(&work_dir, &target_dir)?;
+    } else {
+        build_step!(format!(
+            "Loading the `{project_name}` {tag} binary from the cache"
+        ));
+    }
+    copy(&target_dir.join(&file_name), &dest_dir.join(file_name))
 }
 
 fn fetch_skinny_scie_tools(build_context: &BuildContext) -> Result<SkinnyScieTools, Exit> {
@@ -453,33 +519,6 @@ fn fetch_skinny_scie_tools(build_context: &BuildContext) -> Result<SkinnyScieToo
     );
     execute(Command::new("rustup").args(["target", "add", &build_context.target]))?;
 
-    build_step!("Bootstrapping a `ptex` binary");
-    execute(
-        Command::new(CARGO)
-            .args([
-                "install",
-                "--git",
-                "https://github.com/a-scie/ptex",
-                "--tag",
-                PTEX_TAG,
-                "--root",
-                path_as_str(&build_context.cargo_output_root)?,
-                "--target",
-                &build_context.target,
-                "ptex",
-            ])
-            // N.B.: This just suppresses a warning about adding this bin dir to your PATH.
-            .env(
-                "PATH",
-                vec![
-                    build_context.cargo_output_bin_dir.to_str().unwrap(),
-                    env!("PATH"),
-                ]
-                .join(PATHSEP),
-            ),
-    )?;
-    let bootstrap_ptex = build_context.cargo_output_bin_dir.join("ptex");
-
     let skinny_scies = build_context.cargo_output_root.join("skinny-scies");
     ensure_directory(&skinny_scies, true)?;
 
@@ -490,8 +529,7 @@ fn fetch_skinny_scie_tools(build_context: &BuildContext) -> Result<SkinnyScieToo
         );
         build_a_scie_project(ptex_from, &build_context.target, &skinny_scies)?;
     } else {
-        build_step!("Fetching the `ptex` {tag} binary", tag = PTEX_TAG);
-        fetch_a_scie_project(&bootstrap_ptex, "ptex", PTEX_TAG, "ptex", &skinny_scies)?;
+        fetch_a_scie_project(build_context, "ptex", PTEX_TAG, "ptex", &skinny_scies)?;
     }
     let ptex_exe_path = skinny_scies.join(binary_full_name("ptex"));
     prepare_exe(&ptex_exe_path)?;
@@ -505,9 +543,8 @@ fn fetch_skinny_scie_tools(build_context: &BuildContext) -> Result<SkinnyScieToo
         );
         build_a_scie_project(scie_jump_from, &build_context.target, &skinny_scies)?;
     } else {
-        build_step!("Fetching the `scie-jump` {tag} binary", tag = SCIE_JUMP_TAG);
         fetch_a_scie_project(
-            &bootstrap_ptex,
+            build_context,
             "jump",
             SCIE_JUMP_TAG,
             "scie-jump",

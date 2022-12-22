@@ -200,6 +200,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "fd-lock"
+version = "3.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb21c69b9fea5e15dbc1049e4b77145dd0ba1c84019c488102de0dc4ea4b0a27"
+dependencies = [
+ "cfg-if",
+ "rustix",
+ "windows-sys",
+]
+
+[[package]]
 name = "form_urlencoded"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -398,8 +409,11 @@ name = "package"
 version = "0.2.0"
 dependencies = [
  "clap",
+ "dirs",
+ "fd-lock",
  "lazy_static",
  "log",
+ "once_cell",
  "pretty_env_logger",
  "proc-exit",
  "sha2",
