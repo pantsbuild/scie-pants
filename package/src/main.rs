@@ -875,7 +875,11 @@ fn test(
         execute(
             Command::new("./get-pants.sh")
                 .arg("--bin-dir")
-                .arg(bin_dir.path()),
+                .arg(bin_dir.path())
+                // Convince Apple silicon macs to pick the arm version of curl from the curl
+                // universal binary. Although this all works under rosetta, its nice to get the test
+                // testing the ~expected path.
+                .env("ARCHPREFERENCE ", "arm64e"),
         )?;
     }
 
