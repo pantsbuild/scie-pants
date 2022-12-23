@@ -50,7 +50,7 @@ function calculate_os() {
     # Git bash reports something like: MINGW64_NT-10.0-22621
     echo windows
   else
-    die "Integration tests are not supported for this operating system (${os})."
+    die "Pants is not supported on this operating system (${os})."
   fi
 }
 
