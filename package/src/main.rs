@@ -869,6 +869,14 @@ fn test(
                 .arg("-V")
                 .current_dir(clone_root.path().join("example-django")),
         )?;
+
+        integration_test!("Verifying get-pants.sh works");
+        let bin_dir = create_tempdir()?;
+        execute(
+            Command::new("./get-pants.sh")
+                .arg("--bin-dir")
+                .arg(bin_dir.path()),
+        )?;
     }
 
     // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
@@ -882,7 +890,12 @@ fn test(
             .env("PANTS_VERSION", "1.30.5rc1")
             .env(
                 "PANTS_BACKEND_PACKAGES",
-                "-['pants.backend.python.typecheck.mypy']",
+                "-[\
+                'pants.backend.python.typecheck.mypy',\
+                'pants.backend.shell',\
+                'pants.backend.shell.lint.shellcheck',\
+                'pants.backend.shell.lint.shfmt',\
+                ]",
             )
             .args(["--no-verify-config", "--version"]);
         if Platform::MacOSX86_64 == *CURRENT_PLATFORM {

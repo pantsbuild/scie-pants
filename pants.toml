@@ -6,6 +6,9 @@ backend_packages = [
     "pants.backend.python.lint.black",
     "pants.backend.python.lint.isort",
     "pants.backend.python.typecheck.mypy",
+    "pants.backend.shell",
+    "pants.backend.shell.lint.shellcheck",
+    "pants.backend.shell.lint.shfmt",
 ]
 
 [anonymous-telemetry]
@@ -47,6 +50,9 @@ resolves_generate_lockfiles = false
 
 [python.resolves]
 python-default = "tools/lock.json"
+
+[shfmt]
+args = ["-i 2", "-ci"]
 
 [subprocess-environment]
 env_vars = [
