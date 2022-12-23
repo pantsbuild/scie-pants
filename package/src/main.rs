@@ -875,7 +875,7 @@ fn test(
         execute(
             Command::new("./get-pants.sh")
                 .arg("--bin-dir")
-                .arg(bin_dir.path())
+                .arg(bin_dir.path()),
         )?;
     }
 
