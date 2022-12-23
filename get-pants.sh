@@ -110,7 +110,8 @@ function install_from_url() {
   )
   rm "${workdir}/"*.sha256
   if [[ "${OS}" == "macos" ]]; then
-    install -d -m 755 "${workdir}/"* "${dest}"
+    mkdir -p "$(dirname "${dest}")"
+    install -m 755 "${workdir}/"* "${dest}"
   else
     install -D -m 755 "${workdir}/"* "${dest}"
   fi
