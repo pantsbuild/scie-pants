@@ -23,13 +23,11 @@ function check_cmd() {
 _GC=()
 
 function gc() {
-  if [[ -z "${NO_GC:-}" ]]; then
-    if (($# > 0)); then
-      check_cmd rm
-      _GC+=("$@")
-    else
-      rm -rf "${_GC[@]}"
-    fi
+  if (($# > 0)); then
+    check_cmd rm
+    _GC+=("$@")
+  else
+    rm -rf "${_GC[@]}"
   fi
 }
 
