@@ -1,6 +1,7 @@
 // Copyright 2022 Pants project contributors.
 // Licensed under the Apache License, Version 2.0 (see LICENSE).
 
+use std::cell::Cell;
 use std::env;
 use std::fmt::{Display, Formatter};
 use std::fs::Permissions;
@@ -371,7 +372,7 @@ fn fetch_and_check_trusted_sha256(ptex: &Path, url: &str, dest_dir: &Path) -> Ex
 
 struct BuildContext {
     target: String,
-    target_prepared: bool,
+    target_prepared: Cell<bool>,
     ptex_repo: Option<PathBuf>,
     scie_jump_repo: Option<PathBuf>,
     workspace_root: PathBuf,
@@ -396,7 +397,7 @@ impl BuildContext {
         let output_bin_dir = output_root.join("bin");
         Ok(Self {
             target,
-            target_prepared: false,
+            target_prepared: Cell::new(false),
             ptex_repo: ptex_repo.map(Path::to_path_buf),
             scie_jump_repo: scie_jump_repo.map(Path::to_path_buf),
             workspace_root,
@@ -406,22 +407,21 @@ impl BuildContext {
         })
     }
 
-    fn ensure_target(&mut self) -> ExitResult {
-        if !self.target_prepared {
+    fn ensure_target(&self) -> ExitResult {
+        if !self.target_prepared.get() {
             build_step!(
                 "Ensuring --target {target} is available",
                 target = self.target
             );
             execute(Command::new("rustup").args(["target", "add", &self.target]))?;
-            self.target_prepared = true;
+            self.target_prepared.set(true);
         }
         Ok(())
     }
 
-    fn obtain_ptex(&mut self, dest_dir: &Path) -> Result<PathBuf, Exit> {
-        if self.ptex_repo.is_some() {
+    fn obtain_ptex(&self, dest_dir: &Path) -> Result<PathBuf, Exit> {
+        if let Some(ref ptex_from) = self.ptex_repo {
             self.ensure_target()?;
-            let ptex_from = self.ptex_repo.as_ref().unwrap();
             build_step!(
                 "Building the `ptex` binary from the source at {ptex_from}",
                 ptex_from = ptex_from.display()
@@ -437,10 +437,9 @@ impl BuildContext {
         Ok(ptex_exe)
     }
 
-    fn obtain_scie_jump(&mut self, dest_dir: &Path) -> Result<PathBuf, Exit> {
-        if self.scie_jump_repo.is_some() {
+    fn obtain_scie_jump(&self, dest_dir: &Path) -> Result<PathBuf, Exit> {
+        if let Some(ref scie_jump_from) = self.scie_jump_repo {
             self.ensure_target()?;
-            let scie_jump_from = self.scie_jump_repo.as_ref().unwrap();
             build_step!(
                 "Building the `scie-jump` binary from the source at {scie_jump_from}",
                 scie_jump_from = scie_jump_from.display()
@@ -561,7 +560,7 @@ fn fetch_a_scie_project(
     copy(&target_dir.join(&file_name), &dest_dir.join(file_name))
 }
 
-fn fetch_skinny_scie_tools(build_context: &mut BuildContext) -> Result<SkinnyScieTools, Exit> {
+fn fetch_skinny_scie_tools(build_context: &BuildContext) -> Result<SkinnyScieTools, Exit> {
     let skinny_scies = build_context.cargo_output_root.join("skinny-scies");
     ensure_directory(&skinny_scies, true)?;
     let ptex_exe = build_context.obtain_ptex(&skinny_scies)?;
@@ -1043,7 +1042,7 @@ struct Args {
     command: Commands,
 }
 
-fn maybe_build(args: &Args, build_context: &mut BuildContext) -> Result<Option<PathBuf>, Exit> {
+fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathBuf>, Exit> {
     match &args.command {
         Commands::Test {
             tools_pex: Some(tools_pex),
@@ -1147,12 +1146,12 @@ fn main() -> ExitResult {
         )));
     }
 
-    let mut build_context = BuildContext::new(
+    let build_context = BuildContext::new(
         args.target.as_deref(),
         args.ptex.as_deref(),
         args.scie_jump.as_deref(),
     )?;
-    if let Some(output_file) = maybe_build(&args, &mut build_context)? {
+    if let Some(output_file) = maybe_build(&args, &build_context)? {
         let dest_file_name = output_file
             .file_name()
             .ok_or_else(|| {
