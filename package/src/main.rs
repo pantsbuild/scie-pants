@@ -1,6 +1,7 @@
 // Copyright 2022 Pants project contributors.
 // Licensed under the Apache License, Version 2.0 (see LICENSE).
 
+use std::cell::Cell;
 use std::env;
 use std::fmt::{Display, Formatter};
 use std::fs::Permissions;
@@ -371,6 +372,7 @@ fn fetch_and_check_trusted_sha256(ptex: &Path, url: &str, dest_dir: &Path) -> Ex
 
 struct BuildContext {
     target: String,
+    target_prepared: Cell<bool>,
     ptex_repo: Option<PathBuf>,
     scie_jump_repo: Option<PathBuf>,
     workspace_root: PathBuf,
@@ -395,6 +397,7 @@ impl BuildContext {
         let output_bin_dir = output_root.join("bin");
         Ok(Self {
             target,
+            target_prepared: Cell::new(false),
             ptex_repo: ptex_repo.map(Path::to_path_buf),
             scie_jump_repo: scie_jump_repo.map(Path::to_path_buf),
             workspace_root,
@@ -402,6 +405,54 @@ impl BuildContext {
             cargo_output_root: output_root,
             cargo_output_bin_dir: output_bin_dir,
         })
+    }
+
+    fn ensure_target(&self) -> ExitResult {
+        if !self.target_prepared.get() {
+            build_step!(
+                "Ensuring --target {target} is available",
+                target = self.target
+            );
+            execute(Command::new("rustup").args(["target", "add", &self.target]))?;
+            self.target_prepared.set(true);
+        }
+        Ok(())
+    }
+
+    fn obtain_ptex(&self, dest_dir: &Path) -> Result<PathBuf, Exit> {
+        if let Some(ref ptex_from) = self.ptex_repo {
+            self.ensure_target()?;
+            build_step!(
+                "Building the `ptex` binary from the source at {ptex_from}",
+                ptex_from = ptex_from.display()
+            );
+            build_a_scie_project(ptex_from, &self.target, dest_dir)?;
+        } else {
+            fetch_a_scie_project(self, "ptex", PTEX_TAG, "ptex", dest_dir)?;
+        }
+        let ptex_exe_path = dest_dir.join(binary_full_name("ptex"));
+        prepare_exe(&ptex_exe_path)?;
+        let ptex_exe = dest_dir.join("ptex");
+        rename(&ptex_exe_path, &ptex_exe)?;
+        Ok(ptex_exe)
+    }
+
+    fn obtain_scie_jump(&self, dest_dir: &Path) -> Result<PathBuf, Exit> {
+        if let Some(ref scie_jump_from) = self.scie_jump_repo {
+            self.ensure_target()?;
+            build_step!(
+                "Building the `scie-jump` binary from the source at {scie_jump_from}",
+                scie_jump_from = scie_jump_from.display()
+            );
+            build_a_scie_project(scie_jump_from, &self.target, dest_dir)?;
+        } else {
+            fetch_a_scie_project(self, "jump", SCIE_JUMP_TAG, "scie-jump", dest_dir)?;
+        }
+        let scie_jump_exe_path = dest_dir.join(binary_full_name("scie-jump"));
+        prepare_exe(&scie_jump_exe_path)?;
+        let scie_jump_exe = dest_dir.join("scie_jump");
+        rename(&scie_jump_exe_path, &scie_jump_exe)?;
+        Ok(scie_jump_exe)
     }
 }
 
@@ -510,52 +561,10 @@ fn fetch_a_scie_project(
 }
 
 fn fetch_skinny_scie_tools(build_context: &BuildContext) -> Result<SkinnyScieTools, Exit> {
-    // TODO(John Sirois): These next two steps should be made conditional upon at least one URL
-    // needing to be fetched. If both ptex and scie-jump are being built from sources there is no
-    // need.
-    build_step!(
-        "Ensuring --target {target} is available",
-        target = build_context.target
-    );
-    execute(Command::new("rustup").args(["target", "add", &build_context.target]))?;
-
     let skinny_scies = build_context.cargo_output_root.join("skinny-scies");
     ensure_directory(&skinny_scies, true)?;
-
-    if let Some(ref ptex_from) = build_context.ptex_repo {
-        build_step!(
-            "Building the `ptex` binary from the source at {ptex_from}",
-            ptex_from = ptex_from.display()
-        );
-        build_a_scie_project(ptex_from, &build_context.target, &skinny_scies)?;
-    } else {
-        fetch_a_scie_project(build_context, "ptex", PTEX_TAG, "ptex", &skinny_scies)?;
-    }
-    let ptex_exe_path = skinny_scies.join(binary_full_name("ptex"));
-    prepare_exe(&ptex_exe_path)?;
-    let ptex_exe = skinny_scies.join("ptex");
-    rename(&ptex_exe_path, &ptex_exe)?;
-
-    if let Some(ref scie_jump_from) = build_context.scie_jump_repo {
-        build_step!(
-            "Building the `scie-jump` binary from the source at {scie_jump_from}",
-            scie_jump_from = scie_jump_from.display()
-        );
-        build_a_scie_project(scie_jump_from, &build_context.target, &skinny_scies)?;
-    } else {
-        fetch_a_scie_project(
-            build_context,
-            "jump",
-            SCIE_JUMP_TAG,
-            "scie-jump",
-            &skinny_scies,
-        )?;
-    }
-    let scie_jump_exe_path = skinny_scies.join(binary_full_name("scie-jump"));
-    prepare_exe(&scie_jump_exe_path)?;
-    let scie_jump_exe = skinny_scies.join("scie_jump");
-    rename(&scie_jump_exe_path, &scie_jump_exe)?;
-
+    let ptex_exe = build_context.obtain_ptex(&skinny_scies)?;
+    let scie_jump_exe = build_context.obtain_scie_jump(&skinny_scies)?;
     Ok(SkinnyScieTools {
         ptex: ptex_exe,
         scie_jump: scie_jump_exe,
