@@ -9,7 +9,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-clap = { version = "4.0", features = ["derive"] }
+clap = { version = "4.1", features = ["derive"] }
 dirs = "4.0"
 fd-lock = "3.0"
 lazy_static = "1.4"
