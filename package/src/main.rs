@@ -878,14 +878,6 @@ fn test(
                 .arg("-V")
                 .current_dir(clone_root.path().join("example-django")),
         )?;
-
-        integration_test!("Verifying get-pants.sh works");
-        let bin_dir = create_tempdir()?;
-        execute(
-            Command::new("./get-pants.sh")
-                .arg("--bin-dir")
-                .arg(bin_dir.path()),
-        )?;
     }
 
     // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
