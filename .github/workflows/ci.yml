@@ -58,6 +58,13 @@ jobs:
         run: |
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             cargo run -p package -- test
+      - name: Setup Python 3.9
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
+        uses: actions/setup-python@v4
+        with:
+          # N.B.: We need Python 3.9 for running Pants goals against our tools.pex Python tools
+          # codebase.
+          python-version: "3.9"
       - name: Build, Package & Integration Tests
         if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: |
