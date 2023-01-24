@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.2.1
+
+This release fixes un-warranted warnings processing some `.pants.bootstrap` files.
+
 ## 0.2.0
 
 This release brings support for loading environment variables into Pants (and `scie-pants`)
