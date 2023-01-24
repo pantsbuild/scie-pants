@@ -30,12 +30,25 @@ impl PantsBootstrap {
                 "-euo",
                 "pipefail",
                 "-c",
-                format!(
-                    r#"set >&2; source "{pants_bootstrap}" >"{capture}" 2>&1; set"#,
-                    pants_bootstrap = pants_bootstrap.display(),
-                    capture = capture.path().display(),
-                )
-                .as_str(),
+                // N.B.: The `set` are used to print the current variables. The set -o posix are
+                // used to toggle restriction of `set` to printing only variable names and not more
+                // exotic items like functions. We ensure our modifications are unset before
+                // sourcing the .pants.bootstrap by using a sub-shell so that that script can use
+                // full bash-isms as has been the contract established in the original `./pants`
+                // script.
+                // N.B.: We take care to ensure the bash script here is a single line since the
+                // script contents are re-capitulated in the BASH_EXECUTION_STRING env var and a
+                // multiline env var will have its trailing lines fail to parse as env vars in most
+                // cases.
+                [
+                    r#"(set -o posix; IFS=$'\0'; set >&2); "#,
+                    format!(
+                        r#"source "{pants_bootstrap}" >"{capture}" 2>&1; "#,
+                        pants_bootstrap = pants_bootstrap.display(),
+                        capture = capture.path().display(),
+                    ).as_str(),
+                    r#"set -o posix; IFS=$'\0'; set"#
+                ].join("").as_str(),
             ])
             .output()
             .with_context(|| {
