@@ -8,7 +8,7 @@ use std::fs::Permissions;
 use std::io::Write;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::{Command, Output, Stdio};
 use std::sync::atomic::{AtomicU8, Ordering};
 
 use clap::{arg, command, Parser, Subcommand};
@@ -747,6 +747,22 @@ fn test(
                 .args(["fmt", "lint", "check", "test", "package", "::"])
                 .env("PEX_SCRIPT", "Does not exist!"),
         )?;
+
+        integration_test!("Checking .pants.bootstrap handling ignores bash functions");
+        // N.B.: We run this test after 1st having run the test above to ensure pants is already
+        // bootstrapped so that we don't get stderr output from that process. We also use
+        // `--no-pantsd` to avoid spurious pantsd startup stderr log lines just in case pantsd found
+        // a need to restart.
+        let output = execute(
+            Command::new(scie_pants_scie)
+                .args(["--no-pantsd", "-V"])
+                .stderr(Stdio::piped()),
+        )?;
+        assert!(
+            output.stderr.is_empty(),
+            "Expected no warnings to be printed when handling .pants.bootstrap, found:\n{warnings}",
+            warnings = String::from_utf8_lossy(&output.stderr)
+        );
 
         integration_test!(
             "Verifying the tools.pex built by the package crate matches the tools.pex built by \

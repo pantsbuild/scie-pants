@@ -1,3 +1,10 @@
+function should_be_ignored() {
+  # Normally `set` would print information about functions as well as variables; causing scie-pants
+  # to emit warnings about skipping un-parseable env vars. This function stresses that corner in
+  # integration tests.
+  return
+}
+
 # Ensure GIT_COMMIT is set
 : ${GIT_COMMIT:=$(git rev-parse HEAD)}
 
