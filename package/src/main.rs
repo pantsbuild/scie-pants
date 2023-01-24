@@ -8,7 +8,7 @@ use std::fs::Permissions;
 use std::io::Write;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::{Command, Output, Stdio};
 use std::sync::atomic::{AtomicU8, Ordering};
 
 use clap::{arg, command, Parser, Subcommand};
@@ -741,6 +741,18 @@ fn test(
         *CURRENT_PLATFORM,
         Platform::LinuxX86_64 | Platform::MacOSAarch64 | Platform::MacOSX86_64
     ) {
+        integration_test!("Checking .pants.bootstrap handling ignores bash functions");
+        let output = execute(
+            Command::new(scie_pants_scie)
+                .args(["-V"])
+                .stderr(Stdio::piped()),
+        )?;
+        assert!(
+            output.stderr.is_empty(),
+            "Expected no warnings to be printed when handling .pants.bootstrap, found:\n{warnings}",
+            warnings = String::from_utf8_lossy(&output.stderr)
+        );
+
         integration_test!("Linting, testing and packaging the tools codebase");
         execute(
             Command::new(scie_pants_scie)
