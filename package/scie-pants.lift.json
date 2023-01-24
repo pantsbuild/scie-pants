@@ -91,7 +91,6 @@
           "pants": {
             "description": "Runs a hermetic Pants installation.",
             "env": {
-              "=PATH": "{scie.env.PATH}:{scie.bindings.install:VIRTUAL_ENV}/bin",
               "=PANTS_VERSION": "{scie.bindings.configure:PANTS_VERSION}",
               "PANTS_BUILDROOT_OVERRIDE": "{scie.bindings.configure:PANTS_BUILDROOT_OVERRIDE}"
             },
@@ -104,7 +103,6 @@
           "pants-debug": {
             "description": "Runs a hermetic Pants installation with a debug server for debugging Pants code.",
             "env": {
-              "=PATH": "{scie.env.PATH}:{scie.bindings.install:VIRTUAL_ENV}/bin",
               "=PANTS_VERSION": "{scie.bindings.configure:PANTS_VERSION}",
               "PANTS_BUILDROOT_OVERRIDE": "{scie.bindings.configure:PANTS_BUILDROOT_OVERRIDE}"
             },
