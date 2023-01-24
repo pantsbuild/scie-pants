@@ -741,10 +741,21 @@ fn test(
         *CURRENT_PLATFORM,
         Platform::LinuxX86_64 | Platform::MacOSAarch64 | Platform::MacOSX86_64
     ) {
+        integration_test!("Linting, testing and packaging the tools codebase");
+        execute(
+            Command::new(scie_pants_scie)
+                .args(["fmt", "lint", "check", "test", "package", "::"])
+                .env("PEX_SCRIPT", "Does not exist!"),
+        )?;
+
         integration_test!("Checking .pants.bootstrap handling ignores bash functions");
+        // N.B.: We run this test after 1st having run the test above to ensure pants is already
+        // bootstrapped so that we don't get stderr output from that process. We also use
+        // `--no-pantsd` to avoid spurious pantsd startup stderr log lines just in case pantsd found
+        // a need to restart.
         let output = execute(
             Command::new(scie_pants_scie)
-                .args(["-V"])
+                .args(["--no-pantsd", "-V"])
                 .stderr(Stdio::piped()),
         )?;
         assert!(
@@ -752,13 +763,6 @@ fn test(
             "Expected no warnings to be printed when handling .pants.bootstrap, found:\n{warnings}",
             warnings = String::from_utf8_lossy(&output.stderr)
         );
-
-        integration_test!("Linting, testing and packaging the tools codebase");
-        execute(
-            Command::new(scie_pants_scie)
-                .args(["fmt", "lint", "check", "test", "package", "::"])
-                .env("PEX_SCRIPT", "Does not exist!"),
-        )?;
 
         integration_test!(
             "Verifying the tools.pex built by the package crate matches the tools.pex built by \
