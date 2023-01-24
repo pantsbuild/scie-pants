@@ -46,9 +46,12 @@ impl PantsBootstrap {
                         r#"source "{pants_bootstrap}" >"{capture}" 2>&1; "#,
                         pants_bootstrap = pants_bootstrap.display(),
                         capture = capture.path().display(),
-                    ).as_str(),
-                    r#"set -o posix; IFS=$'\0'; set"#
-                ].join("").as_str(),
+                    )
+                    .as_str(),
+                    r#"set -o posix; IFS=$'\0'; set"#,
+                ]
+                .join("")
+                .as_str(),
             ])
             .output()
             .with_context(|| {
