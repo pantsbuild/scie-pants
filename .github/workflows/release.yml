@@ -90,6 +90,27 @@ jobs:
           files: dist/scie-pants*
           fail_on_unmatched_files: true
           discussion_category_name: Announcements
+      - name: Post to a Pantsbuild Slack '#announce'
+        id: slack
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: "C18RRR4JK"
+          # N.B.: You can muck with the JSON blob and see the results rendered here:
+          #  https://app.slack.com/block-kit-builder
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "The `pants` launcher binary (scie-pants) ${{ needs.determine-tag.outputs.release-tag }} is released:\n* https://github.com/pantsbuild/scie-pants/releases/tag/${{ needs.determine-tag.outputs.release-tag }}\n* https://www.pantsbuild.org/v2.15/docs/installation"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
   aarch64-release-trigger:
     name: Trigger Circle CI Linux aarch64 Github Release
     needs:
