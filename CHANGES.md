@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.2.2
+
+This release fixes the scie-pants scie to not expose the interpreter used to run a Pants
+installation on the PATH. People using Pants for Python projects will need to supply their own
+local Python interpreter for Python goal Processes to use, just like they always have had to.
+
 ## 0.2.1
 
 This release fixes un-warranted warnings processing some `.pants.bootstrap` files.
