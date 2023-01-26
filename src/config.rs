@@ -20,12 +20,19 @@ pub(crate) struct DebugPy {
     pub(crate) version: Option<String>,
 }
 
+#[derive(Default, Deserialize)]
+pub(crate) struct Default {
+    pub(crate) delegate_bootstrap: Option<bool>,
+}
+
 #[derive(Deserialize)]
 pub(crate) struct Config {
     #[serde(default, rename = "GLOBAL")]
     pub(crate) global: Global,
     #[serde(default)]
     pub(crate) debugpy: DebugPy,
+    #[serde(default, rename = "DEFAULT")]
+    pub(crate) default: Default,
 }
 
 pub(crate) struct PantsConfig {
@@ -44,6 +51,10 @@ impl PantsConfig {
 
     pub(crate) fn debugpy_version(&self) -> Option<String> {
         self.config.debugpy.version.clone()
+    }
+
+    pub(crate) fn delegate_bootstrap(&self) -> bool {
+        self.config.default.delegate_bootstrap.unwrap_or_default()
     }
 }
 

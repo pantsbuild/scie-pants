@@ -118,6 +118,10 @@
               "{scie.bindings.configure:PANTS_SHA_FIND_LINKS}"
             ]
           },
+          "pants-dev": {
+            "description": "Runs Pants from a local source checkout of the pantsbuild/pants repository, for development.",
+            "exe": "{scie.env.PANTS_BUILDROOT_OVERRIDE}/pants"
+          },
           "bootstrap-tools": {
             "description": "Introspection tools for the Pants bootstrap process.",
             "env": {

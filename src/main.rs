@@ -97,15 +97,16 @@ fn find_pants_installation() -> Result<Option<PantsConfig>> {
 #[time("debug", "scie-pants::{}")]
 fn get_pants_process() -> Result<Process> {
     let pants_installation = find_pants_installation()?;
-    let (build_root, configured_pants_version, debugpy_version) =
+    let (build_root, configured_pants_version, debugpy_version, delegate_bootstrap) =
         if let Some(ref pants_config) = pants_installation {
             (
                 Some(pants_config.build_root().to_path_buf()),
                 pants_config.package_version(),
                 pants_config.debugpy_version(),
+                pants_config.delegate_bootstrap(),
             )
         } else {
-            (None, None, None)
+            (None, None, None, false)
         };
 
     let env_pants_sha = env_version("PANTS_SHA")?;
@@ -135,7 +136,9 @@ fn get_pants_process() -> Result<Process> {
     let scie_boot = match env::var_os("PANTS_BOOTSTRAP_TOOLS") {
         Some(_) => "bootstrap-tools",
         None => {
-            if pants_debug {
+            if delegate_bootstrap {
+                "pants-dev"
+            } else if pants_debug {
                 "pants-debug"
             } else {
                 "pants"
