@@ -2,7 +2,8 @@
 // Licensed under the Apache License, Version 2.0 (see LICENSE).
 
 use std::env;
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
+use std::path::PathBuf;
 
 use anyhow::{anyhow, bail, Context, Result};
 use build_root::BuildRoot;
@@ -183,6 +184,39 @@ fn get_pants_process() -> Result<Process> {
     })
 }
 
+fn get_pants_from_sources_process(pants_repo_location: PathBuf) -> Result<Process> {
+    let exe = pants_repo_location.join("pants").into_os_string();
+
+    let mut args = vec!["--no-verify-config".into()];
+    args.extend(env::args().skip(1).map(OsString::from));
+
+    let version = std::fs::read_to_string(
+        pants_repo_location
+            .join("src")
+            .join("python")
+            .join("pants")
+            .join("VERSION"),
+    )?;
+
+    // The ENABLE_PANTSD env var is a custom env var defined by the legacy `./pants_from_sources`
+    // script. We maintain support here in perpetuity because it's cheap and we don't break folks'
+    // workflows.
+    let enable_pantsd = env::var_os("ENABLE_PANTSD")
+        .or_else(|| env::var_os("PANTS_PANTSD"))
+        .unwrap_or_else(|| "false".into());
+
+    let env = vec![
+        ("PANTS_VERSION".into(), version.trim().into()),
+        ("PANTS_PANTSD".into(), enable_pantsd),
+        ("no_proxy".into(), "*".into()),
+    ];
+
+    let build_root = BuildRoot::find(None)?;
+    env::set_current_dir(build_root)?;
+
+    Ok(Process { exe, args, env })
+}
+
 trait OrExit<T> {
     fn or_exit(self) -> T;
 }
@@ -199,6 +233,19 @@ impl<T> OrExit<T> for Result<T> {
     }
 }
 
+fn invoked_as_basename() -> Option<String> {
+    let scie = env::var("SCIE_ARGV0").ok()?;
+    let exe_path = PathBuf::from(scie);
+
+    #[cfg(windows)]
+    let basename = exe_path.file_stem().and_then(OsStr::to_str);
+
+    #[cfg(unix)]
+    let basename = exe_path.file_name().and_then(OsStr::to_str);
+
+    basename.map(str::to_owned)
+}
+
 fn main() {
     env_logger::init();
     let _timer = timer!(Level::Debug; "MAIN");
@@ -213,7 +260,15 @@ fn main() {
         }
     }
 
-    let pants_process = get_pants_process().or_exit();
+    let pants_process = if let Ok(value) = env::var("PANTS_SOURCE") {
+        get_pants_from_sources_process(PathBuf::from(value))
+    } else if let Some("pants_from_sources") = invoked_as_basename().as_deref() {
+        get_pants_from_sources_process(PathBuf::from("..").join("pants"))
+    } else {
+        get_pants_process()
+    }
+    .or_exit();
+
     trace!("Launching: {pants_process:#?}");
     let exit_code = pants_process.exec().or_exit();
     std::process::exit(exit_code)
