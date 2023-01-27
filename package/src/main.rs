@@ -1067,9 +1067,7 @@ index 81e3bd7..4236f4b 100755
             })?;
             assert!(
                 stderr.contains(expected_message),
-                "STDERR did not contain {}:\n{}",
-                expected_message,
-                stderr
+                "STDERR did not contain {expected_message}:\n{stderr}"
             );
             Ok(())
         };
