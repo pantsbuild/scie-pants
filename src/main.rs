@@ -198,9 +198,12 @@ fn get_pants_from_sources_process(pants_repo_location: PathBuf) -> Result<Proces
             .join("VERSION"),
     )?;
 
-    // When running pants from sources you are likely to be modifying those sources, so you won't
-    // want pantsd running.  You can override this by setting ENABLE_PANTSD=true.
-    let enable_pantsd = env::var_os("ENABLE_PANTSD").unwrap_or_else(|| "false".into());
+    // The ENABLE_PANTSD env var is a custom env var defined by the legacy `./pants_from_sources`
+    // script. We maintain support here in perpetuity because it's cheap and we don't break folks'
+    // workflows.
+    let enable_pantsd = env::var_os("ENABLE_PANTSD")
+        .or_else(|| env::var_os("PANTS_PANTSD"))
+        .unwrap_or_else(|| "false".into());
 
     let env = vec![
         ("PANTS_VERSION".into(), version.trim().into()),
