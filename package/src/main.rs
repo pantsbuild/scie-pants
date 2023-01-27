@@ -289,9 +289,22 @@ fn copy(src: &Path, dst: &Path) -> ExitResult {
         .map(|_| ())
 }
 
+fn remove_dir(path: &Path) -> ExitResult {
+    if path.exists() {
+        std::fs::remove_dir_all(path).map_err(|e| {
+            Code::FAILURE.with_message(format!(
+                "Failed to remove directory at {path}: {e}",
+                path = path.display()
+            ))
+        })
+    } else {
+        Ok(())
+    }
+}
+
 fn ensure_directory(path: &Path, clean: bool) -> ExitResult {
-    if clean && path.exists() {
-        if let Err(e) = std::fs::remove_dir_all(path) {
+    if clean {
+        if let Err(e) = remove_dir(path) {
             warn!(
                 "Failed to clean directory at {path}: {e}",
                 path = path.display()
@@ -951,11 +964,12 @@ fn test(
         integration_test!("Verify PANTS_SOURCE mode.");
         let dev_cache_dir = dev_cache_dir()?;
         let clone_dir = dev_cache_dir.join("clones");
-        ensure_directory(&clone_dir, false)?;
         let pants_2_14_1_clone_dir = clone_dir.join("pants-2.14.1");
-        if !pants_2_14_1_clone_dir.exists() {
-            let clone_root = create_tempdir()?;
-            let clone_root_path = clone_root.path().to_str().ok_or_else(|| {
+        let venv_dir = dev_cache_dir.join("venvs");
+        let pants_2_14_1_venv_dir = venv_dir.join("pants-2.14.1");
+        if !pants_2_14_1_clone_dir.exists() || !pants_2_14_1_venv_dir.exists() {
+            let clone_root_tmp = create_tempdir()?;
+            let clone_root_path = clone_root_tmp.path().to_str().ok_or_else(|| {
                 Code::FAILURE.with_message(format!(
                     "Failed to convert clone root path to UTF-8 string: {clone_root:?}"
                 ))
@@ -973,22 +987,22 @@ fn test(
                         "https://github.com/pantsbuild/pants",
                         PANTS_2_14_1_SHA,
                     ])
-                    .current_dir(clone_root.path()),
+                    .current_dir(clone_root_tmp.path()),
             )?;
             execute(
                 Command::new("git")
                     .args(["reset", "--hard", PANTS_2_14_1_SHA])
-                    .current_dir(clone_root.path()),
+                    .current_dir(clone_root_tmp.path()),
             )?;
             write_file(
-                clone_root.path().join("patch").as_path(),
+                clone_root_tmp.path().join("patch").as_path(),
                 false,
                 r#"
 diff --git a/build-support/pants_venv b/build-support/pants_venv
-index 81e3bd7..76971bc 100755
+index 81e3bd7..4236f4b 100755
 --- a/build-support/pants_venv
 +++ b/build-support/pants_venv
-@@ -14,7 +14,9 @@ REQUIREMENTS=(
+@@ -14,11 +14,13 @@ REQUIREMENTS=(
  # NB: We house these outside the working copy to avoid needing to gitignore them, but also to
  # dodge https://github.com/hashicorp/vagrant/issues/12057.
  platform=$(uname -mps | sed 's/ /./g')
@@ -999,15 +1013,20 @@ index 81e3bd7..76971bc 100755
 
  function venv_dir() {
    py_venv_version=$(${PY} -c 'import sys; print("".join(map(str, sys.version_info[0:2])))')
+-  echo "${venv_dir_prefix}.py${py_venv_version}.venv"
++  echo "${venv_dir_prefix}/py${py_venv_version}.venv"
+ }
+
+ function activate_venv() {
 "#,
             )?;
             execute(
                 Command::new("git")
                     .args(["apply", "patch"])
-                    .current_dir(clone_root.path()),
+                    .current_dir(clone_root_tmp.path()),
             )?;
             write_file(
-                clone_root
+                clone_root_tmp
                     .path()
                     .join("src")
                     .join("python")
@@ -1017,25 +1036,28 @@ index 81e3bd7..76971bc 100755
                 false,
                 "2.14.1+Custom-Local",
             )?;
+
+            let venv_root_tmp = create_tempdir()?;
             execute(
                 Command::new("./pants")
                     .arg("-V")
-                    .current_dir(clone_root.path()),
+                    .env("PANTS_VENV_DIR_PREFIX", venv_root_tmp.path())
+                    .current_dir(clone_root_tmp.path()),
             )?;
-            std::fs::remove_dir_all(
-                clone_root
+
+            remove_dir(
+                clone_root_tmp
                     .path()
                     .join("src")
                     .join("rust")
                     .join("engine")
-                    .join("target"),
-            )
-            .map_err(|e| {
-                Code::FAILURE.with_message(format!(
-                    "Failed to clean up un-needed Rust compilation artifacts: {e}"
-                ))
-            })?;
-            rename(&clone_root.into_path(), &pants_2_14_1_clone_dir)?;
+                    .join("target")
+                    .as_path(),
+            )?;
+            ensure_directory(&clone_dir, true)?;
+            rename(&clone_root_tmp.into_path(), &pants_2_14_1_clone_dir)?;
+            ensure_directory(&venv_dir, true)?;
+            rename(&venv_root_tmp.into_path(), &pants_2_14_1_venv_dir)?;
         }
 
         let test_pants_from_sources = |command: &mut Command, expected_message: &str| {
@@ -1052,12 +1074,11 @@ index 81e3bd7..76971bc 100755
             Ok(())
         };
 
-        let venv_dir = dev_cache_dir.join("venvs").join("pants-2.14.1");
         test_pants_from_sources(
             Command::new(scie_pants_scie)
                 .arg("-V")
                 .env("PANTS_SOURCE", &pants_2_14_1_clone_dir)
-                .env("PANTS_VENV_DIR_PREFIX", venv_dir)
+                .env("PANTS_VENV_DIR_PREFIX", &pants_2_14_1_venv_dir)
                 .env("SCIE_PANTS_TEST_MODE", "PANTS_SOURCE mode"),
             "The PANTS_SOURCE mode is working.",
         )?;
@@ -1078,6 +1099,7 @@ index 81e3bd7..76971bc 100755
             Command::new(pants_from_sources)
                 .arg("-V")
                 .env("SCIE_PANTS_TEST_MODE", "pants_from_sources mode")
+                .env("PANTS_VENV_DIR_PREFIX", &pants_2_14_1_venv_dir)
                 .current_dir(user_repo_dir),
             "The pants_from_sources mode is working.",
         )?;
