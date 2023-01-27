@@ -63,6 +63,13 @@ provides the following:
   If you run `scie-pants` in a directory where Pants is not already set up, it will prompt you, and
   you can let it set up the latest Pants stable version for your project.
 
++ Built-in [`pants_from_sources`](
+  https://github.com/pantsbuild/example-python/blob/1b38d08821865e3756024950bc000bdbd0161b95/pants_from_sources)
+  support. You can either execute `scie-pants` with `PANTS_SOURCE` set to the path of a local clone
+  of the [Pants](https://github.com/pantsbuild/pants) repo or else copy, link or symlink you
+  `scie-pants` executable to `pants_from_sources` and execute that. In this case `PANTS_SOURCE` will
+  default to `../pants` just as was the case in the bespoke `./pants_from_sources` scripts.
+
 + Partial support for firewalls:
 
   Currently, you can only re-direct the URLs scie-pants uses to fetch [Python Build Standalone](

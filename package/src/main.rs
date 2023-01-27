@@ -24,7 +24,7 @@ use url::Url;
 const BINARY: &str = "scie-pants";
 
 const PTEX_TAG: &str = "v0.6.0";
-const SCIE_JUMP_TAG: &str = "v0.8.0";
+const SCIE_JUMP_TAG: &str = "v0.10.0";
 
 const CARGO: &str = env!("CARGO");
 const CARGO_MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
@@ -224,6 +224,26 @@ fn hardlink(src: &Path, dst: &Path) -> ExitResult {
     })
 }
 
+fn softlink(src: &Path, dst: &Path) -> ExitResult {
+    #[cfg(unix)]
+    use std::os::unix::fs::symlink;
+    #[cfg(windows)]
+    use std::os::windows::fs::symlink_file as symlink;
+
+    info!(
+        "Soft linking {src} -> {dst}",
+        src = src.display(),
+        dst = dst.display()
+    );
+    symlink(src, dst).map_err(|e| {
+        Code::FAILURE.with_message(format!(
+            "Failed to soft link {src} -> {dst}: {e}",
+            src = src.display(),
+            dst = dst.display()
+        ))
+    })
+}
+
 fn rename(src: &Path, dst: &Path) -> ExitResult {
     info!(
         "Renaming {src} -> {dst}",
@@ -280,16 +300,17 @@ fn create_tempdir() -> Result<TempDir, Exit> {
 }
 
 fn touch(path: &Path) -> ExitResult {
-    write_file(path, [])
+    write_file(path, true, [])
 }
 
-fn write_file<C: AsRef<[u8]>>(path: &Path, content: C) -> ExitResult {
+fn write_file<C: AsRef<[u8]>>(path: &Path, append: bool, content: C) -> ExitResult {
     if let Some(parent) = path.parent() {
         ensure_directory(parent, false)?;
     }
     let mut fd = std::fs::OpenOptions::new()
         .create(true)
-        .append(true)
+        .write(true)
+        .append(append)
         .open(path)
         .map_err(|e| {
             Code::FAILURE.with_message(format!("Failed to open {path}: {e}", path = path.display()))
@@ -476,6 +497,19 @@ fn build_a_scie_project(a_scie_project_repo: &Path, target: &str, dest_dir: &Pat
     .map(|_| ())
 }
 
+fn dev_cache_dir() -> Result<PathBuf, Exit> {
+    let cache_dir = dirs::cache_dir()
+        .ok_or_else(|| {
+            Code::FAILURE.with_message(
+                "Failed to look up user cache dir for caching scie project downloads".to_string(),
+            )
+        })?
+        .join("scie-pants")
+        .join("dev");
+    ensure_directory(&cache_dir, false)?;
+    Ok(cache_dir)
+}
+
 fn fetch_a_scie_project(
     build_context: &BuildContext,
     project_name: &str,
@@ -486,16 +520,7 @@ fn fetch_a_scie_project(
     static BOOTSTRAP_PTEX: OnceCell<PathBuf> = OnceCell::new();
 
     let file_name = binary_full_name(binary_name);
-    let cache_dir = dirs::cache_dir()
-        .ok_or_else(|| {
-            Code::FAILURE.with_message(
-                "Failed to look up user cache dir for caching scie project downloads".to_string(),
-            )
-        })?
-        .join("scie-pants")
-        .join("dev")
-        .join("downloads")
-        .join(project_name);
+    let cache_dir = dev_cache_dir()?.join("downloads").join(project_name);
     ensure_directory(&cache_dir, false)?;
 
     // We proceed with single-checked locking, contention is not a concern in this build process!
@@ -888,11 +913,149 @@ fn test(
         integration_test!(
             "Verify `.env` loading works (example-django should down grade to Pants 2.12.1)"
         );
-        write_file(&clone_root.path().join(".env"), "PANTS_VERSION=2.12.1")?;
+        write_file(
+            &clone_root.path().join(".env"),
+            false,
+            "PANTS_VERSION=2.12.1",
+        )?;
         execute(
             Command::new(scie_pants_scie)
                 .arg("-V")
                 .current_dir(clone_root.path().join("example-django")),
+        )?;
+
+        integration_test!("Verify PANTS_SOURCE mode.");
+        let dev_cache_dir = dev_cache_dir()?;
+        let clone_dir = dev_cache_dir.join("clones");
+        ensure_directory(&clone_dir, false)?;
+        let pants_2_14_1_clone_dir = clone_dir.join("pants-2.14.1");
+        if !pants_2_14_1_clone_dir.exists() {
+            let clone_root = create_tempdir()?;
+            let clone_root_path = clone_root.path().to_str().ok_or_else(|| {
+                Code::FAILURE.with_message(format!(
+                    "Failed to convert clone root path to UTF-8 string: {clone_root:?}"
+                ))
+            })?;
+            execute(Command::new("git").args(["init", clone_root_path]))?;
+            // N.B.: The release_2.14.1 tag has sha cfcb23a97434405a22537e584a0f4f26b4f2993b and we
+            // must pass a full sha to use the shallow fetch trick.
+            const PANTS_2_14_1_SHA: &str = "cfcb23a97434405a22537e584a0f4f26b4f2993b";
+            execute(
+                Command::new("git")
+                    .args([
+                        "fetch",
+                        "--depth",
+                        "1",
+                        "https://github.com/pantsbuild/pants",
+                        PANTS_2_14_1_SHA,
+                    ])
+                    .current_dir(clone_root.path()),
+            )?;
+            execute(
+                Command::new("git")
+                    .args(["reset", "--hard", PANTS_2_14_1_SHA])
+                    .current_dir(clone_root.path()),
+            )?;
+            write_file(
+                clone_root.path().join("patch").as_path(),
+                false,
+                r#"
+diff --git a/build-support/pants_venv b/build-support/pants_venv
+index 81e3bd7..76971bc 100755
+--- a/build-support/pants_venv
++++ b/build-support/pants_venv
+@@ -14,7 +14,9 @@ REQUIREMENTS=(
+ # NB: We house these outside the working copy to avoid needing to gitignore them, but also to
+ # dodge https://github.com/hashicorp/vagrant/issues/12057.
+ platform=$(uname -mps | sed 's/ /./g')
+-venv_dir_prefix="${HOME}/.cache/pants/pants_dev_deps/${platform}"
++venv_dir_prefix="${PANTS_VENV_DIR_PREFIX:-${HOME}/.cache/pants/pants_dev_deps/${platform}}"
++
++echo >&2 "The ${SCIE_PANTS_TEST_MODE:-Pants 2.14.1 clone} is working."
+
+ function venv_dir() {
+   py_venv_version=$(${PY} -c 'import sys; print("".join(map(str, sys.version_info[0:2])))')
+"#,
+            )?;
+            execute(
+                Command::new("git")
+                    .args(["apply", "patch"])
+                    .current_dir(clone_root.path()),
+            )?;
+            write_file(
+                clone_root
+                    .path()
+                    .join("src")
+                    .join("python")
+                    .join("pants")
+                    .join("VERSION")
+                    .as_path(),
+                false,
+                "2.14.1+Custom-Local",
+            )?;
+            execute(
+                Command::new("./pants")
+                    .arg("-V")
+                    .current_dir(clone_root.path()),
+            )?;
+            std::fs::remove_dir_all(
+                clone_root
+                    .path()
+                    .join("src")
+                    .join("rust")
+                    .join("engine")
+                    .join("target"),
+            )
+            .map_err(|e| {
+                Code::FAILURE.with_message(format!(
+                    "Failed to clean up un-needed Rust compilation artifacts: {e}"
+                ))
+            })?;
+            rename(&clone_root.into_path(), &pants_2_14_1_clone_dir)?;
+        }
+
+        let test_pants_from_sources = |command: &mut Command, expected_message: &str| {
+            let result = execute(command.stderr(Stdio::piped()))?;
+            let stderr = String::from_utf8(result.stderr).map_err(|e| {
+                Code::FAILURE.with_message(format!("Failed to decode Pants stderr: {e}"))
+            })?;
+            assert!(
+                stderr.contains(expected_message),
+                "STDERR did not contain {}:\n{}",
+                expected_message,
+                stderr
+            );
+            Ok(())
+        };
+
+        let venv_dir = dev_cache_dir.join("venvs").join("pants-2.14.1");
+        test_pants_from_sources(
+            Command::new(scie_pants_scie)
+                .arg("-V")
+                .env("PANTS_SOURCE", &pants_2_14_1_clone_dir)
+                .env("PANTS_VENV_DIR_PREFIX", venv_dir)
+                .env("SCIE_PANTS_TEST_MODE", "PANTS_SOURCE mode"),
+            "The PANTS_SOURCE mode is working.",
+        )?;
+
+        integration_test!("Verify pants_from_sources mode.");
+        let side_by_side_root = create_tempdir()?;
+        let pants_dir = side_by_side_root.path().join("pants");
+        softlink(&pants_2_14_1_clone_dir, &pants_dir)?;
+        let user_repo_dir = side_by_side_root.path().join("user-repo");
+        ensure_directory(&user_repo_dir, true)?;
+        touch(user_repo_dir.join("pants.toml").as_path())?;
+        touch(user_repo_dir.join("BUILD_ROOT").as_path())?;
+
+        let pants_from_sources = side_by_side_root.path().join("pants_from_sources");
+        softlink(scie_pants_scie, &pants_from_sources)?;
+
+        test_pants_from_sources(
+            Command::new(pants_from_sources)
+                .arg("-V")
+                .env("SCIE_PANTS_TEST_MODE", "pants_from_sources mode")
+                .current_dir(user_repo_dir),
+            "The pants_from_sources mode is working.",
         )?;
     }
 
