@@ -139,3 +139,26 @@ jobs:
             }
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  update-homebrew-tap:
+    name: Update pantsbuild/homebrew-tap
+    needs:
+      - determine-tag
+      - github-release
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout pantsbuild/homebrew-tap
+        uses: actions/checkout@v3
+        with:
+          repository: pantsbuild/homebrew-tap
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+      - name: Bump `scie-pants` version in Casks/pants.rb to ${{ needs.determine-tag.outputs.release-tag }}
+        run: |
+          ./bump_version.sh ${{ needs.determine-tag.outputs.release-version }}
+
+          git config user.name github-actions
+          git config user.email github-acctions@github.com
+
+          git add Casks/pants.rb
+          git commit -m "Bump scie-pants ${{ needs.determine-tag.outputs.release-tag }}"
+          git push
