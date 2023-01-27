@@ -90,7 +90,28 @@ jobs:
           files: dist/scie-pants*
           fail_on_unmatched_files: true
           discussion_category_name: Announcements
-      - name: Post to a Pantsbuild Slack '#announce'
+  aarch64-release-trigger:
+    name: Trigger Circle CI Linux aarch64 Github Release
+    needs:
+      - determine-tag
+      - github-release
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Trigger aarch64 release
+        uses: CircleCI-Public/trigger-circleci-pipeline-action@v1.0.5
+        with:
+          GHA_Meta: "${{ needs.determine-tag.outputs.release-tag }}"
+        env:
+          CCI_TOKEN: ${{ secrets.CCI_TOKEN }}
+  announce-release:
+    name: Announce Release
+    needs:
+      - determine-tag
+      - github-release
+      - aarch64-release-trigger
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Post Release Announcement to Pants Slack `#announce`
         id: slack
         uses: slackapi/slack-github-action@v1.23.0
         with:
@@ -106,21 +127,15 @@ jobs:
                     "type": "mrkdwn",
                     "text": "The `pants` launcher binary (scie-pants) ${{ needs.determine-tag.outputs.release-tag }} is released:\n* https://github.com/pantsbuild/scie-pants/releases/tag/${{ needs.determine-tag.outputs.release-tag }}\n* https://www.pantsbuild.org/v2.15/docs/installation"
                   }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "_N.B.: The Linux aarch64 release will lag by ~15 minutes._"
+                  }
                 }
               ]
             }
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-  aarch64-release-trigger:
-    name: Trigger Circle CI Linux aarch64 Github Release
-    needs:
-      - determine-tag
-      - github-release
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Trigger aarch64 release
-        uses: CircleCI-Public/trigger-circleci-pipeline-action@v1.0.5
-        with:
-          GHA_Meta: "${{ needs.determine-tag.outputs.release-tag }}"
-        env:
-          CCI_TOKEN: ${{ secrets.CCI_TOKEN }}
