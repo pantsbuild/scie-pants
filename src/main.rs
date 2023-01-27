@@ -226,7 +226,7 @@ impl<T> OrExit<T> for Result<T> {
         match self {
             Ok(item) => item,
             Err(err) => {
-                eprintln!("{:#}", err);
+                eprintln!("{err:#}");
                 std::process::exit(1)
             }
         }
