@@ -195,10 +195,23 @@ fn _execute_with_input(command: &mut Command, stdin_data: Option<&[u8]>) -> Resu
         ))
     })?;
     if !output.status.success() {
-        return Err(Code::FAILURE.with_message(format!(
+        let mut message_lines = vec![format!(
             "Command {command:?} failed with exit code: {code:?}",
             code = output.status.code()
-        )));
+        )];
+        if output.stdout.is_empty() {
+            message_lines.push("STDOUT not captured.".to_string())
+        } else {
+            message_lines.push("STDOUT:".to_string());
+            message_lines.push(String::from_utf8_lossy(output.stdout.as_slice()).to_string());
+        }
+        if output.stderr.is_empty() {
+            message_lines.push("STDERR not captured.".to_string())
+        } else {
+            message_lines.push("STDERR:".to_string());
+            message_lines.push(String::from_utf8_lossy(output.stderr.as_slice()).to_string());
+        }
+        return Err(Code::FAILURE.with_message(message_lines.join(EOL)));
     }
     Ok(output)
 }
