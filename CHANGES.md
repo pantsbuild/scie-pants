@@ -11,7 +11,7 @@ https://github.com/pantsbuild/example-python/blob/1b38d08821865e3756024950bc000b
 
 There are two ways to activate this mode:
 1. Execute `pants` with the `PANTS_SOURCE` environment variable set as the path to the Pants repo
-   whose Pants code you'd like to run against you repo.
+   whose Pants code you'd like to run against your repo.
 2. Copy, hardlink or symlink your `pants` binary to `pants_from_sources` and execute that.
 
 The first activation method is new. The second mode follows the bespoke `./pants_from_sources`
