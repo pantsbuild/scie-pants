@@ -9,6 +9,7 @@ use std::io::Write;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
+use std::str::FromStr;
 use std::sync::atomic::{AtomicU8, Ordering};
 
 use clap::{arg, command, Parser, Subcommand};
@@ -512,7 +513,14 @@ fn build_a_scie_project(a_scie_project_repo: &Path, target: &str, dest_dir: &Pat
 
 fn dev_cache_dir() -> Result<PathBuf, Exit> {
     if let Ok(cache_dir) = env::var("SCIE_PANTS_DEV_CACHE") {
-        return Ok(PathBuf::from(cache_dir));
+        return PathBuf::from_str(&cache_dir)
+            .expect("PathBuf::from_str has Err<Infallible>.")
+            .canonicalize()
+            .map_err(|e| {
+                Code::FAILURE.with_message(format!(
+                    "Failed to resolve the absolute path of SCIE_PANTS_DEV_CACHE={cache_dir}: {e}"
+                ))
+            });
     }
 
     let cache_dir = dirs::cache_dir()
