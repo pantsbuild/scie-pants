@@ -498,6 +498,10 @@ fn build_a_scie_project(a_scie_project_repo: &Path, target: &str, dest_dir: &Pat
 }
 
 fn dev_cache_dir() -> Result<PathBuf, Exit> {
+    if let Ok(cache_dir) = env::var("SCIE_PANTS_DEV_CACHE") {
+        return Ok(PathBuf::from(cache_dir));
+    }
+
     let cache_dir = dirs::cache_dir()
         .ok_or_else(|| {
             Code::FAILURE.with_message(
