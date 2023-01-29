@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.3.1
+
+This release fixes the Pants from sources feature added in 0.3.0 to forward command line arguments
+to the Pants run from sources correctly. Previously the argument list passed was doubled.
+
 ## 0.3.0
 
 This release adds support for running Pants from a local Pants clone. This is useful for testing out

@@ -187,8 +187,7 @@ fn get_pants_process() -> Result<Process> {
 fn get_pants_from_sources_process(pants_repo_location: PathBuf) -> Result<Process> {
     let exe = pants_repo_location.join("pants").into_os_string();
 
-    let mut args = vec!["--no-verify-config".into()];
-    args.extend(env::args().skip(1).map(OsString::from));
+    let args = vec!["--no-verify-config".into()];
 
     let version = std::fs::read_to_string(
         pants_repo_location

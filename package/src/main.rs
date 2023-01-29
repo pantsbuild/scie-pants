@@ -1018,6 +1018,24 @@ index 81e3bd7..4236f4b 100755
  }
 
  function activate_venv() {
+diff --git a/pants b/pants
+index b422eff..df13536 100755
+--- a/pants
++++ b/pants
+@@ -70,4 +70,5 @@ function exec_pants_bare() {
+     exec ${PANTS_PREPEND_ARGS:-} "$(venv_dir)/bin/python" ${DEBUG_ARGS} "${PANTS_PY_EXE}" "$@"
+ }
+
++echo >&2 "Pants from sources argv: $@."
+ exec_pants_bare "$@"
+diff --git a/src/python/pants/VERSION b/src/python/pants/VERSION
+index b70ae75..271706a 100644
+--- a/src/python/pants/VERSION
++++ b/src/python/pants/VERSION
+@@ -1 +1 @@
+-2.14.1
++2.14.1+Custom-Local
+\ No newline at end of file
 "#,
             )?;
             execute(
@@ -1025,18 +1043,6 @@ index 81e3bd7..4236f4b 100755
                     .args(["apply", "patch"])
                     .current_dir(clone_root_tmp.path()),
             )?;
-            write_file(
-                clone_root_tmp
-                    .path()
-                    .join("src")
-                    .join("python")
-                    .join("pants")
-                    .join("VERSION")
-                    .as_path(),
-                false,
-                "2.14.1+Custom-Local",
-            )?;
-
             let venv_root_tmp = create_tempdir()?;
             execute(
                 Command::new("./pants")
@@ -1061,22 +1067,30 @@ index 81e3bd7..4236f4b 100755
         }
 
         let test_pants_from_sources = |command: &mut Command, expected_message: &str| {
-            let result = execute(command.stderr(Stdio::piped()))?;
+            let result = execute(
+                command
+                    .arg("-V")
+                    .env("PANTS_VENV_DIR_PREFIX", &pants_2_14_1_venv_dir)
+                    .stderr(Stdio::piped()),
+            )?;
             let stderr = String::from_utf8(result.stderr).map_err(|e| {
                 Code::FAILURE.with_message(format!("Failed to decode Pants stderr: {e}"))
             })?;
             assert!(
                 stderr.contains(expected_message),
-                "STDERR did not contain {expected_message}:\n{stderr}"
+                "STDERR did not contain '{expected_message}':\n{stderr}"
+            );
+            let expected_argv_message = "Pants from sources argv: --no-verify-config -V.";
+            assert!(
+                stderr.contains(expected_argv_message),
+                "STDERR did not contain '{expected_argv_message}':\n{stderr}"
             );
             Ok(())
         };
 
         test_pants_from_sources(
             Command::new(scie_pants_scie)
-                .arg("-V")
                 .env("PANTS_SOURCE", &pants_2_14_1_clone_dir)
-                .env("PANTS_VENV_DIR_PREFIX", &pants_2_14_1_venv_dir)
                 .env("SCIE_PANTS_TEST_MODE", "PANTS_SOURCE mode"),
             "The PANTS_SOURCE mode is working.",
         )?;
@@ -1095,9 +1109,7 @@ index 81e3bd7..4236f4b 100755
 
         test_pants_from_sources(
             Command::new(pants_from_sources)
-                .arg("-V")
                 .env("SCIE_PANTS_TEST_MODE", "pants_from_sources mode")
-                .env("PANTS_VENV_DIR_PREFIX", &pants_2_14_1_venv_dir)
                 .current_dir(user_repo_dir),
             "The pants_from_sources mode is working.",
         )?;
