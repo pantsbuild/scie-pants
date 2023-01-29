@@ -150,14 +150,14 @@ jobs:
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.TAP_TOKEN }}
-        # Docs: https://octokit.github.io/rest.js/v19#actions-create-workflow-dispatch
-        script: |
-          await github.rest.actions.createWorkflowDispatch({
-            owner: 'pantsbuild',
-            repo: 'homebrew-tap',
-            workflow_id: 'release.yml',
-            ref: 'main',
-            inputs: {
-              tag: '${{ needs.determine-tag.outputs.release-tag }}'
-            }
-          })
+          # Docs: https://octokit.github.io/rest.js/v19#actions-create-workflow-dispatch
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'pantsbuild',
+              repo: 'homebrew-tap',
+              workflow_id: 'release.yml',
+              ref: 'main',
+              inputs: {
+                tag: '${{ needs.determine-tag.outputs.release-tag }}'
+              }
+            })

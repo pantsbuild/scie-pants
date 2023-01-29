@@ -1,6 +1,6 @@
 # Release Notes
 
-## 0.3.1
+## 0.3.2
 
 This release fixes the Pants from sources feature added in 0.3.0 to forward command line arguments
 to the Pants run from sources correctly. Previously the argument list passed was doubled.
