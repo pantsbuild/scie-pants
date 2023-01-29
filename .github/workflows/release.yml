@@ -139,3 +139,25 @@ jobs:
             }
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  update-homebrew-tap:
+    name: Update pantsbuild/homebrew-tap
+    needs:
+      - determine-tag
+      - github-release
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Bump `scie-pants` version in Casks/pants.rb to ${{ needs.determine-tag.outputs.release-tag }}
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.TAP_TOKEN }}
+        # Docs: https://octokit.github.io/rest.js/v19#actions-create-workflow-dispatch
+        script: |
+          await github.rest.actions.createWorkflowDispatch({
+            owner: 'pantsbuild',
+            repo: 'homebrew-tap',
+            workflow_id: 'release.yml',
+            ref: 'main',
+            inputs: {
+              tag: '${{ needs.determine-tag.outputs.release-tag }}'
+            }
+          })
