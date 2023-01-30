@@ -51,13 +51,13 @@ impl PantsConfig {
     #[time("debug", "PantsConfig::{}")]
     pub(crate) fn parse(build_root: BuildRoot) -> Result<PantsConfig> {
         let pants_config = build_root.join("pants.toml");
-        let contents = std::fs::read(&pants_config).with_context(|| {
+        let contents = std::fs::read_to_string(&pants_config).with_context(|| {
             format!(
                 "Failed to read Pants config from {path}",
                 path = pants_config.display()
             )
         })?;
-        let config: Config = toml::from_slice(contents.as_slice()).with_context(|| {
+        let config: Config = toml::from_str(&contents).with_context(|| {
             format!(
                 "Failed to parse Pants config from {path}",
                 path = pants_config.display()
