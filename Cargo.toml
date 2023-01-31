@@ -6,7 +6,7 @@ members = [
 [package]
 name = "scie-pants"
 description = "Protects your Pants from the elements."
-version = "0.2.2"
+version = "0.3.2"
 edition = "2021"
 authors = [
     "John Sirois <john.sirois@gmail.com>",
@@ -32,5 +32,5 @@ logging_timer = "1.1"
 nix = "0.26"
 serde = { version = "1.0", features = ["derive"] }
 tempfile = { workspace = true }
-toml = "0.5"
+toml = "0.7"
 uuid = { version = "1.2", features = ["v4"] }

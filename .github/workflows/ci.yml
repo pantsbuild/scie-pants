@@ -28,6 +28,9 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-22.04, macos-11, macOS-11-ARM64, windows-2022]
+    env:
+      PY: python3.9
+      SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
     steps:
       - uses: actions/checkout@v3
       - name: Check Formatting
@@ -38,6 +41,18 @@ jobs:
         run: cargo clippy --all
       - name: Unit Tests
         run: cargo test --all
+      - name: Setup Python 3.9
+        if: ${{ matrix.os == 'ubuntu-22.04' || matrix.os == 'macos-11' }}
+        uses: actions/setup-python@v4
+        with:
+          # N.B.: We need Python 3.9 for running Pants goals against our tools.pex Python tools
+          # codebase as well as running Pants from sources in ITs.
+          python-version: "3.9"
+      - name: Cache Build and IT Artifacts
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.SCIE_PANTS_DEV_CACHE }}
+          key: ${{ runner.os }}-${{ runner.arch }}-scie-pants-v1
       - name: Build, Package & Integration Tests
         if: ${{ matrix.os == 'macOS-11-ARM64' }}
         run: |
@@ -58,13 +73,6 @@ jobs:
         run: |
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             cargo run -p package -- test
-      - name: Setup Python 3.9
-        if: ${{ matrix.os == 'ubuntu-22.04' }}
-        uses: actions/setup-python@v4
-        with:
-          # N.B.: We need Python 3.9 for running Pants goals against our tools.pex Python tools
-          # codebase.
-          python-version: "3.9"
       - name: Build, Package & Integration Tests
         if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: |
@@ -85,4 +93,3 @@ jobs:
             cargo run -p package -- test \
               --tools-pex dist/tools.pex --scie-pants dist/scie-pants-linux-x86_64 \
               --tools-pex-mismatch-warn
-

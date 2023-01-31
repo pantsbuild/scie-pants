@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0 (see LICENSE).
 
 use std::ops::Deref;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use logging_timer::time;
@@ -39,5 +39,11 @@ impl Deref for BuildRoot {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl AsRef<Path> for BuildRoot {
+    fn as_ref(&self) -> &Path {
+        self.0.as_path()
     }
 }
