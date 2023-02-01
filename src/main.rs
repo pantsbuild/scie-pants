@@ -110,6 +110,17 @@ fn get_pants_process() -> Result<Process> {
             (None, None, None, false)
         };
 
+    if delegate_bootstrap {
+        let exe = build_root
+            .expect("Failed to locate build root")
+            .join("pants")
+            .into_os_string();
+        return Ok(Process {
+            exe,
+            ..Default::default()
+        });
+    }
+
     let env_pants_sha = env_version("PANTS_SHA")?;
     let env_pants_version = env_version("PANTS_VERSION")?;
     if let (Some(pants_sha), Some(pants_version)) = (&env_pants_sha, &env_pants_version) {
@@ -137,9 +148,7 @@ fn get_pants_process() -> Result<Process> {
     let scie_boot = match env::var_os("PANTS_BOOTSTRAP_TOOLS") {
         Some(_) => "bootstrap-tools",
         None => {
-            if delegate_bootstrap {
-                "pants-dev"
-            } else if pants_debug {
+            if pants_debug {
                 "pants-debug"
             } else {
                 "pants"

@@ -1113,6 +1113,22 @@ index b70ae75..271706a 100644
                 .current_dir(user_repo_dir),
             "The pants_from_sources mode is working.",
         )?;
+
+        integration_test!("Verify delegating to `./pants`.");
+        let result = execute(
+            Command::new(scie_pants_scie)
+                .arg("-V")
+                .current_dir(pants_2_14_1_clone_dir),
+        )?;
+        let stderr = String::from_utf8(result.stderr).map_err(|e| {
+            Code::FAILURE.with_message(format!("Failed to decode Pants stderr: {e}"))
+        })?;
+        let expected_message = "foo bar";
+        assert!(
+          stderr.contains(expected_message),
+          "STDERR did not contain '{expected_message}':\n{stderr}"
+        );
+
     }
 
     // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
