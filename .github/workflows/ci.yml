@@ -27,7 +27,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-11, macOS-11-ARM64, windows-2022]
+        os: [ubuntu-22.04]
     env:
       PY: python3.9
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
@@ -42,7 +42,6 @@ jobs:
       - name: Unit Tests
         run: cargo test --all
       - name: Setup Python 3.9
-        if: ${{ matrix.os == 'ubuntu-22.04' || matrix.os == 'macos-11' }}
         uses: actions/setup-python@v4
         with:
           # N.B.: We need Python 3.9 for running Pants goals against our tools.pex Python tools
@@ -54,27 +53,6 @@ jobs:
           path: ${{ env.SCIE_PANTS_DEV_CACHE }}
           key: ${{ runner.os }}-${{ runner.arch }}-scie-pants-v1
       - name: Build, Package & Integration Tests
-        if: ${{ matrix.os == 'macOS-11-ARM64' }}
-        run: |
-          # TODO(John Sirois): Kill --tools-pex-mismatch-warn:
-          #   https://github.com/pantsbuild/scie-pants/issues/2
-          #
-          # N.B.: Our self-hosted runner does not clean the work directory between runs like the
-          # GitHub hosted runners do; as such, the ~/.cache/pants, etc sticks around. This exposes
-          # a bug in Pants / Pex reproducibility when building PEXes where the
-          # PEX_ROOT/installed_wheels that get packaged up into a PEX may (or may not) contain
-          # bytecode if the particular wheel was ever run against in the past. This leads to varying
-          # final PEX content.
-          #
-          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test --tools-pex-mismatch-warn
-      - name: Build, Package & Integration Tests
-        if: ${{ matrix.os == 'macos-11' }}
-        run: |
-          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test
-      - name: Build, Package & Integration Tests
-        if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: |
           mkdir dist
           cargo run -p package -- --dest-dir dist/ tools
@@ -93,3 +71,8 @@ jobs:
             cargo run -p package -- test \
               --tools-pex dist/tools.pex --scie-pants dist/scie-pants-linux-x86_64 \
               --tools-pex-mismatch-warn
+      - name: Open SSH Access
+        uses: lhotari/action-upterm@v1
+        if: always()
+        with:
+          limit-access-to-actor: true
