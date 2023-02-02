@@ -797,6 +797,12 @@ fn test(
     tools_pex_mismatch_warn: bool,
 ) -> ExitResult {
     build_step!("Running smoke tests");
+    log!(
+        Color::Yellow,
+        "Disabling pants rc files for the smoke tests."
+    );
+    env::set_var("PANTS_PANTSRC", "False");
+
     // Max Python supported is 3.9 and only Linux x86_64 and macOS aarch64 and x86_64 wheels were
     // released.
     if matches!(
@@ -1019,7 +1025,7 @@ index 81e3bd7..4236f4b 100755
 
  function activate_venv() {
 diff --git a/pants b/pants
-index b422eff..df13536 100755
+index b422eff..16f0cf5 100755
 --- a/pants
 +++ b/pants
 @@ -70,4 +70,5 @@ function exec_pants_bare() {
@@ -1028,6 +1034,17 @@ index b422eff..df13536 100755
 
 +echo >&2 "Pants from sources argv: $@."
  exec_pants_bare "$@"
+diff --git a/pants.toml b/pants.toml
+index ab5cba1..8432bb2 100644
+--- a/pants.toml
++++ b/pants.toml
+@@ -1,3 +1,6 @@
++[DEFAULT]
++delegate_bootstrap = true
++
+ [GLOBAL]
+ print_stacktrace = true
+
 diff --git a/src/python/pants/VERSION b/src/python/pants/VERSION
 index b70ae75..271706a 100644
 --- a/src/python/pants/VERSION
@@ -1118,17 +1135,23 @@ index b70ae75..271706a 100644
         let result = execute(
             Command::new(scie_pants_scie)
                 .arg("-V")
-                .current_dir(pants_2_14_1_clone_dir),
+                .env("SCIE_PANTS_TEST_MODE", "delegate_bootstrap mode")
+                .current_dir(pants_2_14_1_clone_dir)
+                .stderr(Stdio::piped()),
         )?;
         let stderr = String::from_utf8(result.stderr).map_err(|e| {
             Code::FAILURE.with_message(format!("Failed to decode Pants stderr: {e}"))
         })?;
-        let expected_message = "foo bar";
+        let expected_message = "The delegate_bootstrap mode is working.";
         assert!(
-          stderr.contains(expected_message),
-          "STDERR did not contain '{expected_message}':\n{stderr}"
+            stderr.contains(expected_message),
+            "STDERR did not contain '{expected_message}':\n{stderr}"
         );
-
+        let expected_argv_message = "Pants from sources argv: -V.";
+        assert!(
+            stderr.contains(expected_argv_message),
+            "STDERR did not contain '{expected_argv_message}':\n{stderr}"
+        );
     }
 
     // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
