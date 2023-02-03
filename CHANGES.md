@@ -1,5 +1,13 @@
 # Release Notes
 
+## 0.4.0
+
+This release supports use of the `scie-pants` binary in the Pants repo being defaulted to
+`PANTS_SOURCE=. pants` behavior; i.e.: If you run `pants` in the Pants repo, it will do what you
+probably expect: not run Pants from a released version (since the Pants repo specifies none), not
+prompt you to set `pants_version` (because that's almost surely not what you want), but run Pants
+from the local repo sources.
+
 ## 0.3.2
 
 This release fixes the Pants from sources feature added in 0.3.0 to forward command line arguments
