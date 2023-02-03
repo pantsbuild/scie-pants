@@ -98,15 +98,16 @@ fn find_pants_installation() -> Result<Option<PantsConfig>> {
 #[time("debug", "scie-pants::{}")]
 fn get_pants_process() -> Result<Process> {
     let pants_installation = find_pants_installation()?;
-    let (build_root, configured_pants_version, debugpy_version) =
+    let (build_root, configured_pants_version, debugpy_version, delegate_bootstrap) =
         if let Some(ref pants_config) = pants_installation {
             (
                 Some(pants_config.build_root().to_path_buf()),
                 pants_config.package_version(),
                 pants_config.debugpy_version(),
+                pants_config.delegate_bootstrap(),
             )
         } else {
-            (None, None, None)
+            (None, None, None, false)
         };
 
     let env_pants_sha = env_version("PANTS_SHA")?;
@@ -125,6 +126,17 @@ fn get_pants_process() -> Result<Process> {
     } else {
         None
     };
+
+    if delegate_bootstrap && pants_version == None {
+        let exe = build_root
+            .expect("Failed to locate build root")
+            .join("pants")
+            .into_os_string();
+        return Ok(Process {
+            exe,
+            ..Default::default()
+        });
+    }
 
     info!("Found Pants build root at {build_root:?}");
     info!("The required Pants version is {pants_version:?}");
