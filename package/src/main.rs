@@ -1083,33 +1083,29 @@ index b70ae75..271706a 100644
             rename(&venv_root_tmp.into_path(), &pants_2_14_1_venv_dir)?;
         }
 
-        let test_pants_from_sources = |command: &mut Command, expected_message: &str| {
-            let result = execute(
-                command
-                    .arg("-V")
-                    .env("PANTS_VENV_DIR_PREFIX", &pants_2_14_1_venv_dir)
-                    .stderr(Stdio::piped()),
-            )?;
+        let test_pants_from_sources = |command: &mut Command, expected_messages: Vec<&str>| {
+            let result = execute(command.arg("-V").stderr(Stdio::piped()))?;
             let stderr = String::from_utf8(result.stderr).map_err(|e| {
                 Code::FAILURE.with_message(format!("Failed to decode Pants stderr: {e}"))
             })?;
-            assert!(
-                stderr.contains(expected_message),
-                "STDERR did not contain '{expected_message}':\n{stderr}"
-            );
-            let expected_argv_message = "Pants from sources argv: --no-verify-config -V.";
-            assert!(
-                stderr.contains(expected_argv_message),
-                "STDERR did not contain '{expected_argv_message}':\n{stderr}"
-            );
-            Ok(())
+            for expected_message in expected_messages {
+                assert!(
+                    stderr.contains(expected_message),
+                    "STDERR did not contain '{expected_message}':\n{stderr}"
+                );
+            }
+            Ok(stderr)
         };
 
         test_pants_from_sources(
             Command::new(scie_pants_scie)
                 .env("PANTS_SOURCE", &pants_2_14_1_clone_dir)
-                .env("SCIE_PANTS_TEST_MODE", "PANTS_SOURCE mode"),
-            "The PANTS_SOURCE mode is working.",
+                .env("SCIE_PANTS_TEST_MODE", "PANTS_SOURCE mode")
+                .env("PANTS_VENV_DIR_PREFIX", &pants_2_14_1_venv_dir),
+            vec![
+                "The PANTS_SOURCE mode is working.",
+                "Pants from sources argv: --no-verify-config -V.",
+            ],
         )?;
 
         integration_test!("Verify pants_from_sources mode.");
@@ -1127,30 +1123,43 @@ index b70ae75..271706a 100644
         test_pants_from_sources(
             Command::new(pants_from_sources)
                 .env("SCIE_PANTS_TEST_MODE", "pants_from_sources mode")
+                .env("PANTS_VENV_DIR_PREFIX", &pants_2_14_1_venv_dir)
                 .current_dir(user_repo_dir),
-            "The pants_from_sources mode is working.",
+            vec![
+                "The pants_from_sources mode is working.",
+                "Pants from sources argv: --no-verify-config -V.",
+            ],
         )?;
 
         integration_test!("Verify delegating to `./pants`.");
-        let result = execute(
+        test_pants_from_sources(
             Command::new(scie_pants_scie)
-                .arg("-V")
                 .env("SCIE_PANTS_TEST_MODE", "delegate_bootstrap mode")
-                .current_dir(pants_2_14_1_clone_dir)
-                .stderr(Stdio::piped()),
+                .current_dir(&pants_2_14_1_clone_dir),
+            vec![
+                "The delegate_bootstrap mode is working.",
+                "Pants from sources argv: -V.",
+            ],
         )?;
-        let stderr = String::from_utf8(result.stderr).map_err(|e| {
-            Code::FAILURE.with_message(format!("Failed to decode Pants stderr: {e}"))
-        })?;
-        let expected_message = "The delegate_bootstrap mode is working.";
+
+        integration_test!("Verify usage of a released Pants version on the pants repo.");
+        let stderr = test_pants_from_sources(
+            Command::new(scie_pants_scie)
+                .env("PANTS_VERSION", "2.16.0.dev5")
+                .env(
+                    "PANTS_BACKEND_PACKAGES",
+                    "-[\
+                    'internal_plugins.test_lockfile_fixtures',\
+                    'pants.backend.explorer',\
+                    ]",
+                )
+                .current_dir(&pants_2_14_1_clone_dir),
+            vec!["[INFO] Scheduler initialized."],
+        )?;
+        let unexpected_message = "Pants from sources argv";
         assert!(
-            stderr.contains(expected_message),
-            "STDERR did not contain '{expected_message}':\n{stderr}"
-        );
-        let expected_argv_message = "Pants from sources argv: -V.";
-        assert!(
-            stderr.contains(expected_argv_message),
-            "STDERR did not contain '{expected_argv_message}':\n{stderr}"
+            !stderr.contains(unexpected_message),
+            "STDERR contained '{unexpected_message}':\n{stderr}"
         );
     }
 

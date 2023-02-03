@@ -127,7 +127,7 @@ fn get_pants_process() -> Result<Process> {
         None
     };
 
-    if delegate_bootstrap && pants_version == None {
+    if delegate_bootstrap && pants_version.is_none() {
         let exe = build_root
             .expect("Failed to locate build root")
             .join("pants")
@@ -179,6 +179,9 @@ fn get_pants_process() -> Result<Process> {
         ));
     }
     if let Some(version) = pants_version {
+        if delegate_bootstrap {
+            env.push(("_PANTS_OVERRIDE_VERSION".into(), version.clone().into()));
+        }
         env.push(("PANTS_VERSION".into(), version.into()));
     } else {
         // Ensure the install binding always re-runs when no Pants version is found so that the
