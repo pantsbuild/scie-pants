@@ -110,17 +110,6 @@ fn get_pants_process() -> Result<Process> {
             (None, None, None, false)
         };
 
-    if delegate_bootstrap {
-        let exe = build_root
-            .expect("Failed to locate build root")
-            .join("pants")
-            .into_os_string();
-        return Ok(Process {
-            exe,
-            ..Default::default()
-        });
-    }
-
     let env_pants_sha = env_version("PANTS_SHA")?;
     let env_pants_version = env_version("PANTS_VERSION")?;
     if let (Some(pants_sha), Some(pants_version)) = (&env_pants_sha, &env_pants_version) {
@@ -137,6 +126,17 @@ fn get_pants_process() -> Result<Process> {
     } else {
         None
     };
+
+    if delegate_bootstrap && pants_version == None {
+        let exe = build_root
+            .expect("Failed to locate build root")
+            .join("pants")
+            .into_os_string();
+        return Ok(Process {
+            exe,
+            ..Default::default()
+        });
+    }
 
     info!("Found Pants build root at {build_root:?}");
     info!("The required Pants version is {pants_version:?}");
