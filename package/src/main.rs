@@ -1148,7 +1148,7 @@ index b70ae75..271706a 100644
         }
 
         let pants_release = "2.16.0.dev5";
-        integration_test!("Verify usage of a Pants {pants_release} on the pants repo.");
+        integration_test!("Verify usage of Pants {pants_release} on the pants repo.");
         {
             let result = test_pants_from_sources(
                 Command::new(scie_pants_scie)

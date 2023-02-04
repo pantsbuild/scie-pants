@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.4.1
+
+This release supports using a released Pants version in the Pants repo when a Pants version to use
+is defined, treating it as any other project that use Pants as build system.
+
 ## 0.4.0
 
 This release supports use of the `scie-pants` binary in the Pants repo being defaulted to
