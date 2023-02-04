@@ -131,10 +131,7 @@ macro_rules! build_step {
 
 macro_rules! integration_test {
     ($msg:expr $(,)?) => {
-        log!(Color::Magenta, ">> {}", $msg);
-    };
-    ($msg:expr, $($arg:tt)*) => {
-        log!(Color::Magenta, ">> {}", format!($msg, $($arg)*));
+        log!(Color::Magenta, ">> {}", format!($msg));
     };
 }
 
@@ -1083,18 +1080,22 @@ index b70ae75..271706a 100644
             rename(&venv_root_tmp.into_path(), &pants_2_14_1_venv_dir)?;
         }
 
+        let decode_output = |output: Vec<u8>| {
+            let res = String::from_utf8(output).map_err(|e| {
+                Code::FAILURE.with_message(format!("Failed to decode Pants output: {e}"))
+            })?;
+            Ok(res)
+        };
         let test_pants_from_sources = |command: &mut Command, expected_messages: Vec<&str>| {
             let result = execute(command.arg("-V").stderr(Stdio::piped()))?;
-            let stderr = String::from_utf8(result.stderr).map_err(|e| {
-                Code::FAILURE.with_message(format!("Failed to decode Pants stderr: {e}"))
-            })?;
+            let stderr = decode_output(result.stderr.clone())?;
             for expected_message in expected_messages {
                 assert!(
                     stderr.contains(expected_message),
                     "STDERR did not contain '{expected_message}':\n{stderr}"
                 );
             }
-            Ok(stderr)
+            Ok(result)
         };
 
         test_pants_from_sources(
@@ -1109,58 +1110,73 @@ index b70ae75..271706a 100644
         )?;
 
         integration_test!("Verify pants_from_sources mode.");
-        let side_by_side_root = create_tempdir()?;
-        let pants_dir = side_by_side_root.path().join("pants");
-        softlink(&pants_2_14_1_clone_dir, &pants_dir)?;
-        let user_repo_dir = side_by_side_root.path().join("user-repo");
-        ensure_directory(&user_repo_dir, true)?;
-        touch(user_repo_dir.join("pants.toml").as_path())?;
-        touch(user_repo_dir.join("BUILD_ROOT").as_path())?;
+        {
+            let side_by_side_root = create_tempdir()?;
+            let pants_dir = side_by_side_root.path().join("pants");
+            softlink(&pants_2_14_1_clone_dir, &pants_dir)?;
+            let user_repo_dir = side_by_side_root.path().join("user-repo");
+            ensure_directory(&user_repo_dir, true)?;
+            touch(user_repo_dir.join("pants.toml").as_path())?;
+            touch(user_repo_dir.join("BUILD_ROOT").as_path())?;
 
-        let pants_from_sources = side_by_side_root.path().join("pants_from_sources");
-        softlink(scie_pants_scie, &pants_from_sources)?;
+            let pants_from_sources = side_by_side_root.path().join("pants_from_sources");
+            softlink(scie_pants_scie, &pants_from_sources)?;
 
-        test_pants_from_sources(
-            Command::new(pants_from_sources)
-                .env("SCIE_PANTS_TEST_MODE", "pants_from_sources mode")
-                .env("PANTS_VENV_DIR_PREFIX", &pants_2_14_1_venv_dir)
-                .current_dir(user_repo_dir),
-            vec![
-                "The pants_from_sources mode is working.",
-                "Pants from sources argv: --no-verify-config -V.",
-            ],
-        )?;
+            test_pants_from_sources(
+                Command::new(pants_from_sources)
+                    .env("SCIE_PANTS_TEST_MODE", "pants_from_sources mode")
+                    .env("PANTS_VENV_DIR_PREFIX", &pants_2_14_1_venv_dir)
+                    .current_dir(user_repo_dir),
+                vec![
+                    "The pants_from_sources mode is working.",
+                    "Pants from sources argv: --no-verify-config -V.",
+                ],
+            )?;
+        }
 
         integration_test!("Verify delegating to `./pants`.");
-        test_pants_from_sources(
-            Command::new(scie_pants_scie)
-                .env("SCIE_PANTS_TEST_MODE", "delegate_bootstrap mode")
-                .current_dir(&pants_2_14_1_clone_dir),
-            vec![
-                "The delegate_bootstrap mode is working.",
-                "Pants from sources argv: -V.",
-            ],
-        )?;
+        {
+            test_pants_from_sources(
+                Command::new(scie_pants_scie)
+                    .env("SCIE_PANTS_TEST_MODE", "delegate_bootstrap mode")
+                    .current_dir(&pants_2_14_1_clone_dir),
+                vec![
+                    "The delegate_bootstrap mode is working.",
+                    "Pants from sources argv: -V.",
+                ],
+            )?;
+        }
 
-        integration_test!("Verify usage of a released Pants version on the pants repo.");
-        let stderr = test_pants_from_sources(
-            Command::new(scie_pants_scie)
-                .env("PANTS_VERSION", "2.16.0.dev5")
-                .env(
-                    "PANTS_BACKEND_PACKAGES",
-                    "-[\
-                    'internal_plugins.test_lockfile_fixtures',\
-                    'pants.backend.explorer',\
-                    ]",
-                )
-                .current_dir(&pants_2_14_1_clone_dir),
-            vec!["[INFO] Scheduler initialized."],
-        )?;
-        let unexpected_message = "Pants from sources argv";
-        assert!(
-            !stderr.contains(unexpected_message),
-            "STDERR contained '{unexpected_message}':\n{stderr}"
-        );
+        let pants_release = "2.16.0.dev5";
+        integration_test!("Verify usage of a Pants {pants_release} on the pants repo.");
+        {
+            let result = test_pants_from_sources(
+                Command::new(scie_pants_scie)
+                    .env("PANTS_VERSION", pants_release)
+                    .env(
+                        "PANTS_BACKEND_PACKAGES",
+                        "-[\
+                        'internal_plugins.test_lockfile_fixtures',\
+                        'pants.backend.explorer',\
+                        ]",
+                    )
+                    .current_dir(&pants_2_14_1_clone_dir)
+                    .stdout(Stdio::piped()),
+                vec![],
+            )?;
+            let expected_message = pants_release;
+            let stdout = decode_output(result.stdout)?;
+            assert!(
+                stdout.contains(expected_message),
+                "STDOUT did not contain '{expected_message}':\n{stdout}"
+            );
+            let unexpected_message = "Pants from sources argv";
+            let stderr = decode_output(result.stderr)?;
+            assert!(
+                !stderr.contains(unexpected_message),
+                "STDERR unexpectedly contained '{unexpected_message}':\n{stderr}"
+            );
+        }
     }
 
     // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
