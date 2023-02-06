@@ -1,4 +1,5 @@
 [toolchain]
+# NB: Update the Docker image used by CI when changing this value.
 channel = "1.67.0"
 components = [
   "cargo",
