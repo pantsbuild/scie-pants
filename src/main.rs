@@ -115,7 +115,7 @@ impl ScieBoot {
     }
 
     #[cfg(windows)]
-    fn quote<T: Into<OsString> + Debug>(value: T) -> Result<String> {
+    fn quote<T: Into<OsString> + Debug>(_value: T) -> Result<String> {
         // The shell_quote crate assumes unix and fails to compile on Windows.
         todo!("TODO(John Sirois): Figure out Git bash? shell quoting for Windows WTF-16 strings.")
     }
