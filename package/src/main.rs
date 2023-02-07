@@ -807,9 +807,15 @@ fn test(
         Platform::LinuxX86_64 | Platform::MacOSAarch64 | Platform::MacOSX86_64
     ) {
         integration_test!("Linting, testing and packaging the tools codebase");
+        let term = env::var_os("TERM").unwrap_or_else(|| "dumb".into());
         let tput_output = |subcommand| {
-            let result =
-                execute(Command::new("tput").arg(subcommand).stdout(Stdio::piped()))?.stdout;
+            let result = execute(
+                Command::new("tput")
+                    .arg(subcommand)
+                    .env("TERM", &term)
+                    .stdout(Stdio::piped()),
+            )?
+            .stdout;
             String::from_utf8(result).map_err(|e| {
                 Code::FAILURE.with_message(format!(
                     "Failed to decode output of tput {subcommand} as UTF-*: {e}"
@@ -822,7 +828,7 @@ fn test(
                 .env("PEX_SCRIPT", "Does not exist!")
                 .env("EXPECTED_COLUMNS", tput_output("cols")?.trim())
                 .env("EXPECTED_LINES", tput_output("lines")?.trim())
-                .env("TERM", env::var_os("TERM").unwrap_or_else(|| "dumb".into())),
+                .env("TERM", term),
         )?;
 
         integration_test!("Checking .pants.bootstrap handling ignores bash functions");
