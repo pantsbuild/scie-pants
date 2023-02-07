@@ -800,6 +800,9 @@ fn test(
     );
     env::set_var("PANTS_PANTSRC", "False");
 
+    // Our `.pants.bootstrap` uses `tput` which requires TERM be set: ensure it is.
+    env::set_var("TERM", env::var_os("TERM").unwrap_or_else(|| "dumb".into()));
+
     // Max Python supported is 3.9 and only Linux x86_64 and macOS aarch64 and x86_64 wheels were
     // released.
     if matches!(
@@ -807,10 +810,21 @@ fn test(
         Platform::LinuxX86_64 | Platform::MacOSAarch64 | Platform::MacOSX86_64
     ) {
         integration_test!("Linting, testing and packaging the tools codebase");
+        let tput_output = |subcommand| {
+            let result =
+                execute(Command::new("tput").arg(subcommand).stdout(Stdio::piped()))?.stdout;
+            String::from_utf8(result).map_err(|e| {
+                Code::FAILURE.with_message(format!(
+                    "Failed to decode output of tput {subcommand} as UTF-*: {e}"
+                ))
+            })
+        };
         execute(
             Command::new(scie_pants_scie)
                 .args(["fmt", "lint", "check", "test", "package", "::"])
-                .env("PEX_SCRIPT", "Does not exist!"),
+                .env("PEX_SCRIPT", "Does not exist!")
+                .env("EXPECTED_COLUMNS", tput_output("cols")?.trim())
+                .env("EXPECTED_LINES", tput_output("lines")?.trim()),
         )?;
 
         integration_test!("Checking .pants.bootstrap handling ignores bash functions");

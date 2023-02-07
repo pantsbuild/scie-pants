@@ -3,6 +3,7 @@
 
 use std::env;
 use std::ffi::{OsStr, OsString};
+use std::fmt::Debug;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, bail, Context, Result};
@@ -12,11 +13,9 @@ use logging_timer::{time, timer, Level};
 use uuid::Uuid;
 
 use crate::config::PantsConfig;
-use crate::pants_bootstrap::PantsBootstrap;
 
 mod build_root;
 mod config;
-mod pants_bootstrap;
 
 #[derive(Debug, Default)]
 struct Process {
@@ -86,13 +85,71 @@ fn env_version(env_var_name: &str) -> Result<Option<String>> {
 
 fn find_pants_installation() -> Result<Option<PantsConfig>> {
     if let Ok(build_root) = BuildRoot::find(None) {
-        if let Some(pants_bootstrap) = PantsBootstrap::load(&build_root)? {
-            pants_bootstrap.export_env();
-        }
         let pants_config = PantsConfig::parse(build_root)?;
         return Ok(Some(pants_config));
     }
     Ok(None)
+}
+
+#[derive(Eq, PartialEq)]
+enum ScieBoot {
+    BootstrapTools,
+    Pants,
+    PantsDebug,
+}
+
+impl ScieBoot {
+    fn env_value(&self) -> OsString {
+        match self {
+            ScieBoot::BootstrapTools => "bootstrap-tools",
+            ScieBoot::Pants => "pants",
+            ScieBoot::PantsDebug => "pants-debug",
+        }
+        .into()
+    }
+
+    #[cfg(unix)]
+    fn quote<T: Into<OsString> + Debug>(value: T) -> Result<String> {
+        String::from_utf8(shell_quote::bash::escape(value))
+            .context("Shell-quoted value could not be interpreted as UTF-8.")
+    }
+
+    #[cfg(windows)]
+    fn quote<T: Into<OsString> + Debug>(_value: T) -> Result<String> {
+        // The shell_quote crate assumes unix and fails to compile on Windows.
+        todo!("TODO(John Sirois): Figure out Git bash? shell quoting for Windows WTF-16 strings.")
+    }
+
+    fn into_process(
+        self,
+        scie: String,
+        build_root: Option<PathBuf>,
+        env: Vec<(OsString, OsString)>,
+    ) -> Result<Process> {
+        Ok(match build_root.map(|br| br.join(".pants.bootstrap")) {
+            Some(pants_bootstrap) if self != Self::BootstrapTools && pants_bootstrap.is_file() => {
+                Process {
+                    exe: "/usr/bin/env".into(),
+                    args: vec![
+                        "bash".into(),
+                        "-c".into(),
+                        format!(
+                            r#"set -eou pipefail; source {bootstrap}; exec {scie} "$0" "$@""#,
+                            bootstrap = Self::quote(pants_bootstrap)?,
+                            scie = Self::quote(scie)?
+                        )
+                        .into(),
+                    ],
+                    env,
+                }
+            }
+            _ => Process {
+                exe: scie.into(),
+                env,
+                ..Default::default()
+            },
+        })
+    }
 }
 
 #[time("debug", "scie-pants::{}")]
@@ -142,23 +199,23 @@ fn get_pants_process() -> Result<Process> {
     info!("The required Pants version is {pants_version:?}");
 
     let scie =
-        env::var_os("SCIE").context("Failed to retrieve SCIE location from the environment.")?;
+        env::var("SCIE").context("Failed to retrieve SCIE location from the environment.")?;
 
     let pants_debug = matches!(env::var_os("PANTS_DEBUG"), Some(value) if !value.is_empty());
     let scie_boot = match env::var_os("PANTS_BOOTSTRAP_TOOLS") {
-        Some(_) => "bootstrap-tools",
+        Some(_) => ScieBoot::BootstrapTools,
         None => {
             if pants_debug {
-                "pants-debug"
+                ScieBoot::PantsDebug
             } else {
-                "pants"
+                ScieBoot::Pants
             }
         }
     };
 
     let mut env = vec![
-        ("SCIE_BOOT".into(), scie_boot.into()),
-        ("PANTS_BIN_NAME".into(), scie.as_os_str().into()),
+        ("SCIE_BOOT".into(), scie_boot.env_value()),
+        ("PANTS_BIN_NAME".into(), scie.clone().into()),
         (
             "PANTS_DEBUG".into(),
             if pants_debug { "1" } else { "" }.into(),
@@ -168,7 +225,7 @@ fn get_pants_process() -> Result<Process> {
             debugpy_version.unwrap_or_default().into(),
         ),
     ];
-    if let Some(build_root) = build_root {
+    if let Some(ref build_root) = build_root {
         env.push((
             "PANTS_BUILDROOT_OVERRIDE".into(),
             build_root.as_os_str().to_os_string(),
@@ -192,11 +249,7 @@ fn get_pants_process() -> Result<Process> {
         ))
     }
 
-    Ok(Process {
-        exe: scie,
-        env,
-        ..Default::default()
-    })
+    scie_boot.into_process(scie, build_root, env)
 }
 
 fn get_pants_from_sources_process(pants_repo_location: PathBuf) -> Result<Process> {

@@ -1,10 +1,16 @@
 function should_be_ignored() {
   # Normally `set` would print information about functions as well as variables; causing scie-pants
   # to emit warnings about skipping un-parseable env vars. This function stresses that corner in
-  # integration tests.
+  # integration tests. Although `set` is no longer used to evaluated `.pants.bootstrap` scripts,
+  # this shell function still serves to prevent a back-slide.
   return
 }
 
 # Ensure GIT_COMMIT is set
-: ${GIT_COMMIT:=$(git rev-parse HEAD)}
+export GIT_COMMIT="$(git rev-parse HEAD)"
+
+# Exercise https://github.com/pantsbuild/scie-pants/issues/107
+export PANTS_DOCKER_TOOLS="+['aws-oidc', 'open']"
+export COLUMNS="$(tput cols)"
+export LINES="$(tput lines)"
 
