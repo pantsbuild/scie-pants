@@ -10,7 +10,13 @@ python_tests(
         "//tools"
     ],
     extra_env_vars=[
+        "COLUMNS",
+        "EXPECTED_COLUMNS",
+        "EXPECTED_LINES",
         "GIT_COMMIT",
+        "LINES",
+        "PANTS_DOCKER_TOOLS",
+        "TERM",
         "TOOLS_PEX=tools/tools.pex",
     ],
 )

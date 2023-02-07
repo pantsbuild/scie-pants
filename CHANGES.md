@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.4.2
+
+This release fixes `.pants.bootstrap` handling to robustly mimic handling by the `./pants` script.
+The `scie-pants` binary now re-execs itself through a bash shell when `.pants.bootstrap` needs to
+be sourced.
+
 ## 0.4.1
 
 This release supports using a released Pants version in the Pants repo when a Pants version to use
