@@ -108,9 +108,16 @@ impl ScieBoot {
         .into()
     }
 
+    #[cfg(unix)]
     fn quote<T: Into<OsString> + Debug>(value: T) -> Result<String> {
         String::from_utf8(shell_quote::bash::escape(value))
             .context("Shell-quoted value could not be interpreted as UTF-8.")
+    }
+
+    #[cfg(windows)]
+    fn quote(value: String) -> Result<String> {
+        // The shell_quote crate assumes unix and fails to compile on Windows.
+        todo!("TODO(John Sirois): Figure out Git bash? shell quoting for Windows WTF-16 strings.")
     }
 
     fn into_process(
@@ -127,8 +134,8 @@ impl ScieBoot {
                         "bash".into(),
                         "-c".into(),
                         format!(
-                            r#"set -eou pipefail; source {bootstrap}; exec "{scie}" "$0" "$@""#,
-                            bootstrap = Self::quote(pants_bootstrap)?,
+                            r#"set -eou pipefail; source {bootstrap}; exec {scie} "$0" "$@""#,
+                            bootstrap = Self::quote(pants_bootstrap.display().to_string())?,
                             scie = Self::quote(scie)?
                         )
                         .into(),
