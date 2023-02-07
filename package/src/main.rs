@@ -821,7 +821,8 @@ fn test(
                 .args(["fmt", "lint", "check", "test", "package", "::"])
                 .env("PEX_SCRIPT", "Does not exist!")
                 .env("EXPECTED_COLUMNS", tput_output("cols")?.trim())
-                .env("EXPECTED_LINES", tput_output("lines")?.trim()),
+                .env("EXPECTED_LINES", tput_output("lines")?.trim())
+                .env("TERM", env::var_os("TERM").unwrap_or_else(|| "dumb".into())),
         )?;
 
         integration_test!("Checking .pants.bootstrap handling ignores bash functions");
