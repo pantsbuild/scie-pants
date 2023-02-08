@@ -827,6 +827,74 @@ fn test(
                 .env("EXPECTED_LINES", tput_output("lines")?.trim()),
         )?;
 
+        integration_test!("Checking PANTS_BIN_NAME handling");
+        {
+            let check_pants_bin_name_chroot = create_tempdir()?;
+
+            let bin_dir = check_pants_bin_name_chroot.path().join("bin");
+            let project_dir = check_pants_bin_name_chroot.path().join("project");
+            let existing_path =
+                env::split_paths(&env::var_os("PATH").unwrap_or("".into())).collect::<Vec<_>>();
+            let path = env::join_paths(
+                [bin_dir.as_os_str()]
+                    .into_iter()
+                    .chain(existing_path.iter().map(|p| p.as_os_str())),
+            )
+            .unwrap();
+            ensure_directory(&bin_dir, true)?;
+
+            ensure_directory(&project_dir, true)?;
+            write_file(
+                &project_dir.join("pants.toml"),
+                false,
+                r#"
+                [GLOBAL]
+                pants_version = "2.14.1"
+                # TODO(John Sirois): This works around ongoing issues with pantsd termination
+                # variously crashing or hanging depending on Pants version.
+                pantsd = false
+                [anonymous-telemetry]
+                enabled = false
+                "#,
+            )?;
+
+            softlink(scie_pants_scie, &bin_dir.join("foo"))?;
+            softlink(scie_pants_scie, &project_dir.join("bar"))?;
+            let absolute_argv0_path = check_pants_bin_name_chroot.path().join("baz");
+            softlink(scie_pants_scie, &absolute_argv0_path)?;
+
+            let assert_pants_bin_name =
+                |argv0: &str, expected_bin_name: &str, extra_envs: Vec<(_, _)>| -> ExitResult {
+                    let output = String::from_utf8(
+                        execute(
+                            Command::new(argv0)
+                                .arg("help-advanced")
+                                .arg("global")
+                                .env("PATH", &path)
+                                .envs(extra_envs)
+                                .current_dir(&project_dir)
+                                .stdout(Stdio::piped()),
+                        )?
+                        .stdout,
+                    )
+                    .unwrap();
+                    let expected_output =
+                        format!("current value: {expected_bin_name} (from env var PANTS_BIN_NAME)");
+                    assert!(
+                        output.contains(&expected_output),
+                        "Expected:{EOL}{expected_output}{EOL}STDOUT was:{EOL}{output}"
+                    );
+                    Ok(())
+                };
+
+            assert_pants_bin_name("foo", "foo", vec![])?;
+            assert_pants_bin_name("./bar", "./bar", vec![])?;
+
+            let absolute_argv0 = absolute_argv0_path.to_str().unwrap();
+            assert_pants_bin_name(absolute_argv0, absolute_argv0, vec![])?;
+            assert_pants_bin_name(absolute_argv0, "spam", vec![("PANTS_BIN_NAME", "spam")])?;
+        }
+
         integration_test!("Checking .pants.bootstrap handling ignores bash functions");
         // N.B.: We run this test after 1st having run the test above to ensure pants is already
         // bootstrapped so that we don't get stderr output from that process. We also use

@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.5.0
+
+This release improves `scie-pants` operation with Pants help by ensuring the command line you used
+to invoke Pants is accurately reflected in the help information Pants presents back to you.
+
 ## 0.4.2
 
 This release fixes `.pants.bootstrap` handling to robustly mimic handling by the `./pants` script.
