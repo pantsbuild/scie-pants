@@ -96,7 +96,6 @@
             },
             "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/pants",
             "args": [
-              "--pants-bin-name={scie.env.PANTS_BIN_NAME}",
               "{scie.bindings.configure:PANTS_SHA_FIND_LINKS}"
             ]
           },
@@ -114,7 +113,6 @@
               "127.0.0.1:5678",
               "--wait-for-client",
               "{scie.bindings.install:VIRTUAL_ENV}/bin/pants",
-              "--pants-bin-name={scie.env.PANTS_BIN_NAME}",
               "{scie.bindings.configure:PANTS_SHA_FIND_LINKS}"
             ]
           },

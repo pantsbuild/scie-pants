@@ -213,9 +213,13 @@ fn get_pants_process() -> Result<Process> {
         }
     };
 
+    let pants_bin_name = env::var_os("PANTS_BIN_NAME")
+        .or_else(|| env::var_os("SCIE_ARGV0"))
+        .unwrap_or_else(|| scie.clone().into());
+
     let mut env = vec![
         ("SCIE_BOOT".into(), scie_boot.env_value()),
-        ("PANTS_BIN_NAME".into(), scie.clone().into()),
+        ("PANTS_BIN_NAME".into(), pants_bin_name),
         (
             "PANTS_DEBUG".into(),
             if pants_debug { "1" } else { "" }.into(),
