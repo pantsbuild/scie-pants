@@ -849,7 +849,7 @@ fn test(
                 false,
                 r#"
                 [GLOBAL]
-                pants_version = "2.14.1"
+                pants_version = "2.15.0rc4"
                 [anonymous-telemetry]
                 enabled = false
                 "#,
