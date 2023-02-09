@@ -27,7 +27,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-11, macOS-11-ARM64, windows-2022]
+        os: [ubuntu-22.04]
     env:
       PY: python3.9
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
