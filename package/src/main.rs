@@ -849,10 +849,7 @@ fn test(
                 false,
                 r#"
                 [GLOBAL]
-                pants_version = "2.14.1"
-                # TODO(John Sirois): This works around ongoing issues with pantsd termination
-                # variously crashing or hanging depending on Pants version.
-                pantsd = false
+                pants_version = "2.15.0rc4"
                 [anonymous-telemetry]
                 enabled = false
                 "#,

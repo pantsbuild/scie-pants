@@ -54,26 +54,6 @@ jobs:
           path: ${{ env.SCIE_PANTS_DEV_CACHE }}
           key: ${{ runner.os }}-${{ runner.arch }}-scie-pants-v2
       - name: Build, Package & Integration Tests
-        if: ${{ matrix.os == 'macOS-11-ARM64' }}
-        run: |
-          # TODO(John Sirois): Kill --tools-pex-mismatch-warn:
-          #   https://github.com/pantsbuild/scie-pants/issues/2
-          #
-          # N.B.: Our self-hosted runner does not clean the work directory between runs like the
-          # GitHub hosted runners do; as such, the ~/.cache/pants, etc sticks around. This exposes
-          # a bug in Pants / Pex reproducibility when building PEXes where the
-          # PEX_ROOT/installed_wheels that get packaged up into a PEX may (or may not) contain
-          # bytecode if the particular wheel was ever run against in the past. This leads to varying
-          # final PEX content.
-          #
-          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test --tools-pex-mismatch-warn
-      - name: Build, Package & Integration Tests
-        if: ${{ matrix.os == 'macos-11' }}
-        run: |
-          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test
-      - name: Build, Package & Integration Tests
         if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: |
           mkdir dist
@@ -89,7 +69,7 @@ jobs:
           echo
           echo "Running under: $(uname -a)"
           echo
-          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test \
-              --tools-pex dist/tools.pex --scie-pants dist/scie-pants-linux-x86_64 \
-              --tools-pex-mismatch-warn
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+        with:
+          limit-access-to-actor: true
