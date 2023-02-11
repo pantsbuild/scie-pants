@@ -40,6 +40,24 @@ pub(crate) fn fingerprint(path: &Path) -> Result<String, Exit> {
     Ok(format!("{digest:x}", digest = hasher.finalize()))
 }
 
+pub(crate) fn check_sha256(path: &Path) -> ExitResult {
+    let sha256_file = PathBuf::from(format!("{path}.sha256", path = path.display()));
+    let contents = std::fs::read_to_string(&sha256_file).map_err(|e| {
+        Code::FAILURE.with_message(format!(
+            "Failed to read {sha256_file}: {e}",
+            sha256_file = sha256_file.display()
+        ))
+    })?;
+    let expected_sha256 = contents.split(' ').next().ok_or_else(|| {
+        Code::FAILURE.with_message(format!(
+            "Expected {sha256_file} to have a leading hash",
+            sha256_file = sha256_file.display()
+        ))
+    })?;
+    assert_eq!(expected_sha256, fingerprint(path)?.as_str());
+    Ok(())
+}
+
 fn fetch_and_check_trusted_sha256(ptex: &Path, url: &str, dest_dir: &Path) -> ExitResult {
     execute(Command::new(ptex).args(["-O", url]).current_dir(dest_dir))?;
 
@@ -57,7 +75,7 @@ fn fetch_and_check_trusted_sha256(ptex: &Path, url: &str, dest_dir: &Path) -> Ex
         Code::FAILURE.with_message(format!("Failed to determine file name from {url}"))
     })?;
     info!("Checking downloaded {url} has sha256 reported in {sha256_url}");
-    crate::check_sha256(&dest_dir.join(file_name))
+    check_sha256(&dest_dir.join(file_name))
 }
 
 pub(crate) struct BuildContext {

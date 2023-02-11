@@ -19,6 +19,7 @@ use std::path::{Path, PathBuf};
 use clap::{arg, command, Parser, Subcommand};
 use proc_exit::{Code, Exit, ExitResult};
 use termcolor::{Color, WriteColor};
+use utils::build;
 
 use crate::scie_pants::build_scie_pants_scie;
 use crate::test::run_integration_tests;
@@ -30,24 +31,6 @@ const BINARY: &str = "scie-pants";
 
 const PTEX_TAG: &str = "v0.6.0";
 const SCIE_JUMP_TAG: &str = "v0.10.0";
-
-fn check_sha256(path: &Path) -> ExitResult {
-    let sha256_file = PathBuf::from(format!("{path}.sha256", path = path.display()));
-    let contents = std::fs::read_to_string(&sha256_file).map_err(|e| {
-        Code::FAILURE.with_message(format!(
-            "Failed to read {sha256_file}: {e}",
-            sha256_file = sha256_file.display()
-        ))
-    })?;
-    let expected_sha256 = contents.split(' ').next().ok_or_else(|| {
-        Code::FAILURE.with_message(format!(
-            "Expected {sha256_file} to have a leading hash",
-            sha256_file = sha256_file.display()
-        ))
-    })?;
-    assert_eq!(expected_sha256, fingerprint(path)?.as_str());
-    Ok(())
-}
 
 #[derive(Clone)]
 struct SpecifiedPath(PathBuf);
@@ -297,7 +280,7 @@ fn main() -> ExitResult {
                 fingerprint_file = fingerprint_file.display()
             ))
         })?;
-        check_sha256(&dest_file)?;
+        build::check_sha256(&dest_file)?;
 
         log!(
             Color::Yellow,

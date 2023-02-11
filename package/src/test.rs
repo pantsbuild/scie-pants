@@ -30,19 +30,16 @@ fn decode_output(output: Vec<u8>) -> Result<String, Exit> {
     Ok(res)
 }
 
-fn test_pants_from_sources(
-    command: &mut Command,
-    expected_messages: Vec<&str>,
-) -> Result<Output, Exit> {
-    let result = execute(command.arg("-V").stderr(Stdio::piped()))?;
-    let stderr = decode_output(result.stderr.clone())?;
+fn assert_stderr_output(command: &mut Command, expected_messages: Vec<&str>) -> Output {
+    let output = execute(command.stderr(Stdio::piped())).unwrap();
+    let stderr = decode_output(output.stderr.clone()).unwrap();
     for expected_message in expected_messages {
         assert!(
             stderr.contains(expected_message),
             "STDERR did not contain '{expected_message}':\n{stderr}"
         );
     }
-    Ok(result)
+    output
 }
 
 pub(crate) fn run_integration_tests(
@@ -519,8 +516,9 @@ index b70ae75..271706a 100644
         rename(&venv_root_tmp.into_path(), pants_2_14_1_venv_dir).unwrap();
     }
 
-    test_pants_from_sources(
+    assert_stderr_output(
         Command::new(scie_pants_scie)
+            .arg("-V")
             .env("PANTS_SOURCE", pants_2_14_1_clone_dir)
             .env("SCIE_PANTS_TEST_MODE", "PANTS_SOURCE mode")
             .env("PANTS_VENV_DIR_PREFIX", pants_2_14_1_venv_dir),
@@ -528,8 +526,7 @@ index b70ae75..271706a 100644
             "The PANTS_SOURCE mode is working.",
             "Pants from sources argv: --no-verify-config -V.",
         ],
-    )
-    .unwrap();
+    );
 }
 
 fn test_pants_from_sources_mode(
@@ -549,8 +546,9 @@ fn test_pants_from_sources_mode(
     let pants_from_sources = side_by_side_root.path().join("pants_from_sources");
     softlink(scie_pants_scie, &pants_from_sources).unwrap();
 
-    test_pants_from_sources(
+    assert_stderr_output(
         Command::new(pants_from_sources)
+            .arg("-V")
             .env("SCIE_PANTS_TEST_MODE", "pants_from_sources mode")
             .env("PANTS_VENV_DIR_PREFIX", pants_2_14_1_venv_dir)
             .current_dir(user_repo_dir),
@@ -558,29 +556,29 @@ fn test_pants_from_sources_mode(
             "The pants_from_sources mode is working.",
             "Pants from sources argv: --no-verify-config -V.",
         ],
-    )
-    .unwrap();
+    );
 }
 
 fn test_delegate_pants_in_pants_repo(scie_pants_scie: &Path, pants_2_14_1_clone_dir: &PathBuf) {
     integration_test!("Verify delegating to `./pants`.");
-    test_pants_from_sources(
+    assert_stderr_output(
         Command::new(scie_pants_scie)
+            .arg("-V")
             .env("SCIE_PANTS_TEST_MODE", "delegate_bootstrap mode")
             .current_dir(pants_2_14_1_clone_dir),
         vec![
             "The delegate_bootstrap mode is working.",
             "Pants from sources argv: -V.",
         ],
-    )
-    .unwrap();
+    );
 }
 
 fn test_use_pants_release_in_pants_repo(scie_pants_scie: &Path, pants_2_14_1_clone_dir: &PathBuf) {
     let pants_release = "2.16.0.dev5";
     integration_test!("Verify usage of Pants {pants_release} on the pants repo.");
-    let result = test_pants_from_sources(
+    let output = assert_stderr_output(
         Command::new(scie_pants_scie)
+            .arg("help")
             .env("PANTS_VERSION", pants_release)
             .env(
                 "PANTS_BACKEND_PACKAGES",
@@ -592,16 +590,15 @@ fn test_use_pants_release_in_pants_repo(scie_pants_scie: &Path, pants_2_14_1_clo
             .current_dir(pants_2_14_1_clone_dir)
             .stdout(Stdio::piped()),
         vec![],
-    )
-    .unwrap();
+    );
     let expected_message = pants_release;
-    let stdout = decode_output(result.stdout).unwrap();
+    let stdout = decode_output(output.stdout).unwrap();
     assert!(
         stdout.contains(expected_message),
         "STDOUT did not contain '{expected_message}':\n{stdout}"
     );
     let unexpected_message = "Pants from sources argv";
-    let stderr = decode_output(result.stderr).unwrap();
+    let stderr = decode_output(output.stderr).unwrap();
     assert!(
         !stderr.contains(unexpected_message),
         "STDERR unexpectedly contained '{unexpected_message}':\n{stderr}"
