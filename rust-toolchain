@@ -1,6 +1,6 @@
 [toolchain]
-# NB: Update the Docker image used by CI when changing this value.
-channel = "1.67.0"
+# N.B.: Update .github and .circleci yaml to use a matching image.
+channel = "1.67.1"
 components = [
   "cargo",
   "clippy",
