@@ -19,12 +19,11 @@ use std::path::{Path, PathBuf};
 use clap::{arg, command, Parser, Subcommand};
 use proc_exit::{Code, Exit, ExitResult};
 use termcolor::{Color, WriteColor};
-use utils::build;
 
 use crate::scie_pants::build_scie_pants_scie;
 use crate::test::run_integration_tests;
 use crate::tools_pex::build_tools_pex;
-use crate::utils::build::{fetch_skinny_scie_tools, fingerprint, BuildContext};
+use crate::utils::build::{check_sha256, fetch_skinny_scie_tools, fingerprint, BuildContext};
 use crate::utils::fs::{canonicalize, copy, ensure_directory};
 
 const BINARY: &str = "scie-pants";
@@ -280,7 +279,7 @@ fn main() -> ExitResult {
                 fingerprint_file = fingerprint_file.display()
             ))
         })?;
-        build::check_sha256(&dest_file)?;
+        check_sha256(&dest_file)?;
 
         log!(
             Color::Yellow,
