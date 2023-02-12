@@ -7,9 +7,9 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use anyhow::{Context, Result};
 use log::info;
 use once_cell::sync::OnceCell;
-use proc_exit::{Code, Exit, ExitResult};
 use sha2::{Digest, Sha256};
 use termcolor::WriteColor;
 use url::Url;
@@ -27,38 +27,33 @@ const CARGO_MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
 const OUT_DIR: &str = env!("OUT_DIR");
 const TARGET: &str = env!("TARGET");
 
-pub(crate) fn fingerprint(path: &Path) -> Result<String, Exit> {
-    let mut reader = std::fs::File::open(path).map_err(|e| {
-        Code::FAILURE.with_message(format!(
-            "Failed to open {path} for hashing: {e}",
-            path = path.display()
-        ))
-    })?;
+pub(crate) fn fingerprint(path: &Path) -> Result<String> {
+    let mut reader = std::fs::File::open(path)
+        .with_context(|| format!("Failed to open {path} for hashing.", path = path.display()))?;
     let mut hasher = Sha256::new();
-    std::io::copy(&mut reader, &mut hasher)
-        .map_err(|e| Code::FAILURE.with_message(format!("Failed to digest stream: {e}")))?;
+    std::io::copy(&mut reader, &mut hasher).context("Failed to digest stream")?;
     Ok(format!("{digest:x}", digest = hasher.finalize()))
 }
 
-pub(crate) fn check_sha256(path: &Path) -> ExitResult {
+pub(crate) fn check_sha256(path: &Path) -> Result<()> {
     let sha256_file = PathBuf::from(format!("{path}.sha256", path = path.display()));
-    let contents = std::fs::read_to_string(&sha256_file).map_err(|e| {
-        Code::FAILURE.with_message(format!(
-            "Failed to read {sha256_file}: {e}",
+    let contents = std::fs::read_to_string(&sha256_file).with_context(|| {
+        format!(
+            "Failed to read {sha256_file}",
             sha256_file = sha256_file.display()
-        ))
+        )
     })?;
-    let expected_sha256 = contents.split(' ').next().ok_or_else(|| {
-        Code::FAILURE.with_message(format!(
+    let expected_sha256 = contents.split(' ').next().with_context(|| {
+        format!(
             "Expected {sha256_file} to have a leading hash",
             sha256_file = sha256_file.display()
-        ))
+        )
     })?;
     assert_eq!(expected_sha256, fingerprint(path)?.as_str());
     Ok(())
 }
 
-fn fetch_and_check_trusted_sha256(ptex: &Path, url: &str, dest_dir: &Path) -> ExitResult {
+fn fetch_and_check_trusted_sha256(ptex: &Path, url: &str, dest_dir: &Path) -> Result<()> {
     execute(Command::new(ptex).args(["-O", url]).current_dir(dest_dir))?;
 
     let sha256_url = format!("{url}.sha256");
@@ -68,12 +63,11 @@ fn fetch_and_check_trusted_sha256(ptex: &Path, url: &str, dest_dir: &Path) -> Ex
             .current_dir(dest_dir),
     )?;
 
-    let parsed_url = Url::parse(url)
-        .map_err(|e| Code::FAILURE.with_message(format!("Failed to parse {url}: {e}")))?;
+    let parsed_url = Url::parse(url).with_context(|| format!("Failed to parse {url}"))?;
     let url_path = PathBuf::from(parsed_url.path());
-    let file_name = url_path.file_name().ok_or_else(|| {
-        Code::FAILURE.with_message(format!("Failed to determine file name from {url}"))
-    })?;
+    let file_name = url_path
+        .file_name()
+        .with_context(|| format!("Failed to determine file name from {url}"))?;
     info!("Checking downloaded {url} has sha256 reported in {sha256_url}");
     check_sha256(&dest_dir.join(file_name))
 }
@@ -94,12 +88,13 @@ impl BuildContext {
         target: Option<&str>,
         ptex_repo: Option<&Path>,
         scie_jump_repo: Option<&Path>,
-    ) -> Result<Self, Exit> {
+    ) -> Result<Self> {
         let target = target.unwrap_or(TARGET).to_string();
         let package_crate_root = PathBuf::from(CARGO_MANIFEST_DIR);
-        let workspace_root = package_crate_root.join("..").canonicalize().map_err(|e| {
-            Code::FAILURE.with_message(format!("Failed to canonicalize workspace root: {e}"))
-        })?;
+        let workspace_root = package_crate_root
+            .join("..")
+            .canonicalize()
+            .context("Failed to canonicalize workspace root")?;
 
         let output_root = PathBuf::from(OUT_DIR).join("dist");
         let output_bin_dir = output_root.join("bin");
@@ -115,7 +110,7 @@ impl BuildContext {
         })
     }
 
-    fn ensure_target(&self) -> ExitResult {
+    fn ensure_target(&self) -> Result<()> {
         if !self.target_prepared.get() {
             build_step!(
                 "Ensuring --target {target} is available",
@@ -127,7 +122,7 @@ impl BuildContext {
         Ok(())
     }
 
-    pub(crate) fn obtain_ptex(&self, dest_dir: &Path) -> Result<PathBuf, Exit> {
+    pub(crate) fn obtain_ptex(&self, dest_dir: &Path) -> Result<PathBuf> {
         if let Some(ref ptex_from) = self.ptex_repo {
             self.ensure_target()?;
             build_step!(
@@ -145,7 +140,7 @@ impl BuildContext {
         Ok(ptex_exe)
     }
 
-    pub(crate) fn obtain_scie_jump(&self, dest_dir: &Path) -> Result<PathBuf, Exit> {
+    pub(crate) fn obtain_scie_jump(&self, dest_dir: &Path) -> Result<PathBuf> {
         if let Some(ref scie_jump_from) = self.scie_jump_repo {
             self.ensure_target()?;
             build_step!(
@@ -163,7 +158,7 @@ impl BuildContext {
         Ok(scie_jump_exe)
     }
 
-    pub(crate) fn build_scie_pants(&self) -> Result<PathBuf, Exit> {
+    pub(crate) fn build_scie_pants(&self) -> Result<PathBuf> {
         execute(
             Command::new(CARGO)
                 .args([
@@ -193,7 +188,7 @@ pub(crate) struct SkinnyScieTools {
     pub(crate) scie_jump: PathBuf,
 }
 
-fn build_a_scie_project(a_scie_project_repo: &Path, target: &str, dest_dir: &Path) -> ExitResult {
+fn build_a_scie_project(a_scie_project_repo: &Path, target: &str, dest_dir: &Path) -> Result<()> {
     execute(Command::new(CARGO).args([
         "run",
         "--manifest-path",
@@ -214,7 +209,7 @@ fn fetch_a_scie_project(
     tag: &str,
     binary_name: &str,
     dest_dir: &Path,
-) -> ExitResult {
+) -> Result<()> {
     static BOOTSTRAP_PTEX: OnceCell<PathBuf> = OnceCell::new();
 
     let file_name = binary_full_name(binary_name);
@@ -227,16 +222,16 @@ fn fetch_a_scie_project(
     // We only care about correctness.
     let target_dir = cache_dir.join(tag);
     let lock_file = cache_dir.join(format!("{tag}.lck"));
-    let lock_fd = std::fs::File::create(&lock_file).map_err(|e| {
-        Code::FAILURE.with_message(format!(
-            "Failed to open {path} for locking: {e}",
+    let lock_fd = std::fs::File::create(&lock_file).with_context(|| {
+        format!(
+            "Failed to open {path} for locking",
             path = lock_file.display()
-        ))
+        )
     })?;
     let mut lock = fd_lock::RwLock::new(lock_fd);
     let _write_lock = lock.write();
     if !target_dir.exists() {
-        let bootstrap_ptex = BOOTSTRAP_PTEX.get_or_try_init(|| {
+        let bootstrap_ptex = BOOTSTRAP_PTEX.get_or_try_init::<_, anyhow::Error>(|| {
             build_step!("Bootstrapping a `ptex` binary");
             execute(
                 Command::new(CARGO)
@@ -285,9 +280,7 @@ fn fetch_a_scie_project(
     copy(&target_dir.join(&file_name), &dest_dir.join(file_name))
 }
 
-pub(crate) fn fetch_skinny_scie_tools(
-    build_context: &BuildContext,
-) -> Result<SkinnyScieTools, Exit> {
+pub(crate) fn fetch_skinny_scie_tools(build_context: &BuildContext) -> Result<SkinnyScieTools> {
     let skinny_scies = build_context.cargo_output_root.join("skinny-scies");
     ensure_directory(&skinny_scies, true)?;
     let ptex_exe = build_context.obtain_ptex(&skinny_scies)?;

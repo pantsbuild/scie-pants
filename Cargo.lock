@@ -433,6 +433,7 @@ checksum = "9b7820b9daea5457c9f21c69448905d723fbd21136ccf521748f23fd49e723ee"
 name = "package"
 version = "0.2.0"
 dependencies = [
+ "anyhow",
  "clap",
  "dirs",
  "fd-lock",
@@ -440,7 +441,6 @@ dependencies = [
  "log",
  "once_cell",
  "pretty_env_logger",
- "proc-exit",
  "sha2",
  "tempfile",
  "termcolor",
@@ -468,12 +468,6 @@ dependencies = [
  "env_logger 0.7.1",
  "log",
 ]
-
-[[package]]
-name = "proc-exit"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2d778539881515d37cd91925d169f4a351120c5a1b44fce2b7c462b0d7f4ec6"
 
 [[package]]
 name = "proc-macro-error"

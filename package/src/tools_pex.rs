@@ -6,7 +6,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
 
-use proc_exit::Exit;
+use anyhow::Result;
 use termcolor::WriteColor;
 
 use crate::build_step;
@@ -18,7 +18,7 @@ pub(crate) fn build_tools_pex(
     build_context: &BuildContext,
     skinny_scie_tools: &SkinnyScieTools,
     update_lock: bool,
-) -> Result<PathBuf, Exit> {
+) -> Result<PathBuf> {
     build_step!("Executing scie-jump boot-pack of the `pbt` helper binary");
     let pbt_package_dir = build_context.cargo_output_root.join("pbt");
     ensure_directory(&pbt_package_dir, true)?;
