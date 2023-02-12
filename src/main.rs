@@ -288,22 +288,6 @@ fn get_pants_from_sources_process(pants_repo_location: PathBuf) -> Result<Proces
     Ok(Process { exe, args, env })
 }
 
-trait OrExit<T> {
-    fn or_exit(self) -> T;
-}
-
-impl<T> OrExit<T> for Result<T> {
-    fn or_exit(self) -> T {
-        match self {
-            Ok(item) => item,
-            Err(err) => {
-                eprintln!("{err:#}");
-                std::process::exit(1)
-            }
-        }
-    }
-}
-
 fn invoked_as_basename() -> Option<String> {
     let scie = env::var("SCIE_ARGV0").ok()?;
     let exe_path = PathBuf::from(scie);
