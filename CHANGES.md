@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.5.1
+
+This release silences Pip notifications about new Pip versions being available. The Pip used by
+scie-pants is for a one-time install of a Pants in a venv and the version of Pip that ships with
+the hermetic Python Build Standalone interpreters suffices for this purpose.
+
 ## 0.5.0
 
 This release improves `scie-pants` operation with Pants help by ensuring the command line you used

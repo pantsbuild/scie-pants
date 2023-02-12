@@ -45,6 +45,9 @@ def install_pants(
                 "-sE",
                 "-m",
                 "pip",
+                # This internal 1-use pip need not nag the user about its up-to-date-ness.
+                "--disable-pip-version-check",
+                "--no-python-version-warning",
                 "--log",
                 install_log,
                 "install",
