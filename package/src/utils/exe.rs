@@ -8,9 +8,9 @@ use std::io::Write;
 use std::path::Path;
 use std::process::{Command, Output};
 
+use anyhow::{bail, Context, Result};
 use lazy_static::lazy_static;
 use log::info;
-use proc_exit::{Code, Exit, ExitResult};
 
 use super::os::EOL;
 
@@ -24,20 +24,18 @@ pub(crate) enum Platform {
 }
 
 impl Platform {
-    pub(crate) fn current() -> Result<Self, Exit> {
+    pub(crate) fn current() -> Result<Self> {
         match (env::consts::OS, env::consts::ARCH) {
             ("linux", "aarch64") => Ok(Self::LinuxAarch64),
             ("linux", "x86_64") => Ok(Self::LinuxX86_64),
             ("macos", "aarch64") => Ok(Self::MacOSAarch64),
             ("macos", "x86_64") => Ok(Self::MacOSX86_64),
             ("windows", "x86_64") => Ok(Self::WindowsX86_64),
-            _ => Err(Code::FAILURE.with_message({
-                format!(
-                    "Unsupported platform: os={os} arch={arch}",
-                    os = env::consts::OS,
-                    arch = env::consts::ARCH
-                )
-            })),
+            _ => bail!(
+                "Unsupported platform: os={os} arch={arch}",
+                os = env::consts::OS,
+                arch = env::consts::ARCH
+            ),
         }
     }
 
@@ -73,51 +71,42 @@ fn executable_permissions() -> Option<Permissions> {
     Some(Permissions::from_mode(0o755))
 }
 
-pub(crate) fn prepare_exe(path: &Path) -> ExitResult {
+pub(crate) fn prepare_exe(path: &Path) -> Result<()> {
     if let Some(permissions) = executable_permissions() {
-        std::fs::set_permissions(path, permissions).map_err(|e| {
-            Code::FAILURE.with_message(format!(
-                "Failed to mark {path} as executable: {e}",
-                path = path.display()
-            ))
+        std::fs::set_permissions(path, permissions).with_context(|| {
+            format!("Failed to mark {path} as executable", path = path.display())
         })?
     }
     Ok(())
 }
 
-pub(crate) fn execute_with_input(command: &mut Command, stdin_data: &[u8]) -> Result<Output, Exit> {
+pub(crate) fn execute_with_input(command: &mut Command, stdin_data: &[u8]) -> Result<Output> {
     _execute_with_input(command, Some(stdin_data))
 }
 
-pub(crate) fn execute(command: &mut Command) -> Result<Output, Exit> {
+pub(crate) fn execute(command: &mut Command) -> Result<Output> {
     _execute_with_input(command, None)
 }
 
-fn _execute_with_input(command: &mut Command, stdin_data: Option<&[u8]>) -> Result<Output, Exit> {
+fn _execute_with_input(command: &mut Command, stdin_data: Option<&[u8]>) -> Result<Output> {
     info!("Executing {command:#?}");
     if stdin_data.is_some() {
         command.stdin(std::process::Stdio::piped());
     }
-    let mut child = command.spawn().map_err(|e| {
-        Code::FAILURE.with_message(format!("Failed to spawn command: {command:?}: {e}"))
-    })?;
+    let mut child = command
+        .spawn()
+        .with_context(|| format!("Failed to spawn command: {command:?}"))?;
     if let Some(stdin_data) = stdin_data {
         child
             .stdin
             .as_mut()
             .expect("We just set a stdin pipe above")
             .write(stdin_data)
-            .map_err(|e| {
-                Code::FAILURE.with_message(format!(
-                    "Failed to write {stdin_data:?} to sub-process stdin: {e}"
-                ))
-            })?;
+            .with_context(|| format!("Failed to write {stdin_data:?} to sub-process stdin"))?;
     }
-    let output = child.wait_with_output().map_err(|e| {
-        Code::FAILURE.with_message(format!(
-            "Failed to gather exit status of command: {command:?}: {e}"
-        ))
-    })?;
+    let output = child
+        .wait_with_output()
+        .with_context(|| format!("Failed to gather exit status of command: {command:?}"))?;
     if !output.status.success() {
         let mut message_lines = vec![format!(
             "Command {command:?} failed with exit code: {code:?}",
@@ -135,7 +124,7 @@ fn _execute_with_input(command: &mut Command, stdin_data: Option<&[u8]>) -> Resu
             message_lines.push("STDERR:".to_string());
             message_lines.push(String::from_utf8_lossy(output.stderr.as_slice()).to_string());
         }
-        return Err(Code::FAILURE.with_message(message_lines.join(EOL)));
+        bail!(message_lines.join(EOL));
     }
     Ok(output)
 }

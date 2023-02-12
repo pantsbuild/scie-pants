@@ -317,7 +317,7 @@ fn invoked_as_basename() -> Option<String> {
     basename.map(str::to_owned)
 }
 
-fn main() {
+fn main() -> Result<()> {
     env_logger::init();
     let _timer = timer!(Level::Debug; "MAIN");
 
@@ -337,10 +337,9 @@ fn main() {
         get_pants_from_sources_process(PathBuf::from("..").join("pants"))
     } else {
         get_pants_process()
-    }
-    .or_exit();
+    }?;
 
     trace!("Launching: {pants_process:#?}");
-    let exit_code = pants_process.exec().or_exit();
+    let exit_code = pants_process.exec()?;
     std::process::exit(exit_code)
 }

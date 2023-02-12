@@ -16,8 +16,8 @@ use std::io::Write;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
+use anyhow::{bail, Context, Result};
 use clap::{arg, command, Parser, Subcommand};
-use proc_exit::{Code, Exit, ExitResult};
 use termcolor::{Color, WriteColor};
 
 use crate::scie_pants::build_scie_pants_scie;
@@ -140,7 +140,7 @@ struct Args {
     command: Commands,
 }
 
-fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathBuf>, Exit> {
+fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathBuf>> {
     match &args.command {
         Commands::Test {
             tools_pex: Some(tools_pex),
@@ -231,17 +231,17 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
     }
 }
 
-fn main() -> ExitResult {
+fn main() -> Result<()> {
     pretty_env_logger::init();
 
     let args = Args::parse();
 
     let dest_dir = &args.dest_dir;
     if dest_dir.is_file() {
-        return Err(Code::FAILURE.with_message(format!(
-            "The specified dest_dir of {} is a file. Not overwriting",
-            dest_dir.display()
-        )));
+        bail!(
+            "The specified dest_dir of {dest_dir} is a file. Not overwriting",
+            dest_dir = dest_dir.display()
+        );
     }
 
     let build_context = BuildContext::new(
@@ -252,16 +252,10 @@ fn main() -> ExitResult {
     if let Some(output_file) = maybe_build(&args, &build_context)? {
         let dest_file_name = output_file
             .file_name()
-            .ok_or_else(|| {
-                Code::FAILURE.with_message(format!(
-                    "Failed to determine the basename of {output_file:?}"
-                ))
-            })?
+            .with_context(|| format!("Failed to determine the basename of {output_file:?}"))?
             .to_str()
-            .ok_or_else(|| {
-                Code::FAILURE.with_message(format!(
-                    "Failed to interpret the basename of {output_file:?} as a UTF-8 string"
-                ))
+            .with_context(|| {
+                format!("Failed to interpret the basename of {output_file:?} as a UTF-8 string")
             })?;
         let dest_file = dest_dir.join(dest_file_name);
         ensure_directory(dest_dir, false)?;
@@ -273,11 +267,11 @@ fn main() -> ExitResult {
             &fingerprint_file,
             format!("{dest_file_digest} *{dest_file_name}\n"),
         )
-        .map_err(|e| {
-            Code::FAILURE.with_message(format!(
-                "Failed to write fingerprint file {fingerprint_file}: {e}",
+        .with_context(|| {
+            format!(
+                "Failed to write fingerprint file {fingerprint_file}",
                 fingerprint_file = fingerprint_file.display()
-            ))
+            )
         })?;
         check_sha256(&dest_file)?;
 

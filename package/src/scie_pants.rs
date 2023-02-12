@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use proc_exit::Exit;
+use anyhow::Result;
 use termcolor::WriteColor;
 
 use crate::utils::build::{BuildContext, SkinnyScieTools};
@@ -15,7 +15,7 @@ pub(crate) fn build_scie_pants_scie(
     build_context: &BuildContext,
     skinny_scie_tools: &SkinnyScieTools,
     tools_pex_file: &Path,
-) -> Result<PathBuf, Exit> {
+) -> Result<PathBuf> {
     build_step!("Building the scie-pants Rust binary.");
     let scie_pants_exe = build_context.build_scie_pants()?;
 

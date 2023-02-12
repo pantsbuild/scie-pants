@@ -6,7 +6,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
-use proc_exit::{Code, Exit, ExitResult};
+use anyhow::{Context, Result};
 use tempfile::TempDir;
 use termcolor::{Color, WriteColor};
 
@@ -24,10 +24,8 @@ macro_rules! integration_test {
     };
 }
 
-fn decode_output(output: Vec<u8>) -> Result<String, Exit> {
-    let res = String::from_utf8(output)
-        .map_err(|e| Code::FAILURE.with_message(format!("Failed to decode Pants output: {e}")))?;
-    Ok(res)
+fn decode_output(output: Vec<u8>) -> Result<String> {
+    String::from_utf8(output).context("Failed to decode Pants output.")
 }
 
 fn assert_stderr_output(command: &mut Command, expected_messages: Vec<&str>) -> Output {
@@ -47,7 +45,7 @@ pub(crate) fn run_integration_tests(
     tools_pex_path: &Path,
     scie_pants_scie: &Path,
     tools_pex_mismatch_warn: bool,
-) -> ExitResult {
+) -> Result<()> {
     build_step!("Running smoke tests");
     log!(
         Color::Yellow,
@@ -143,11 +141,7 @@ fn test_tools(scie_pants_scie: &Path) {
             .unwrap()
             .stdout;
         String::from_utf8(result)
-            .map_err(|e| {
-                Code::FAILURE.with_message(format!(
-                    "Failed to decode output of tput {subcommand} as UTF-*: {e}"
-                ))
-            })
+            .with_context(|| format!("Failed to decode output of tput {subcommand} as UTF-*"))
             .unwrap()
     };
     execute(
@@ -398,10 +392,8 @@ fn test_pants_source_mode(
         let clone_root_path = clone_root_tmp
             .path()
             .to_str()
-            .ok_or_else(|| {
-                Code::FAILURE.with_message(format!(
-                    "Failed to convert clone root path to UTF-8 string: {clone_root_tmp:?}"
-                ))
+            .with_context(|| {
+                format!("Failed to convert clone root path to UTF-8 string: {clone_root_tmp:?}")
             })
             .unwrap();
         execute(Command::new("git").args(["init", clone_root_path])).unwrap();
