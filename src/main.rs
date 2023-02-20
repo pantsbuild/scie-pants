@@ -224,11 +224,10 @@ fn get_pants_process() -> Result<Process> {
             "PANTS_DEBUG".into(),
             if pants_debug { "1" } else { "" }.into(),
         ),
-        (
-            "PANTS_DEBUGPY_VERSION".into(),
-            debugpy_version.unwrap_or_default().into(),
-        ),
     ];
+    if let Some(debugpy_version) = debugpy_version {
+        env.push(("PANTS_DEBUGPY_VERSION".into(), debugpy_version.into()));
+    }
     if let Some(ref build_root) = build_root {
         env.push((
             "PANTS_BUILDROOT_OVERRIDE".into(),

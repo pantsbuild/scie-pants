@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.5.2
+
+This release fixes `scie-pants` to interoperate with `pants run --debug-adapter`. Previously, if
+there was no custom `[debugpy] version` configured, `scie-pants` would cause Pants to error by
+passing the empty string as the `debugpy` `version` requirement string via `PANTS_DEBUGPY_VERSION=`.
+
 ## 0.5.1
 
 This release silences Pip notifications about new Pip versions being available. The Pip used by
