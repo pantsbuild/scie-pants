@@ -179,7 +179,7 @@ fn get_pants_process() -> Result<Process> {
     let pants_version = if let Some(env_version) = env_pants_version {
         Some(env_version)
     } else if env_pants_sha.is_none() {
-        configured_pants_version
+        configured_pants_version.clone()
     } else {
         None
     };
@@ -233,10 +233,15 @@ fn get_pants_process() -> Result<Process> {
             "PANTS_BUILDROOT_OVERRIDE".into(),
             build_root.as_os_str().to_os_string(),
         ));
-        env.push((
-            "PANTS_TOML".into(),
-            build_root.join("pants.toml").into_os_string(),
-        ));
+        // This should not be conditional. Ideally we'd always set this env var, which is used
+        // by the configure binding, and scie-jump would be smart enough to skip the configure
+        // binding when the install binding is a cache hit.
+        if configured_pants_version.is_none() {
+            env.push((
+                "PANTS_TOML".into(),
+                build_root.join("pants.toml").into_os_string(),
+            ));
+        }
     }
     if let Some(version) = pants_version {
         if delegate_bootstrap {

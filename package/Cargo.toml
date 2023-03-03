@@ -21,3 +21,4 @@ sha2 = "0.10"
 tempfile = { workspace = true }
 termcolor = "1.2"
 url = "2.3"
+walkdir = "2.3"

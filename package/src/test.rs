@@ -22,6 +22,13 @@ macro_rules! integration_test {
     ($msg:expr $(,)?) => {
         log!(::termcolor::Color::Magenta, ">> {}", format!($msg));
     };
+    ($msg:expr $(,)?, $($arg:tt)*) => {
+        log!(::termcolor::Color::Magenta, ">> {}", format!($msg, $($arg)*));
+    };
+}
+
+fn issue_link(issue: usize) -> String {
+    format!("https://github.com/pantsbuild/scie-pants/issues/{issue}")
 }
 
 fn decode_output(output: Vec<u8>) -> Result<String> {
@@ -116,7 +123,9 @@ pub(crate) fn run_integration_tests(
             &pants_2_14_1_venv_dir,
         );
         test_delegate_pants_in_pants_repo(scie_pants_scie, &pants_2_14_1_clone_dir);
-        test_use_pants_release_in_pants_repo(scie_pants_scie, &pants_2_14_1_clone_dir)
+        test_use_pants_release_in_pants_repo(scie_pants_scie, &pants_2_14_1_clone_dir);
+
+        test_caching_issue_129(scie_pants_scie);
     }
 
     // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
@@ -635,4 +644,82 @@ fn test_self_downgrade(scie_pants_scie: &Path) {
             .current_dir(scie_pants_scie.parent().unwrap()),
     )
     .unwrap();
+}
+
+fn test_caching_issue_129(scie_pants_scie: &Path) {
+    integration_test!(
+        "Verifying the build root does not influence caching ({issue})",
+        issue = issue_link(129)
+    );
+    let tmpdir = create_tempdir().unwrap();
+
+    let scie_base = tmpdir.path().join("nce");
+
+    let pants_toml = r#"
+    [GLOBAL]
+    pants_version = "2.15.0"
+    [anonymous-telemetry]
+    enabled = false
+    "#;
+
+    let one = tmpdir.path().join("one");
+    ensure_directory(&one, false).unwrap();
+    write_file(&one.join("pants.toml"), false, pants_toml).unwrap();
+    execute(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .env("SCIE_BASE", &scie_base)
+            .current_dir(&one),
+    )
+    .unwrap();
+
+    let two = tmpdir.path().join("two");
+    ensure_directory(&two, false).unwrap();
+    write_file(&two.join("pants.toml"), false, pants_toml).unwrap();
+    execute(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .env("SCIE_BASE", &scie_base)
+            .current_dir(&two),
+    )
+    .unwrap();
+
+    #[derive(Debug, Eq, PartialEq)]
+    enum LockType {
+        Configure,
+        Install,
+    }
+    let binding_locks = walkdir::WalkDir::new(scie_base)
+        .sort_by_file_name()
+        .into_iter()
+        .filter_map(|entry| match entry {
+            Ok(dir_entry) => {
+                if !dir_entry.file_type().is_file() {
+                    return None;
+                }
+                if let Some(file_name) = dir_entry.file_name().to_str() {
+                    if let Some(parent_dir) = dir_entry.path().parent() {
+                        if let Some(parent_dir_name) = parent_dir.file_name() {
+                            if "locks" != parent_dir_name {
+                                return None;
+                            }
+                        }
+                        if !file_name.ends_with(".lck") {
+                            return None;
+                        }
+                        if file_name.starts_with("configure-") {
+                            return Some(LockType::Configure);
+                        }
+                        if file_name.starts_with("install-") {
+                            return Some(LockType::Install);
+                        }
+                    }
+                }
+                None
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(vec![LockType::Configure, LockType::Install], binding_locks)
 }

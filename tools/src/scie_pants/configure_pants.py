@@ -80,6 +80,7 @@ def main() -> NoReturn:
     find_links_dir = base_dir / "find_links"
 
     finalizers = []
+    newly_created_build_root = None
     pants_config = Path(options.pants_config) if options.pants_config else None
     if options.pants_sha:
         resolve_info = determine_sha_version(
@@ -103,6 +104,7 @@ def main() -> NoReturn:
             if not maybe_pants_config:
                 sys.exit(1)
             pants_config = maybe_pants_config
+            newly_created_build_root = pants_config.parent
 
         configure_version, resolve_info = determine_latest_stable_version(
             ptex=ptex,
@@ -113,10 +115,6 @@ def main() -> NoReturn:
         finalizers.append(configure_version)
         version = resolve_info.stable_version
 
-    if pants_config is None:
-        fatal("Failed to configure a pants.toml")
-
-    build_root = pants_config.parent
     python = "python3.8" if version < Version("2.5") else "python3.9"
 
     for finalizer in finalizers:
@@ -124,7 +122,8 @@ def main() -> NoReturn:
 
     with open(env_file, "a") as fp:
         print(f"FIND_LINKS={resolve_info.find_links}", file=fp)
-        print(f"PANTS_BUILDROOT_OVERRIDE={build_root}", file=fp)
+        if newly_created_build_root:
+            print(f"PANTS_BUILDROOT_OVERRIDE={newly_created_build_root}", file=fp)
         print(f"PANTS_SHA_FIND_LINKS={resolve_info.pants_find_links_option(version)}", file=fp)
         print(f"PANTS_VERSION={version}", file=fp)
         print(f"PYTHON={python}", file=fp)
