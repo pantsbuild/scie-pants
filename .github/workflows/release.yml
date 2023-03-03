@@ -125,7 +125,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "The `pants` launcher binary (scie-pants) ${{ needs.determine-tag.outputs.release-tag }} is released:\n* https://github.com/pantsbuild/scie-pants/releases/tag/${{ needs.determine-tag.outputs.release-tag }}\n* https://www.pantsbuild.org/v2.15/docs/installation"
+                    "text": "The `pants` launcher binary (scie-pants) ${{ needs.determine-tag.outputs.release-tag }} is released:\n* https://github.com/pantsbuild/scie-pants/releases/tag/${{ needs.determine-tag.outputs.release-tag }}\n* https://www.pantsbuild.org/docs/installation"
                   }
                 },
                 {
