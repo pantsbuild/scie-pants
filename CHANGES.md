@@ -1,5 +1,13 @@
 # Release Notes
 
+## 0.5.3
+
+This release fixes `scie-pants` caching of Pants installs. Previously a given version of Pants was
+not fully cached and `scie-pants` would do un-necessary network requests when re-using the already
+installed Pants version from a project directory different from the initial installation project
+directory. Now a given version of Pants is fully cached per-user (really per `SCIE_BASE`, which
+defaults to a cache directory under the user's `HOME` dir).
+
 ## 0.5.2
 
 This release fixes `scie-pants` to interoperate with `pants run --debug-adapter`. Previously, if
