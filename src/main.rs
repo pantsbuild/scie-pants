@@ -280,14 +280,16 @@ fn get_pants_from_sources_process(pants_repo_location: PathBuf) -> Result<Proces
         .or_else(|| env::var_os("PANTS_PANTSD"))
         .unwrap_or_else(|| "false".into());
 
+    let build_root = BuildRoot::find(None)?;
     let env = vec![
         ("PANTS_VERSION".into(), version.trim().into()),
         ("PANTS_PANTSD".into(), enable_pantsd),
+        (
+            "PANTS_BUILDROOT_OVERRIDE".into(),
+            build_root.as_os_str().to_os_string(),
+        ),
         ("no_proxy".into(), "*".into()),
     ];
-
-    let build_root = BuildRoot::find(None)?;
-    env::set_current_dir(build_root)?;
 
     Ok(Process { exe, args, env })
 }

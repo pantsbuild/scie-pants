@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.5.4
+
+Support using pants from sources also from a projects subtree not only the project root.
+
 ## 0.5.3
 
 This release fixes `scie-pants` caching of Pants installs. Previously a given version of Pants was
