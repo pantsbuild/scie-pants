@@ -65,7 +65,7 @@ jobs:
           docker run --rm \
             -v $PWD:/code \
             -w /code \
-            rust:1.67.1-alpine3.17 \
+            rust:1.68.0-alpine3.17 \
               sh -c '
                 apk add cmake make musl-dev perl && \
                 cargo run -p package -- --dest-dir dist/ scie --tools-pex dist/tools.pex \
