@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import urllib.parse
+from typing import Any, Dict, List
 from dataclasses import dataclass
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -42,6 +43,8 @@ class ResolveInfo:
         )
         return f"--python-repos-{option_name}={operator}['{self.find_links}']"
 
+class TagNotFoundError(Exception):
+    pass
 
 def determine_find_links(
     ptex: Ptex,
@@ -117,12 +120,22 @@ def determine_tag_version(
         github_api_url = (
             f"https://api.github.com/repos/pantsbuild/pants/git/refs/tags/{urllib.parse.quote(tag)}"
         )
+        github_releases_url="https://github.com/pantsbuild/pants/releases"
         headers = (
             {"Authorization": f"Bearer {github_api_bearer_token}"}
             if github_api_bearer_token
             else {}
         )
-        github_api_tag_url = ptex.fetch_json(github_api_url, **headers)["object"]["url"]
+        github_api_response: Dict[str, Any]
+        try:
+            github_api_response = ptex.fetch_json(github_api_url, **headers)
+            # If the response is a list, multiple matches were found, which means the supplied tag
+            # is not an exact match against any tag
+            if isinstance(github_api_response, list):
+                raise TagNotFoundError(f"Could not find Pants tag {tag} in {github_releases_url}")
+        except CalledProcessError as e:
+            raise TagNotFoundError(f"Could not find Pants tag {tag} in {github_releases_url}: {e}")
+        github_api_tag_url = github_api_response["object"]["url"]
         commit_sha = ptex.fetch_json(github_api_tag_url, **headers)["object"]["sha"]
 
     return determine_find_links(
