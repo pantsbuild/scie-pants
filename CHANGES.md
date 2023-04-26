@@ -1,5 +1,16 @@
 # Release Notes
 
+## 0.6.0
+
+Support the `PANTS_TOML` environment variable for specifying a location other than the project's
+build root for Pants configuration file. This was a missed port from the `./pants` script and
+behaves the same: setting the `PANTS_TOML` tells `scie-pants` where to find the config file, but you
+must also tell Pants by using `PANTS_CONFIG_FILES` as well. With these two environment variables set
+and the project's build root demarcated by either a `BUILD_ROOT` or `BUILDROOT` marker file, Pants
+project layouts supported  by `./pants` should now be fully supported by `scie-pants`. Since
+`scie-pants` supports `.env` files you can also populate both env vars there as now to streamline
+the setup.
+
 ## 0.5.4
 
 Support using pants from sources also from a projects subtree not only the project root.

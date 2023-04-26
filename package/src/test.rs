@@ -126,6 +126,7 @@ pub(crate) fn run_integration_tests(
         test_use_pants_release_in_pants_repo(scie_pants_scie, &pants_2_14_1_clone_dir);
 
         test_caching_issue_129(scie_pants_scie);
+        test_custom_pants_toml_issue_153(scie_pants_scie);
     }
 
     // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
@@ -722,4 +723,87 @@ fn test_caching_issue_129(scie_pants_scie: &Path) {
         .collect::<Vec<_>>();
 
     assert_eq!(vec![LockType::Configure, LockType::Install], binding_locks)
+}
+
+fn test_custom_pants_toml_issue_153(scie_pants_scie: &Path) {
+    integration_test!(
+        "Verifying the PANTS_TOML env var is respected ({issue})",
+        issue = issue_link(153)
+    );
+
+    let tmpdir = create_tempdir().unwrap();
+
+    let buildroot = tmpdir.path().join("buildroot");
+    touch(&buildroot.join("BUILD_ROOT")).unwrap();
+
+    let pants_toml_content = r#"
+    [GLOBAL]
+    pants_version = "2.17.0.dev4"
+    backend_packages = ["pants.backend.python"]
+    [anonymous-telemetry]
+    enabled = false
+    "#;
+    let pants_toml = tmpdir.path().join("elsewhere").join("pants.toml");
+    write_file(&pants_toml, false, pants_toml_content).unwrap();
+
+    let buildroot_subdir = buildroot.join("subdir");
+    ensure_directory(&buildroot_subdir, false).unwrap();
+
+    let output = execute(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .env("PANTS_TOML", &pants_toml)
+            .env("PANTS_CONFIG_FILES", &pants_toml)
+            .current_dir(&buildroot_subdir)
+            .stdout(Stdio::piped()),
+    )
+    .unwrap();
+    assert_eq!(
+        "2.17.0.dev4",
+        String::from_utf8(output.stdout.to_vec()).unwrap().trim()
+    );
+
+    let build_content = r#"
+python_requirement(name="cowsay", requirements=["cowsay==5.0"])
+pex_binary(name="moo", script="cowsay", dependencies=[":cowsay"])
+    "#;
+    write_file(&buildroot_subdir.join("BUILD"), false, build_content).unwrap();
+    let output = execute(
+        Command::new(scie_pants_scie)
+            .args(["list", ":"])
+            .env("PANTS_TOML", &pants_toml)
+            .env("PANTS_CONFIG_FILES", &pants_toml)
+            .current_dir(&buildroot_subdir)
+            .stdout(Stdio::piped()),
+    )
+    .unwrap();
+
+    let expected_output = r#"
+subdir:cowsay
+subdir:moo
+    "#;
+    assert_eq!(
+        expected_output.trim(),
+        String::from_utf8(output.stdout.to_vec()).unwrap().trim()
+    );
+
+    let dot_env_content = format!(
+        r#"
+export PANTS_TOML={pants_toml}
+export PANTS_CONFIG_FILES=${{PANTS_TOML}}
+        "#,
+        pants_toml = pants_toml.display()
+    );
+    write_file(&buildroot.join(".env"), false, dot_env_content).unwrap();
+    let output = execute(
+        Command::new(scie_pants_scie)
+            .args(["list", ":"])
+            .current_dir(&buildroot_subdir)
+            .stdout(Stdio::piped()),
+    )
+    .unwrap();
+    assert_eq!(
+        expected_output.trim(),
+        String::from_utf8(output.stdout.to_vec()).unwrap().trim()
+    );
 }
