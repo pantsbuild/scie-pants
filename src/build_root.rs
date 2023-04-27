@@ -20,13 +20,14 @@ impl BuildRoot {
 
         let mut cwd = start_search.as_path();
         loop {
-            let config_path = cwd.join("pants.toml");
-            if config_path.is_file() {
-                return Ok(BuildRoot(cwd.to_path_buf()));
+            for marker_file_name in ["pants.toml", "BUILDROOT", "BUILD_ROOT"] {
+                if cwd.join(marker_file_name).is_file() {
+                    return Ok(BuildRoot(cwd.to_path_buf()));
+                }
             }
             cwd = cwd.parent().with_context(|| {
                 format!(
-                    "Failed to find pants.toml starting at {start_search}",
+                    "Failed to find pants.toml, BUILDROOT or BUILD_ROOT starting at {start_search}",
                     start_search = start_search.display()
                 )
             })?;
