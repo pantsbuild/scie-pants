@@ -95,6 +95,7 @@ fn find_pants_installation() -> Result<Option<PantsConfig>> {
 enum ScieBoot {
     BootstrapTools,
     Pants,
+    PantsMaybeNativeClient,
     PantsDebug,
 }
 
@@ -103,6 +104,7 @@ impl ScieBoot {
         match self {
             ScieBoot::BootstrapTools => "bootstrap-tools",
             ScieBoot::Pants => "pants",
+            ScieBoot::PantsMaybeNativeClient => "pants-maybe-native-client",
             ScieBoot::PantsDebug => "pants-debug",
         }
         .into()
@@ -202,15 +204,13 @@ fn get_pants_process() -> Result<Process> {
         env::var("SCIE").context("Failed to retrieve SCIE location from the environment.")?;
 
     let pants_debug = matches!(env::var_os("PANTS_DEBUG"), Some(value) if !value.is_empty());
+    let pants_no_native_client =
+        matches!(env::var_os("PANTS_NO_NATIVE_CLIENT"), Some(value) if !value.is_empty());
     let scie_boot = match env::var_os("PANTS_BOOTSTRAP_TOOLS") {
         Some(_) => ScieBoot::BootstrapTools,
-        None => {
-            if pants_debug {
-                ScieBoot::PantsDebug
-            } else {
-                ScieBoot::Pants
-            }
-        }
+        None if pants_debug => ScieBoot::PantsDebug,
+        None if pants_no_native_client => ScieBoot::Pants,
+        None => ScieBoot::PantsMaybeNativeClient,
     };
 
     let pants_bin_name = env::var_os("PANTS_BIN_NAME")

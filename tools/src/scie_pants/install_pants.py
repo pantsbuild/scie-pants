@@ -10,6 +10,7 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import Iterable, NoReturn
+from glob import glob
 
 from packaging.version import Version
 
@@ -116,8 +117,13 @@ def main() -> NoReturn:
     )
     info(f"New virtual environment successfully created at {venv_dir}.")
 
+    # TODO: Reference the version after which we can assume existence of this file.
+    native_client_binaries = glob(str(venv_dir / "lib/python*/site-packages/pants/bin/native_client"))
+    maybe_native_client_binary = native_client_binaries[0] if len(native_client_binaries) == 1 else venv_dir / "bin" / "pants"
+
     with open(env_file, "a") as fp:
         print(f"VIRTUAL_ENV={venv_dir}", file=fp)
+        print(f"MAYBE_NATIVE_CLIENT_BINARY={maybe_native_client_binary}", file=fp)
 
     sys.exit(0)
 
