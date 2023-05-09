@@ -248,7 +248,7 @@ fn get_pants_process() -> Result<Process> {
             env.push(("_PANTS_OVERRIDE_VERSION".into(), version.clone().into()));
         }
         env.push(("PANTS_VERSION".into(), version.into()));
-    } else {
+    } else if env_pants_sha.is_none()  {
         // Ensure the install binding always re-runs when no Pants version is found so that the
         // the user can be prompted with configuration options.
         env.push((

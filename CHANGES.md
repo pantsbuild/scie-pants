@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.6.1
+
+This release fixes `PANTS_SHA` support to properly cache the resulting Pants install.
+
 ## 0.6.0
 
 Support the `PANTS_TOML` environment variable for specifying a location other than the project's
