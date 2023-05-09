@@ -13,3 +13,5 @@
 /.pants.d/
 /.pids/
 
+# Python bytecode
+__pycache__/
