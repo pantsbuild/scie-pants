@@ -117,7 +117,7 @@ def main() -> NoReturn:
     )
     info(f"New virtual environment successfully created at {venv_dir}.")
 
-    # TODO: Reference the version after which we can assume existence of this file.
+    # Added in https://github.com/pantsbuild/pants/commit/558d843549204bbe49c351d00cdf23402da262c1
     native_client_binaries = glob(str(venv_dir / "lib/python*/site-packages/pants/bin/native_client"))
     maybe_native_client_binary = native_client_binaries[0] if len(native_client_binaries) == 1 else venv_dir / "bin" / "pants"
 
