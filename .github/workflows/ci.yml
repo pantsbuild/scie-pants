@@ -67,12 +67,12 @@ jobs:
           # final PEX content.
           #
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test --tools-pex-mismatch-warn
+            cargo run -p package -- test --check --tools-pex-mismatch-warn
       - name: Build, Package & Integration Tests
         if: ${{ matrix.os == 'macos-11' }}
         run: |
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test --tools-pex-mismatch-warn
+            cargo run -p package -- test --check --tools-pex-mismatch-warn
       - name: Build, Package & Integration Tests
         if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: |
@@ -92,4 +92,5 @@ jobs:
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             cargo run -p package -- test \
               --tools-pex dist/tools.pex --scie-pants dist/scie-pants-linux-x86_64 \
+              --check \
               --tools-pex-mismatch-warn

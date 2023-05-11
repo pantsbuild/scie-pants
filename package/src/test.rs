@@ -51,6 +51,7 @@ pub(crate) fn run_integration_tests(
     workspace_root: &Path,
     tools_pex_path: &Path,
     scie_pants_scie: &Path,
+    check: bool,
     tools_pex_mismatch_warn: bool,
 ) -> Result<()> {
     build_step!("Running smoke tests");
@@ -69,7 +70,7 @@ pub(crate) fn run_integration_tests(
         *CURRENT_PLATFORM,
         Platform::LinuxX86_64 | Platform::MacOSAarch64 | Platform::MacOSX86_64
     ) {
-        test_tools(scie_pants_scie);
+        test_tools(scie_pants_scie, check);
         test_pants_bin_name_handling(scie_pants_scie);
         test_pants_bootstrap_handling(scie_pants_scie);
         test_tools_pex_reproducibility(workspace_root, tools_pex_path, tools_pex_mismatch_warn);
@@ -143,7 +144,7 @@ pub(crate) fn run_integration_tests(
     Ok(())
 }
 
-fn test_tools(scie_pants_scie: &Path) {
+fn test_tools(scie_pants_scie: &Path, check: bool) {
     integration_test!("Linting, testing and packaging the tools codebase");
 
     let tput_output = |subcommand| {
@@ -154,9 +155,13 @@ fn test_tools(scie_pants_scie: &Path) {
             .with_context(|| format!("Failed to decode output of tput {subcommand} as UTF-*"))
             .unwrap()
     };
+    let mut command = Command::new(scie_pants_scie);
+    if !check {
+        command.arg("fmt");
+    }
     execute(
-        Command::new(scie_pants_scie)
-            .args(["fmt", "lint", "check", "test", "package", "::"])
+        command
+            .args(["lint", "check", "test", "package", "::"])
             .env("PEX_SCRIPT", "Does not exist!")
             .env("EXPECTED_COLUMNS", tput_output("cols").trim())
             .env("EXPECTED_LINES", tput_output("lines").trim()),

@@ -95,6 +95,13 @@ enum Commands {
         scie_pants: Option<PathBuf>,
         #[arg(
             long,
+            help = "Only check formatting and lints and fail the tests if these checks fail \
+            instead of re-formatting.",
+            default_value_t = false
+        )]
+        check: bool,
+        #[arg(
+            long,
             help = "Only warn if the Pants built tools.pex doesn't match ours instead of failing \
             the tests.",
             default_value_t = false
@@ -145,12 +152,14 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
         Commands::Test {
             tools_pex: Some(tools_pex),
             scie_pants: Some(scie_pants),
+            check,
             tools_pex_mismatch_warn,
         } => {
             run_integration_tests(
                 &build_context.workspace_root,
                 &canonicalize(tools_pex)?,
                 &canonicalize(scie_pants)?,
+                *check,
                 *tools_pex_mismatch_warn,
             )?;
             Ok(None)
@@ -158,6 +167,7 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
         Commands::Test {
             tools_pex: None,
             scie_pants: Some(scie_pants),
+            check,
             tools_pex_mismatch_warn,
         } => {
             let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
@@ -166,6 +176,7 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
                 &build_context.workspace_root,
                 &tools_pex,
                 &canonicalize(scie_pants)?,
+                *check,
                 *tools_pex_mismatch_warn,
             )?;
             Ok(None)
@@ -173,6 +184,7 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
         Commands::Test {
             tools_pex: Some(tools_pex),
             scie_pants: None,
+            check,
             tools_pex_mismatch_warn,
         } => {
             let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
@@ -181,6 +193,7 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
                 &build_context.workspace_root,
                 &canonicalize(tools_pex)?,
                 &scie_pants,
+                *check,
                 *tools_pex_mismatch_warn,
             )?;
             Ok(Some(scie_pants))
@@ -188,6 +201,7 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
         Commands::Test {
             tools_pex: None,
             scie_pants: None,
+            check,
             tools_pex_mismatch_warn,
         } => {
             let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
@@ -197,6 +211,7 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
                 &build_context.workspace_root,
                 &tools_pex,
                 &scie_pants,
+                *check,
                 *tools_pex_mismatch_warn,
             )?;
             Ok(Some(scie_pants))

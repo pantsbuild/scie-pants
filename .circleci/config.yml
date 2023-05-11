@@ -79,6 +79,7 @@ jobs:
             PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${GITHUB_TOKEN} \
               cargo run -p package -- test \
                 --tools-pex dist/tools.pex --scie-pants dist/scie-pants-linux-aarch64 \
+                --check
   release:
     docker:
       - image: 'cimg/base:stable'
