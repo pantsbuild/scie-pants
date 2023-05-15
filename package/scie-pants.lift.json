@@ -92,9 +92,10 @@
             "description": "Runs a hermetic Pants installation.",
             "env": {
               "=PANTS_VERSION": "{scie.bindings.configure:PANTS_VERSION}",
-              "PANTS_BUILDROOT_OVERRIDE": "{scie.bindings.configure:PANTS_BUILDROOT_OVERRIDE}"
+              "PANTS_BUILDROOT_OVERRIDE": "{scie.bindings.configure:PANTS_BUILDROOT_OVERRIDE}",
+              "=_PANTS_SERVER_EXE": "{scie.bindings.install:PANTS_SERVER_EXE}"
             },
-            "exe": "{scie.bindings.install:VIRTUAL_ENV}/bin/pants",
+            "exe": "{scie.bindings.install:PANTS_CLIENT_EXE}",
             "args": [
               "{scie.bindings.configure:PANTS_SHA_FIND_LINKS}"
             ]

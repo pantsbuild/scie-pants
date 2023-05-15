@@ -204,13 +204,8 @@ fn get_pants_process() -> Result<Process> {
     let pants_debug = matches!(env::var_os("PANTS_DEBUG"), Some(value) if !value.is_empty());
     let scie_boot = match env::var_os("PANTS_BOOTSTRAP_TOOLS") {
         Some(_) => ScieBoot::BootstrapTools,
-        None => {
-            if pants_debug {
-                ScieBoot::PantsDebug
-            } else {
-                ScieBoot::Pants
-            }
-        }
+        None if pants_debug => ScieBoot::PantsDebug,
+        None => ScieBoot::Pants,
     };
 
     let pants_bin_name = env::var_os("PANTS_BIN_NAME")
