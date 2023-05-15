@@ -8,9 +8,9 @@ import os
 import subprocess
 import sys
 from argparse import ArgumentParser
+from glob import glob
 from pathlib import Path
 from typing import Iterable, NoReturn
-from glob import glob
 
 from packaging.version import Version
 
@@ -119,8 +119,12 @@ def main() -> NoReturn:
 
     pants_server_exe = str(venv_dir / "bin" / "pants")
     # Added in https://github.com/pantsbuild/pants/commit/558d843549204bbe49c351d00cdf23402da262c1
-    native_client_binaries = glob(str(venv_dir / "lib/python*/site-packages/pants/bin/native_client"))
-    pants_client_exe = native_client_binaries[0] if len(native_client_binaries) == 1 else pants_server_exe
+    native_client_binaries = glob(
+        str(venv_dir / "lib/python*/site-packages/pants/bin/native_client")
+    )
+    pants_client_exe = (
+        native_client_binaries[0] if len(native_client_binaries) == 1 else pants_server_exe
+    )
 
     with open(env_file, "a") as fp:
         print(f"VIRTUAL_ENV={venv_dir}", file=fp)
