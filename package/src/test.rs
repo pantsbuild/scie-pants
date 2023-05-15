@@ -96,7 +96,7 @@ pub(crate) fn run_integration_tests(
             env::set_var("PANTS_PANTSD", "False");
         }
 
-        test_pants_sha(scie_pants_scie);
+        test_pants_shas(scie_pants_scie);
         test_python_repos_repos(scie_pants_scie);
         test_initialize_new_pants_project(scie_pants_scie);
         test_set_pants_version(scie_pants_scie);
@@ -294,14 +294,21 @@ fn test_pants_bootstrap_tools(scie_pants_scie: &Path) {
     .unwrap();
 }
 
-fn test_pants_sha(scie_pants_scie: &Path) {
-    integration_test!("Verifying PANTS_SHA is respected");
-    execute(
-        Command::new(scie_pants_scie)
-            .env("PANTS_SHA", "8e381dbf90cae57c5da2b223c577b36ca86cace9")
-            .args(["--no-verify-config", "-V"]),
-    )
-    .unwrap();
+fn test_pants_shas(scie_pants_scie: &Path) {
+    for sha in [
+        // initial
+        "8e381dbf90cae57c5da2b223c577b36ca86cace9",
+        // native-client added to wheel
+        "558d843549204bbe49c351d00cdf23402da262c1",
+    ] {
+        integration_test!("Verifying significant PANTS_SHA: {sha}");
+        execute(
+            Command::new(scie_pants_scie)
+                .env("PANTS_SHA", sha)
+                .args(["--no-verify-config", "-V"]),
+        )
+        .unwrap();
+    }
 }
 
 fn test_python_repos_repos(scie_pants_scie: &Path) {

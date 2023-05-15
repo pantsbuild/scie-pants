@@ -117,13 +117,15 @@ def main() -> NoReturn:
     )
     info(f"New virtual environment successfully created at {venv_dir}.")
 
+    pants_server_exe = str(venv_dir / "bin" / "pants")
     # Added in https://github.com/pantsbuild/pants/commit/558d843549204bbe49c351d00cdf23402da262c1
     native_client_binaries = glob(str(venv_dir / "lib/python*/site-packages/pants/bin/native_client"))
-    maybe_native_client_binary = native_client_binaries[0] if len(native_client_binaries) == 1 else venv_dir / "bin" / "pants"
+    pants_client_exe = native_client_binaries[0] if len(native_client_binaries) == 1 else pants_server_exe
 
     with open(env_file, "a") as fp:
         print(f"VIRTUAL_ENV={venv_dir}", file=fp)
-        print(f"MAYBE_NATIVE_CLIENT_BINARY={maybe_native_client_binary}", file=fp)
+        print(f"PANTS_SERVER_EXE={pants_server_exe}", file=fp)
+        print(f"PANTS_CLIENT_EXE={pants_client_exe}", file=fp)
 
     sys.exit(0)
 
