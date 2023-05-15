@@ -302,8 +302,11 @@ fn test_pants_shas(scie_pants_scie: &Path) {
         "558d843549204bbe49c351d00cdf23402da262c1",
     ] {
         integration_test!("Verifying significant PANTS_SHA: {sha}");
+        let existing_project_dir = create_tempdir().unwrap();
+        touch(&existing_project_dir.path().join("pants.toml")).unwrap();
         execute(
             Command::new(scie_pants_scie)
+                .current_dir(existing_project_dir.path())
                 .env("PANTS_SHA", sha)
                 .args(["--no-verify-config", "-V"]),
         )
