@@ -28,8 +28,8 @@ use crate::utils::fs::{canonicalize, copy, ensure_directory};
 
 const BINARY: &str = "scie-pants";
 
-const PTEX_TAG: &str = "v0.6.0";
-const SCIE_JUMP_TAG: &str = "v0.10.0";
+const PTEX_TAG: &str = "v0.7.0";
+const SCIE_JUMP_TAG: &str = "v0.11.0";
 
 #[derive(Clone)]
 struct SpecifiedPath(PathBuf);

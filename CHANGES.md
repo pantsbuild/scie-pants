@@ -1,5 +1,15 @@
 # Release Notes
 
+## 0.7.0
+
+This release updates `scie-jump` to 0.11.0 and `ptex` to 0.7.0. The `scie-jump` upgrade brings in
+a feature not yet used by `scie-pants`, but that will be used when it transitions from `scie-jump`
+to [`science`](https://github.com/a-scie/lift) for its scie building tool in an upcoming release.
+The `ptex` upgrade brings in many fixes in the underlying `curl` code.
+
+The `scie-jump` release notes are here: https://github.com/a-scie/jump/releases/tag/v0.11.0
+The `ptex` release notes are here: https://github.com/a-scie/ptex/releases/tag/v0.7.0
+
 ## 0.6.1
 
 This release fixes `PANTS_SHA` support to properly cache the resulting Pants install.
