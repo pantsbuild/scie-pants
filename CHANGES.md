@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.7.1
+
+Adds support for using the [Pants native client](https://github.com/pantsbuild/pants/pull/11922),
+if it has been included in the Pants distribution. Pants releases starting with `2.17.0a0` are
+expected to include the native client.
+
 ## 0.7.0
 
 This release updates `scie-jump` to 0.11.0 and `ptex` to 0.7.0. The `scie-jump` upgrade brings in
