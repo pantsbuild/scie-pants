@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
+import stat
 import subprocess
 import sys
 from argparse import ArgumentParser
@@ -70,6 +71,10 @@ def install_pants(
     pip_install("--progress-bar", "off", *pants_requirements)
 
 
+def chmod_plus_x(path: str) -> None:
+    os.chmod(path, os.stat(path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+
 def main() -> NoReturn:
     parser = ArgumentParser()
     parser.add_argument(
@@ -125,6 +130,7 @@ def main() -> NoReturn:
     pants_client_exe = (
         native_client_binaries[0] if len(native_client_binaries) == 1 else pants_server_exe
     )
+    chmod_plus_x(pants_client_exe)
 
     with open(env_file, "a") as fp:
         print(f"VIRTUAL_ENV={venv_dir}", file=fp)

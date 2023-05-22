@@ -128,6 +128,7 @@ pub(crate) fn run_integration_tests(
 
         test_caching_issue_129(scie_pants_scie);
         test_custom_pants_toml_issue_153(scie_pants_scie);
+        test_pants_native_client_perms_issue_182(scie_pants_scie);
     }
 
     // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
@@ -820,5 +821,25 @@ export PANTS_CONFIG_FILES=${{PANTS_TOML}}
     assert_eq!(
         expected_output.trim(),
         String::from_utf8(output.stdout.to_vec()).unwrap().trim()
+    );
+}
+
+fn test_pants_native_client_perms_issue_182(scie_pants_scie: &Path) {
+    integration_test!(
+        "Verifying scie-pants sets executable perms on the Pants native client binary when \
+        present ({issue})",
+        issue = issue_link(182)
+    );
+
+    let pants_release = "2.17.0a1";
+    let output = execute(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .env("PANTS_VERSION", pants_release)
+            .stdout(Stdio::piped()),
+    );
+    assert_eq!(
+        pants_release,
+        decode_output(output.unwrap().stdout).unwrap().trim()
     );
 }
