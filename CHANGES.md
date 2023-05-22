@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.7.2
+
+This release fixes handling of the Pants native client by ensuring it is executable before trying
+to run it.
+
 ## 0.7.1
 
 Adds support for using the [Pants native client](https://github.com/pantsbuild/pants/pull/11922),
