@@ -831,11 +831,22 @@ fn test_pants_native_client_perms_issue_182(scie_pants_scie: &Path) {
         issue = issue_link(182)
     );
 
+    let tmpdir = create_tempdir().unwrap();
+
     let pants_release = "2.17.0a1";
+    let pants_toml_content = format!(
+        r#"
+        [GLOBAL]
+        pants_version = "{pants_release}"
+        "#
+    );
+    let pants_toml = tmpdir.path().join("pants.toml");
+    write_file(&pants_toml, false, pants_toml_content).unwrap();
+
     let output = execute(
         Command::new(scie_pants_scie)
-            .env("PANTS_VERSION", pants_release)
-            .args(["--no-verify-config", "-V"])
+            .arg("-V")
+            .current_dir(&tmpdir)
             .stdout(Stdio::piped()),
     );
     assert_eq!(
