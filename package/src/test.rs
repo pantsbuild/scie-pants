@@ -834,8 +834,8 @@ fn test_pants_native_client_perms_issue_182(scie_pants_scie: &Path) {
     let pants_release = "2.17.0a1";
     let output = execute(
         Command::new(scie_pants_scie)
-            .arg("-V")
             .env("PANTS_VERSION", pants_release)
+            .args(["--no-verify-config", "-V"])
             .stdout(Stdio::piped()),
     );
     assert_eq!(
