@@ -17,7 +17,9 @@ use url::Url;
 use crate::utils::exe::{binary_full_name, execute, prepare_exe};
 use crate::utils::fs::{copy, ensure_directory, path_as_str, rename};
 use crate::utils::os::PATHSEP;
-use crate::{build_step, BINARY, PTEX_TAG, SCIE_JUMP_TAG};
+use crate::{build_step, BINARY, SCIENCE_TAG};
+
+const BOOTSTRAP_PTEX_TAG: &str = "v0.7.0";
 
 const CARGO: &str = env!("CARGO");
 const CARGO_MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
@@ -78,17 +80,12 @@ pub(crate) struct BuildContext {
     pub(crate) cargo_output_root: PathBuf,
     target: String,
     target_prepared: Cell<bool>,
-    ptex_repo: Option<PathBuf>,
-    scie_jump_repo: Option<PathBuf>,
+    science_repo: Option<PathBuf>,
     cargo_output_bin_dir: PathBuf,
 }
 
 impl BuildContext {
-    pub(crate) fn new(
-        target: Option<&str>,
-        ptex_repo: Option<&Path>,
-        scie_jump_repo: Option<&Path>,
-    ) -> Result<Self> {
+    pub(crate) fn new(target: Option<&str>, science_repo: Option<&Path>) -> Result<Self> {
         let target = target.unwrap_or(TARGET).to_string();
         let package_crate_root = PathBuf::from(CARGO_MANIFEST_DIR);
         let workspace_root = package_crate_root
@@ -104,8 +101,7 @@ impl BuildContext {
             cargo_output_root: output_root,
             target,
             target_prepared: Cell::new(false),
-            ptex_repo: ptex_repo.map(Path::to_path_buf),
-            scie_jump_repo: scie_jump_repo.map(Path::to_path_buf),
+            science_repo: science_repo.map(Path::to_path_buf),
             cargo_output_bin_dir: output_bin_dir,
         })
     }
@@ -122,43 +118,34 @@ impl BuildContext {
         Ok(())
     }
 
-    pub(crate) fn obtain_ptex(&self, dest_dir: &Path) -> Result<PathBuf> {
-        if let Some(ref ptex_from) = self.ptex_repo {
+    pub(crate) fn obtain_science(&self, dest_dir: &Path) -> Result<PathBuf> {
+        if let Some(ref science_from) = self.science_repo {
             self.ensure_target()?;
             build_step!(
-                "Building the `ptex` binary from the source at {ptex_from}",
-                ptex_from = ptex_from.display()
+                "Building the `science` binary from the source at {science_from}",
+                science_from = science_from.display()
             );
-            build_a_scie_project(ptex_from, &self.target, dest_dir)?;
+            execute(
+                Command::new("nox")
+                    .args(["-e", "package"])
+                    .env(
+                        "SCIENCE_LIFT_BUILD_DEST_DIR",
+                        format!("{dest_dir}", dest_dir = dest_dir.display()),
+                    )
+                    .current_dir(science_from),
+            )?;
         } else {
-            fetch_a_scie_project(self, "ptex", PTEX_TAG, "ptex", dest_dir)?;
+            fetch_a_scie_project(self, "lift", SCIENCE_TAG, "science", dest_dir)?;
         }
-        let ptex_exe_path = dest_dir.join(binary_full_name("ptex"));
-        prepare_exe(&ptex_exe_path)?;
-        let ptex_exe = dest_dir.join("ptex");
-        rename(&ptex_exe_path, &ptex_exe)?;
-        Ok(ptex_exe)
-    }
-
-    pub(crate) fn obtain_scie_jump(&self, dest_dir: &Path) -> Result<PathBuf> {
-        if let Some(ref scie_jump_from) = self.scie_jump_repo {
-            self.ensure_target()?;
-            build_step!(
-                "Building the `scie-jump` binary from the source at {scie_jump_from}",
-                scie_jump_from = scie_jump_from.display()
-            );
-            build_a_scie_project(scie_jump_from, &self.target, dest_dir)?;
-        } else {
-            fetch_a_scie_project(self, "jump", SCIE_JUMP_TAG, "scie-jump", dest_dir)?;
-        }
-        let scie_jump_exe_path = dest_dir.join(binary_full_name("scie-jump"));
-        prepare_exe(&scie_jump_exe_path)?;
-        let scie_jump_exe = dest_dir.join("scie_jump");
-        rename(&scie_jump_exe_path, &scie_jump_exe)?;
-        Ok(scie_jump_exe)
+        let science_exe_path = dest_dir.join(binary_full_name("science"));
+        prepare_exe(&science_exe_path)?;
+        let science_exe = dest_dir.join("science");
+        rename(&science_exe_path, &science_exe)?;
+        Ok(science_exe)
     }
 
     pub(crate) fn build_scie_pants(&self) -> Result<PathBuf> {
+        build_step!("Building the scie-pants Rust binary.");
         execute(
             Command::new(CARGO)
                 .args([
@@ -184,23 +171,7 @@ impl BuildContext {
 }
 
 pub(crate) struct SkinnyScieTools {
-    pub(crate) ptex: PathBuf,
-    pub(crate) scie_jump: PathBuf,
-}
-
-fn build_a_scie_project(a_scie_project_repo: &Path, target: &str, dest_dir: &Path) -> Result<()> {
-    execute(Command::new(CARGO).args([
-        "run",
-        "--manifest-path",
-        path_as_str(&a_scie_project_repo.join("Cargo.toml"))?,
-        "-p",
-        "package",
-        "--",
-        "--target",
-        target,
-        path_as_str(dest_dir)?,
-    ]))
-    .map(|_| ())
+    pub(crate) science: PathBuf,
 }
 
 fn fetch_a_scie_project(
@@ -240,7 +211,7 @@ fn fetch_a_scie_project(
                         "--git",
                         "https://github.com/a-scie/ptex",
                         "--tag",
-                        PTEX_TAG,
+                        BOOTSTRAP_PTEX_TAG,
                         "--root",
                         path_as_str(&build_context.cargo_output_root)?,
                         "--target",
@@ -283,10 +254,8 @@ fn fetch_a_scie_project(
 pub(crate) fn fetch_skinny_scie_tools(build_context: &BuildContext) -> Result<SkinnyScieTools> {
     let skinny_scies = build_context.cargo_output_root.join("skinny-scies");
     ensure_directory(&skinny_scies, true)?;
-    let ptex_exe = build_context.obtain_ptex(&skinny_scies)?;
-    let scie_jump_exe = build_context.obtain_scie_jump(&skinny_scies)?;
+    let science_exe = build_context.obtain_science(&skinny_scies)?;
     Ok(SkinnyScieTools {
-        ptex: ptex_exe,
-        scie_jump: scie_jump_exe,
+        science: science_exe,
     })
 }

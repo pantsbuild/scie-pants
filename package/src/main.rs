@@ -16,20 +16,20 @@ use std::io::Write;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use clap::{arg, command, Parser, Subcommand};
 use termcolor::{Color, WriteColor};
+use utils::fs;
 
-use crate::scie_pants::build_scie_pants_scie;
+use crate::scie_pants::{build_scie_pants_scie, SciePantsBuild};
 use crate::test::run_integration_tests;
 use crate::tools_pex::build_tools_pex;
-use crate::utils::build::{check_sha256, fetch_skinny_scie_tools, fingerprint, BuildContext};
-use crate::utils::fs::{canonicalize, copy, ensure_directory};
+use crate::utils::build::{check_sha256, fetch_skinny_scie_tools, BuildContext};
+use crate::utils::fs::{base_name, canonicalize, copy, ensure_directory};
 
 const BINARY: &str = "scie-pants";
 
-const PTEX_TAG: &str = "v0.7.0";
-const SCIE_JUMP_TAG: &str = "v0.11.0";
+const SCIENCE_TAG: &str = "v0.1.2";
 
 #[derive(Clone)]
 struct SpecifiedPath(PathBuf);
@@ -70,8 +70,16 @@ impl Display for SpecifiedPath {
 enum Commands {
     /// Builds the `tools.pex` used by the scie-pants scie to perform Pants installs.
     Tools,
+    /// Builds the `scie-pants` Rust binary.
+    SciePants,
     /// Builds the `scie-pants` scie.
     Scie {
+        #[arg(
+            long,
+            help = "The location of the pre-built `scie-pants` Rust binary to use. By default, the \
+            `scie-pants` binary is built fresh."
+        )]
+        scie_pants: Option<PathBuf>,
         #[arg(
             long,
             help = "The location of the pre-built tools.pex to use. By default, the tools.pex is \
@@ -118,19 +126,11 @@ struct Args {
     #[arg(
         long,
         help = format!(
-            "Instead of using the released {PTEX_TAG} ptex, package ptex from the ptex project \
-            repo at this directory."
+            "Instead of using the released {SCIENCE_TAG} science, package science from the science \
+            project repo at this directory."
         )
     )]
-    ptex: Option<PathBuf>,
-    #[arg(
-        long,
-        help = format!(
-            "Instead of using the released {SCIE_JUMP_TAG} scie-jump, package the scie-jump from \
-            the scie-jump project repo at this directory."
-        )
-    )]
-    scie_jump: Option<PathBuf>,
+    science: Option<PathBuf>,
     #[arg(
         long,
         help = "Refresh the tools lock before building the tools.pex",
@@ -147,7 +147,7 @@ struct Args {
     command: Commands,
 }
 
-fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathBuf>> {
+fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<SciePantsBuild>> {
     match &args.command {
         Commands::Test {
             tools_pex: Some(tools_pex),
@@ -171,7 +171,12 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
             tools_pex_mismatch_warn,
         } => {
             let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            let tools_pex = build_tools_pex(build_context, &skinny_scie_tools, args.update_lock)?;
+            let tools_pex = build_tools_pex(
+                build_context,
+                &skinny_scie_tools,
+                args.update_lock,
+                args.dest_dir.as_path(),
+            )?;
             run_integration_tests(
                 &build_context.workspace_root,
                 &tools_pex,
@@ -187,12 +192,14 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
             check,
             tools_pex_mismatch_warn,
         } => {
+            let scie_pants = build_context.build_scie_pants()?;
             let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            let scie_pants = build_scie_pants_scie(build_context, &skinny_scie_tools, tools_pex)?;
+            let scie_pants =
+                build_scie_pants_scie(build_context, &skinny_scie_tools, &scie_pants, tools_pex)?;
             run_integration_tests(
                 &build_context.workspace_root,
                 &canonicalize(tools_pex)?,
-                &scie_pants,
+                &scie_pants.exe,
                 *check,
                 *tools_pex_mismatch_warn,
             )?;
@@ -204,44 +211,101 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<PathB
             check,
             tools_pex_mismatch_warn,
         } => {
+            let scie_pants = build_context.build_scie_pants()?;
             let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            let tools_pex = build_tools_pex(build_context, &skinny_scie_tools, args.update_lock)?;
-            let scie_pants = build_scie_pants_scie(build_context, &skinny_scie_tools, &tools_pex)?;
+            let tools_pex = build_tools_pex(
+                build_context,
+                &skinny_scie_tools,
+                args.update_lock,
+                args.dest_dir.as_path(),
+            )?;
+            let scie_pants =
+                build_scie_pants_scie(build_context, &skinny_scie_tools, &scie_pants, &tools_pex)?;
             run_integration_tests(
                 &build_context.workspace_root,
                 &tools_pex,
-                &scie_pants,
+                &scie_pants.exe,
                 *check,
                 *tools_pex_mismatch_warn,
             )?;
             Ok(Some(scie_pants))
         }
-        Commands::Scie { tools_pex: None } => {
+        Commands::Scie {
+            scie_pants: None,
+            tools_pex: None,
+        } => {
+            let scie_pants = build_context.build_scie_pants()?;
             let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            let tools_pex = build_tools_pex(build_context, &skinny_scie_tools, args.update_lock)?;
+            let tools_pex = build_tools_pex(
+                build_context,
+                &skinny_scie_tools,
+                args.update_lock,
+                args.dest_dir.as_path(),
+            )?;
             Ok(Some(build_scie_pants_scie(
                 build_context,
                 &skinny_scie_tools,
+                &scie_pants,
                 &tools_pex,
             )?))
         }
         Commands::Scie {
+            scie_pants: None,
+            tools_pex: Some(tools_pex),
+        } => {
+            let scie_pants = build_context.build_scie_pants()?;
+            let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
+            Ok(Some(build_scie_pants_scie(
+                build_context,
+                &skinny_scie_tools,
+                &scie_pants,
+                tools_pex,
+            )?))
+        }
+        Commands::Scie {
+            scie_pants: Some(scie_pants),
+            tools_pex: None,
+        } => {
+            let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
+            let tools_pex = build_tools_pex(
+                build_context,
+                &skinny_scie_tools,
+                args.update_lock,
+                args.dest_dir.as_path(),
+            )?;
+            Ok(Some(build_scie_pants_scie(
+                build_context,
+                &skinny_scie_tools,
+                scie_pants,
+                &tools_pex,
+            )?))
+        }
+        Commands::Scie {
+            scie_pants: Some(scie_pants),
             tools_pex: Some(tools_pex),
         } => {
             let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
             Ok(Some(build_scie_pants_scie(
                 build_context,
                 &skinny_scie_tools,
+                scie_pants,
                 tools_pex,
             )?))
         }
+        Commands::SciePants => {
+            let scie_pants = build_context.build_scie_pants()?;
+            copy(&scie_pants, &args.dest_dir.join(base_name(&scie_pants)?))?;
+            Ok(None)
+        }
         Commands::Tools => {
             let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            Ok(Some(build_tools_pex(
+            build_tools_pex(
                 build_context,
                 &skinny_scie_tools,
                 args.update_lock,
-            )?))
+                args.dest_dir.as_path(),
+            )?;
+            Ok(None)
         }
     }
 }
@@ -259,35 +323,18 @@ fn main() -> Result<()> {
         );
     }
 
-    let build_context = BuildContext::new(
-        args.target.as_deref(),
-        args.ptex.as_deref(),
-        args.scie_jump.as_deref(),
-    )?;
-    if let Some(output_file) = maybe_build(&args, &build_context)? {
-        let dest_file_name = output_file
-            .file_name()
-            .with_context(|| format!("Failed to determine the basename of {output_file:?}"))?
-            .to_str()
-            .with_context(|| {
-                format!("Failed to interpret the basename of {output_file:?} as a UTF-8 string")
-            })?;
-        let dest_file = dest_dir.join(dest_file_name);
+    let build_context = BuildContext::new(args.target.as_deref(), args.science.as_deref())?;
+    if let Some(scie_pants) = maybe_build(&args, &build_context)? {
         ensure_directory(dest_dir, false)?;
-        copy(&output_file, &dest_file)?;
 
-        let fingerprint_file = dest_file.with_file_name(format!("{dest_file_name}.sha256"));
-        let dest_file_digest = fingerprint(&dest_file)?;
-        std::fs::write(
-            &fingerprint_file,
-            format!("{dest_file_digest} *{dest_file_name}\n"),
-        )
-        .with_context(|| {
-            format!(
-                "Failed to write fingerprint file {fingerprint_file}",
-                fingerprint_file = fingerprint_file.display()
-            )
-        })?;
+        let dest_file_name = fs::base_name(&scie_pants.exe)?;
+        let dest_file = dest_dir.join(dest_file_name);
+        copy(&scie_pants.exe, &dest_file)?;
+        copy(
+            &scie_pants.sha256,
+            &dest_dir.join(fs::base_name(&scie_pants.sha256)?),
+        )?;
+
         check_sha256(&dest_file)?;
 
         log!(

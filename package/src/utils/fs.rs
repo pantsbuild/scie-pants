@@ -142,6 +142,13 @@ pub(crate) fn canonicalize(path: &Path) -> Result<PathBuf> {
     })
 }
 
+pub(crate) fn base_name(path: &Path) -> Result<&str> {
+    path.file_name()
+        .with_context(|| format!("Failed to determine the basename of {path:?}"))?
+        .to_str()
+        .with_context(|| format!("Failed to interpret the basename of {path:?} as a UTF-8 string"))
+}
+
 pub(crate) fn dev_cache_dir() -> Result<PathBuf> {
     if let Ok(cache_dir) = env::var("SCIE_PANTS_DEV_CACHE") {
         let cache_path = PathBuf::from(cache_dir);

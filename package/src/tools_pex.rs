@@ -3,7 +3,7 @@
 
 use std::env;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::Result;
@@ -12,29 +12,30 @@ use termcolor::WriteColor;
 use crate::build_step;
 use crate::utils::build::{BuildContext, SkinnyScieTools};
 use crate::utils::exe::execute;
-use crate::utils::fs::{ensure_directory, hardlink, path_as_str};
+use crate::utils::fs::{base_name, copy, ensure_directory, hardlink, path_as_str};
 
 pub(crate) fn build_tools_pex(
     build_context: &BuildContext,
     skinny_scie_tools: &SkinnyScieTools,
     update_lock: bool,
+    dest_dir: &Path,
 ) -> Result<PathBuf> {
-    build_step!("Executing scie-jump boot-pack of the `pbt` helper binary");
+    build_step!("Executing science build of the `pbt` helper binary");
     let pbt_package_dir = build_context.cargo_output_root.join("pbt");
     ensure_directory(&pbt_package_dir, true)?;
 
     let pbt_exe = pbt_package_dir
         .join("pbt")
         .with_extension(env::consts::EXE_EXTENSION);
-    let scie_jump_dst = pbt_package_dir.join(skinny_scie_tools.scie_jump.file_name().unwrap());
-    let ptex_dst = pbt_package_dir.join(skinny_scie_tools.ptex.file_name().unwrap());
-    let pbt_manifest = build_context.package_crate_root.join("pbt.lift.json");
-    let pbt_manifest_dst = pbt_package_dir.join("lift.json");
-    hardlink(&skinny_scie_tools.scie_jump, &scie_jump_dst)?;
-    hardlink(&skinny_scie_tools.ptex, &ptex_dst)?;
+    let pbt_manifest = build_context.package_crate_root.join("pbt.toml");
+    let pbt_manifest_dst = pbt_package_dir.join("lift.toml");
     hardlink(&pbt_manifest, &pbt_manifest_dst)?;
 
-    execute(Command::new(&skinny_scie_tools.scie_jump).current_dir(&pbt_package_dir))?;
+    execute(
+        Command::new(&skinny_scie_tools.science)
+            .args(["lift", "build"])
+            .current_dir(&pbt_package_dir),
+    )?;
 
     let tools_path = build_context.workspace_root.join("tools");
     let lock_path = tools_path.join("lock.json");
@@ -104,5 +105,8 @@ pub(crate) fn build_tools_pex(
         ),
     )?;
 
-    Ok(tools_pex_path)
+    let tools_pex_dest = dest_dir.join(base_name(&tools_pex_path)?);
+    ensure_directory(dest_dir, false)?;
+    copy(&tools_pex_path, &tools_pex_dest)?;
+    Ok(tools_pex_dest)
 }
