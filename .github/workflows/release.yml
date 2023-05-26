@@ -14,14 +14,14 @@ jobs:
   org-check:
     name: Check GitHub Organization
     if: ${{ github.repository_owner == 'pantsbuild' }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Noop
         run: "true"
   determine-tag:
     name: Determine the release tag to operate against.
     needs: org-check
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       release-tag: ${{ steps.determine-tag.outputs.release-tag }}
       release-version: ${{ steps.determine-tag.outputs.release-version }}
@@ -55,10 +55,10 @@ jobs:
         with:
           ref: ${{ needs.determine-tag.outputs.release-tag }}
       - name: Package scie-pants ${{ needs.determine-tag.outputs.release-tag }} binary
-        if: ${{ matrix.os != 'ubuntu-20.04' }}
+        if: ${{ matrix.os != 'ubuntu-22.04' }}
         run: cargo run -p package -- --dest-dir dist/ scie
       - name: Package scie-pants ${{ needs.determine-tag.outputs.release-tag }} binary
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: |
           mkdir dist
           cargo run -p package -- --dest-dir dist/ tools
@@ -97,7 +97,7 @@ jobs:
     needs:
       - determine-tag
       - github-release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Trigger aarch64 release
         uses: CircleCI-Public/trigger-circleci-pipeline-action@v1.0.5
@@ -111,7 +111,7 @@ jobs:
       - determine-tag
       - github-release
       - aarch64-release-trigger
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Post Release Announcement to Pants Slack `#announce`
         id: slack
@@ -146,7 +146,7 @@ jobs:
     needs:
       - determine-tag
       - github-release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Bump `scie-pants` version in Casks/pants.rb to ${{ needs.determine-tag.outputs.release-tag }}
         uses: actions/github-script@v6
