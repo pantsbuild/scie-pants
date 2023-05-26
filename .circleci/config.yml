@@ -92,7 +92,7 @@ jobs:
       - run:
           name: Upload scie-pants-linux-aarch64 to << pipeline.parameters.GHA_Meta >> Github Release
           command: |
-            gh release upload << pipeline.parameters.GHA_Meta >> dist/scie-pants* \
+            gh release upload << pipeline.parameters.GHA_Meta >> dist/scie-pants-* \
               --repo pantsbuild/scie-pants
 
 workflows:

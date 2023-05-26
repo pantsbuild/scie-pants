@@ -89,7 +89,7 @@ jobs:
           body_path: ${{ steps.prepare-changelog.outputs.changelog-file }}
           draft: false
           prerelease: false
-          files: dist/scie-pants*
+          files: dist/scie-pants-*
           fail_on_unmatched_files: true
           discussion_category_name: Announcements
   aarch64-release-trigger:
