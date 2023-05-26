@@ -1,0 +1,229 @@
+[lift]
+name = "scie-pants"
+description = "Isolates your Pants from the elements."
+load_dotenv = true
+
+[lift.app_info]
+repo = "https://github.com/pantsbuild/scie-pants"
+
+[lift.ptex]
+id = "ptex"
+version = "0.7.0"
+lazy_argv1 = "{scie.env.PANTS_BOOTSTRAP_URLS={scie.lift}}"
+
+[lift.scie-jump]
+version = "0.11.0"
+
+[[lift.interpreters]]
+id = "cpython38"
+provider = "PythonBuildStandalone"
+release = "20230507"
+lazy = true
+version = "3.8.16"
+
+[[lift.interpreters]]
+id = "cpython39"
+provider = "PythonBuildStandalone"
+release = "20230507"
+lazy = true
+version = "3.9.16"
+
+[[lift.interpreter_groups]]
+id = "cpython"
+selector = "{scie.bindings.configure:PYTHON}"
+members = [
+    "cpython38",
+    "cpython39",
+]
+
+[[lift.files]]
+# N.B.: We name the scie-pants binary scie-pants.bin since the scie itself is named scie-pants
+# which would conflict when packaging.
+name = "scie-pants.bin"
+executable = true
+
+[[lift.files]]
+name = "tools.pex"
+
+# Boot
+[[lift.commands]]
+description = "Detects the current Pants installation and launches it."
+exe = "{scie-pants.bin}"
+
+# Run Pants
+[[lift.commands]]
+name = "pants"
+description = "Runs a hermetic Pants installation."
+exe = "{scie.bindings.install:PANTS_CLIENT_EXE}"
+args = [
+    "{scie.bindings.configure:PANTS_SHA_FIND_LINKS}",
+]
+
+[lift.commands.env.default]
+PANTS_BUILDROOT_OVERRIDE = "{scie.bindings.configure:PANTS_BUILDROOT_OVERRIDE}"
+
+[lift.commands.env.replace]
+PANTS_VERSION = "{scie.bindings.configure:PANTS_VERSION}"
+_PANTS_SERVER_EXE = "{scie.bindings.install:PANTS_SERVER_EXE}"
+
+# Run Pants Debug Mode
+[[lift.commands]]
+name = "pants-debug"
+description = "Runs a hermetic Pants installation with a debug server for debugging Pants code."
+exe = "{scie.bindings.install:VIRTUAL_ENV}/bin/pants"
+args = [
+    "-c",
+    """\
+sys = __import__("sys")
+sys.path.pop(0)
+print(
+    "Launching debugpy server at '127.0.0.1:5678' and waiting for client connection.",
+    file=sys.stderr
+)
+del sys
+__import__("debugpy.server.cli").server.cli.main()
+""",
+    "--listen",
+    "127.0.0.1:5678",
+    "--wait-for-client",
+    "{scie.bindings.install:VIRTUAL_ENV}/bin/pants",
+    "{scie.bindings.configure:PANTS_SHA_FIND_LINKS}",
+]
+
+[lift.commands.env.default]
+PANTS_BUILDROOT_OVERRIDE = "{scie.bindings.configure:PANTS_BUILDROOT_OVERRIDE}"
+
+[lift.commands.env.replace]
+PANTS_VERSION = "{scie.bindings.configure:PANTS_VERSION}"
+
+
+# Bootstrap Tools
+[[lift.commands]]
+name = "bootstrap-tools"
+description = "Introspection tools for the Pants bootstrap process."
+exe = "#{cpython:python}"
+args = [
+    "{tools.pex}",
+    "bootstrap-tools",
+    "--python-distribution-hash",
+    "{scie.files:hash.#{cpython}}",
+    "--pants-version",
+    "{scie.bindings.configure:PANTS_VERSION}",
+]
+env.remove_re = [
+    "PEX_.*",
+]
+
+[lift.commands.env.replace]
+PEX_ROOT = "{scie.bindings}/pex_root"
+PEX_PYTHON_PATH = "#{cpython:python}"
+
+# Self Update
+[[lift.commands]]
+name = "update"
+description = "Update scie-pants."
+exe = "#{cpython39:python}"
+args = [
+    "{tools.pex}",
+    "update-scie-pants",
+    "--ptex-path",
+    "{ptex}",
+    "--platform",
+    "{scie.platform}",
+    "--base-dir",
+    "{scie.bindings}",
+    "--scie",
+    "{scie}",
+    "--current-version",
+    "{scie.bindings.scie-pants-info:VERSION}",
+    "--github-api-bearer-token",
+    "{scie.env.PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN}",
+]
+env.remove_re = [
+    "PEX_.*",
+]
+
+[lift.commands.env.replace]
+PEX_ROOT = "{scie.bindings}/pex_root"
+PEX_PYTHON_PATH = "#{cpython39:python}"
+
+# Self Info
+[[lift.bindings]]
+name = "scie-pants-info"
+description = "Records information about the current scie-pants binary."
+exe = "#{cpython39:python}"
+args = [
+    "{tools.pex}",
+    "record-scie-pants-info",
+    "--base-dir",
+    "{scie.bindings}",
+    "--scie",
+    "{scie}",
+]
+env.remove_re = [
+    "PEX_.*",
+]
+
+[lift.bindings.env.replace]
+PEX_ROOT = "{scie.bindings}/pex_root"
+PEX_PYTHON_PATH = "#{cpython39:python}"
+
+# Configure Pants
+[[lift.bindings]]
+name = "configure"
+description = "Prompts the user for missing Pants configuration if needed."
+exe = "#{cpython39:python}"
+args = [
+    "{tools.pex}",
+    "configure-pants",
+    "--ptex-path",
+    "{ptex}",
+    "--pants-version",
+    "{scie.env.PANTS_VERSION}",
+    "--pants-sha",
+    "{scie.env.PANTS_SHA}",
+    "--pants-config",
+    "{scie.env.PANTS_TOML}",
+    "--github-api-bearer-token",
+    "{scie.env.PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN}",
+    "{scie.bindings}",
+]
+env.remove_re = [
+    "PEX_.*",
+]
+
+[lift.bindings.env.default]
+PANTS_VERSION_PROMPT_SALT = "{scie.env.PANTS_VERSION_PROMPT_SALT}"
+
+[lift.bindings.env.replace]
+PEX_ROOT = "{scie.bindings}/pex_root"
+PEX_PYTHON_PATH = "#{cpython39:python}"
+
+# Install Pants
+[[lift.bindings]]
+name = "install"
+description = """\
+Installs a hermetic Pants environment from PyPI or binaries.pantsbuild.org with optional debug \
+support.\
+"""
+exe = "#{cpython:python}"
+args = [
+    "{tools.pex}",
+    "install-pants",
+    "--pants-version",
+    "{scie.bindings.configure:PANTS_VERSION}",
+    "--find-links",
+    "{scie.bindings.configure:FIND_LINKS}",
+    "--debug",
+    "{scie.env.PANTS_DEBUG}",
+    "--debugpy-requirement",
+    "{scie.env.PANTS_DEBUGPY_VERSION}",
+    "{scie.bindings}",
+]
+env.remove_re = [
+    "PEX_.*",
+]
+
+[lift.bindings.env.replace]
+PEX_ROOT = "{scie.bindings}/pex_root"
+PEX_PYTHON_PATH = "#{cpython:python}"

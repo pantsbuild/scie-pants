@@ -654,11 +654,15 @@ fn test_self_downgrade(scie_pants_scie: &Path) {
     integration_test!("Verifying downgrade works");
     // Additionally, we exercise using a relative path to the scie-jump binary which triggered
     // https://github.com/pantsbuild/scie-pants/issues/38 in the past.
+    let tmpdir = create_tempdir().unwrap();
+    let scie_pants_basename = scie_pants_scie.file_name().unwrap();
+    let scie_pants = tmpdir.path().join(scie_pants_basename);
+    copy(scie_pants_scie, &scie_pants).unwrap();
     execute(
-        Command::new(PathBuf::from(".").join(scie_pants_scie.file_name().unwrap()))
+        Command::new(PathBuf::from(".").join(scie_pants_basename))
             .env("SCIE_BOOT", "update")
             .arg("0.1.8")
-            .current_dir(scie_pants_scie.parent().unwrap()),
+            .current_dir(tmpdir.path()),
     )
     .unwrap();
 }
