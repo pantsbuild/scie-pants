@@ -145,6 +145,7 @@ impl BuildContext {
     }
 
     pub(crate) fn build_scie_pants(&self) -> Result<PathBuf> {
+        build_step!("Building the scie-pants Rust binary.");
         execute(
             Command::new(CARGO)
                 .args([

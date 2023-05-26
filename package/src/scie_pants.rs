@@ -18,14 +18,11 @@ pub(crate) struct SciePantsBuild {
 pub(crate) fn build_scie_pants_scie(
     build_context: &BuildContext,
     skinny_scie_tools: &SkinnyScieTools,
+    scie_pants_exe: &Path,
     tools_pex_file: &Path,
 ) -> Result<SciePantsBuild> {
-    build_step!("Building the scie-pants Rust binary.");
-    let scie_pants_exe = build_context.build_scie_pants()?;
-
     build_step!("Building the `scie-pants` scie");
 
-    // Setup the scie-pants science build.
     let scie_pants_package_dir = build_context.cargo_output_root.join("scie-pants");
     ensure_directory(&scie_pants_package_dir, true)?;
 
@@ -45,7 +42,7 @@ pub(crate) fn build_scie_pants_scie(
                 "--file",
                 &format!(
                     "scie-pants.bin={scie_pants_exe}",
-                    scie_pants_exe = path_as_str(&scie_pants_exe)?
+                    scie_pants_exe = path_as_str(scie_pants_exe)?
                 ),
                 "--file",
                 &format!(
