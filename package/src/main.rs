@@ -163,7 +163,12 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<ScieP
             tools_pex_mismatch_warn,
         } => {
             let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            let tools_pex = build_tools_pex(build_context, &skinny_scie_tools, args.update_lock)?;
+            let tools_pex = build_tools_pex(
+                build_context,
+                &skinny_scie_tools,
+                args.update_lock,
+                args.dest_dir.as_path(),
+            )?;
             run_integration_tests(
                 &build_context.workspace_root,
                 &tools_pex,
@@ -197,7 +202,12 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<ScieP
             tools_pex_mismatch_warn,
         } => {
             let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            let tools_pex = build_tools_pex(build_context, &skinny_scie_tools, args.update_lock)?;
+            let tools_pex = build_tools_pex(
+                build_context,
+                &skinny_scie_tools,
+                args.update_lock,
+                args.dest_dir.as_path(),
+            )?;
             let scie_pants = build_scie_pants_scie(build_context, &skinny_scie_tools, &tools_pex)?;
             run_integration_tests(
                 &build_context.workspace_root,
@@ -210,7 +220,12 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<ScieP
         }
         Commands::Scie { tools_pex: None } => {
             let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            let tools_pex = build_tools_pex(build_context, &skinny_scie_tools, args.update_lock)?;
+            let tools_pex = build_tools_pex(
+                build_context,
+                &skinny_scie_tools,
+                args.update_lock,
+                args.dest_dir.as_path(),
+            )?;
             Ok(Some(build_scie_pants_scie(
                 build_context,
                 &skinny_scie_tools,
@@ -229,7 +244,12 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<ScieP
         }
         Commands::Tools => {
             let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            build_tools_pex(build_context, &skinny_scie_tools, args.update_lock)?;
+            build_tools_pex(
+                build_context,
+                &skinny_scie_tools,
+                args.update_lock,
+                args.dest_dir.as_path(),
+            )?;
             Ok(None)
         }
     }

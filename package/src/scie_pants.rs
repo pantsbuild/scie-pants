@@ -7,7 +7,7 @@ use termcolor::WriteColor;
 
 use crate::utils::build::{BuildContext, SkinnyScieTools};
 use crate::utils::exe::{binary_full_name, execute};
-use crate::utils::fs::ensure_directory;
+use crate::utils::fs::{ensure_directory, path_as_str};
 use crate::{build_step, BINARY};
 
 pub(crate) struct SciePantsBuild {
@@ -45,26 +45,20 @@ pub(crate) fn build_scie_pants_scie(
                 "--file",
                 &format!(
                     "scie-pants.bin={scie_pants_exe}",
-                    scie_pants_exe = scie_pants_exe.display()
+                    scie_pants_exe = path_as_str(&scie_pants_exe)?
                 ),
                 "--file",
                 &format!(
                     "tools.pex={tools_pex}",
-                    tools_pex = tools_pex_file.display()
+                    tools_pex = path_as_str(tools_pex_file)?
                 ),
                 "build",
                 "--dest-dir",
-                &format!(
-                    "{scie_pants_package_dir}",
-                    scie_pants_package_dir = scie_pants_package_dir.display()
-                ),
+                path_as_str(&scie_pants_package_dir)?,
                 "--use-platform-suffix",
                 "--hash",
                 "sha256",
-                &format!(
-                    "{scie_pants_manifest}",
-                    scie_pants_manifest = scie_pants_manifest.display()
-                ),
+                path_as_str(&scie_pants_manifest)?,
             ])
             .current_dir(&build_context.workspace_root),
     )?;
