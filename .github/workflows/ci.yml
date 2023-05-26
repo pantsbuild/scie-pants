@@ -52,7 +52,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ env.SCIE_PANTS_DEV_CACHE }}
-          key: ${{ runner.os }}-${{ runner.arch }}-scie-pants-v2
+          key: ${{ runner.os }}-${{ runner.arch }}-scie-pants-v3
       - name: Build, Package & Integration Tests
         if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64'}}
         run: |
