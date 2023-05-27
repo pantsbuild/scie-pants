@@ -47,7 +47,6 @@ jobs:
       - run:
           name: Package scie-pants
           command: |
-            mkdir dist
             cargo run -p package -- --dest-dir dist/ tools
             docker run --rm \
               -v $PWD:/code \
