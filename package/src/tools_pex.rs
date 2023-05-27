@@ -10,13 +10,13 @@ use anyhow::Result;
 use termcolor::WriteColor;
 
 use crate::build_step;
-use crate::utils::build::{BuildContext, SkinnyScieTools};
+use crate::utils::build::{BuildContext, Science};
 use crate::utils::exe::execute;
 use crate::utils::fs::{base_name, copy, ensure_directory, hardlink, path_as_str};
 
 pub(crate) fn build_tools_pex(
     build_context: &BuildContext,
-    skinny_scie_tools: &SkinnyScieTools,
+    science: &Science,
     update_lock: bool,
     dest_dir: &Path,
 ) -> Result<PathBuf> {
@@ -32,7 +32,8 @@ pub(crate) fn build_tools_pex(
     hardlink(&pbt_manifest, &pbt_manifest_dst)?;
 
     execute(
-        Command::new(&skinny_scie_tools.science)
+        science
+            .command()
             .args(["lift", "build"])
             .current_dir(&pbt_package_dir),
     )?;
