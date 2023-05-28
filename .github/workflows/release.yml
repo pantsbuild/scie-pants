@@ -60,7 +60,6 @@ jobs:
       - name: Package scie-pants ${{ needs.determine-tag.outputs.release-tag }} binary
         if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: |
-          mkdir dist
           cargo run -p package -- --dest-dir dist/ tools
           docker run --rm \
             -v $PWD:/code \

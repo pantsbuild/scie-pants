@@ -1,11 +1,10 @@
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use anyhow::Result;
 use termcolor::WriteColor;
 
-use crate::utils::build::{BuildContext, SkinnyScieTools};
+use crate::utils::build::{BuildContext, Science};
 use crate::utils::exe::{binary_full_name, execute};
 use crate::utils::fs::{ensure_directory, path_as_str};
 use crate::{build_step, BINARY};
@@ -17,7 +16,7 @@ pub(crate) struct SciePantsBuild {
 
 pub(crate) fn build_scie_pants_scie(
     build_context: &BuildContext,
-    skinny_scie_tools: &SkinnyScieTools,
+    science: &Science,
     scie_pants_exe: &Path,
     tools_pex_file: &Path,
 ) -> Result<SciePantsBuild> {
@@ -35,7 +34,8 @@ pub(crate) fn build_scie_pants_scie(
     // N.B.: We name the scie-pants binary scie-pants.bin since the scie itself is named scie-pants
     // which would conflict when packaging.
     execute(
-        Command::new(&skinny_scie_tools.science)
+        science
+            .command()
             .args([
                 "lift",
                 "--include-provenance",

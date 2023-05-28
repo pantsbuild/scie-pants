@@ -24,7 +24,7 @@ use utils::fs;
 use crate::scie_pants::{build_scie_pants_scie, SciePantsBuild};
 use crate::test::run_integration_tests;
 use crate::tools_pex::build_tools_pex;
-use crate::utils::build::{check_sha256, fetch_skinny_scie_tools, BuildContext};
+use crate::utils::build::{check_sha256, fetch_science, BuildContext};
 use crate::utils::fs::{base_name, canonicalize, copy, ensure_directory};
 
 const BINARY: &str = "scie-pants";
@@ -147,150 +147,65 @@ struct Args {
     command: Commands,
 }
 
+fn maybe_build_components(
+    build_context: &BuildContext,
+    scie_pants_exe: &Option<PathBuf>,
+    tools_pex_file: &Option<PathBuf>,
+    update_lock: bool,
+    dest_dir: &Path,
+) -> Result<(SciePantsBuild, PathBuf)> {
+    let scie_pants_exe = if let Some(scie_pants_exe) = scie_pants_exe.to_owned() {
+        scie_pants_exe
+    } else {
+        build_context.build_scie_pants()?
+    };
+    let science = fetch_science(build_context)?;
+    let tools_pex_file = if let Some(tools_pex_file) = tools_pex_file.to_owned() {
+        tools_pex_file
+    } else {
+        build_tools_pex(build_context, &science, update_lock, dest_dir)?
+    };
+    let scie_pants_build =
+        build_scie_pants_scie(build_context, &science, &scie_pants_exe, &tools_pex_file)?;
+    Ok((scie_pants_build, tools_pex_file))
+}
+
 fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<SciePantsBuild>> {
     match &args.command {
         Commands::Test {
-            tools_pex: Some(tools_pex),
-            scie_pants: Some(scie_pants),
+            tools_pex,
+            scie_pants,
             check,
             tools_pex_mismatch_warn,
         } => {
-            run_integration_tests(
-                &build_context.workspace_root,
-                &canonicalize(tools_pex)?,
-                &canonicalize(scie_pants)?,
-                *check,
-                *tools_pex_mismatch_warn,
-            )?;
-            Ok(None)
-        }
-        Commands::Test {
-            tools_pex: None,
-            scie_pants: Some(scie_pants),
-            check,
-            tools_pex_mismatch_warn,
-        } => {
-            let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            let tools_pex = build_tools_pex(
+            let (scie_pants, tools_pex) = maybe_build_components(
                 build_context,
-                &skinny_scie_tools,
+                scie_pants,
+                tools_pex,
                 args.update_lock,
                 args.dest_dir.as_path(),
             )?;
             run_integration_tests(
                 &build_context.workspace_root,
-                &tools_pex,
-                &canonicalize(scie_pants)?,
-                *check,
-                *tools_pex_mismatch_warn,
-            )?;
-            Ok(None)
-        }
-        Commands::Test {
-            tools_pex: Some(tools_pex),
-            scie_pants: None,
-            check,
-            tools_pex_mismatch_warn,
-        } => {
-            let scie_pants = build_context.build_scie_pants()?;
-            let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            let scie_pants =
-                build_scie_pants_scie(build_context, &skinny_scie_tools, &scie_pants, tools_pex)?;
-            run_integration_tests(
-                &build_context.workspace_root,
-                &canonicalize(tools_pex)?,
-                &scie_pants.exe,
-                *check,
-                *tools_pex_mismatch_warn,
-            )?;
-            Ok(Some(scie_pants))
-        }
-        Commands::Test {
-            tools_pex: None,
-            scie_pants: None,
-            check,
-            tools_pex_mismatch_warn,
-        } => {
-            let scie_pants = build_context.build_scie_pants()?;
-            let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            let tools_pex = build_tools_pex(
-                build_context,
-                &skinny_scie_tools,
-                args.update_lock,
-                args.dest_dir.as_path(),
-            )?;
-            let scie_pants =
-                build_scie_pants_scie(build_context, &skinny_scie_tools, &scie_pants, &tools_pex)?;
-            run_integration_tests(
-                &build_context.workspace_root,
-                &tools_pex,
-                &scie_pants.exe,
+                &canonicalize(&tools_pex)?,
+                &canonicalize(&scie_pants.exe)?,
                 *check,
                 *tools_pex_mismatch_warn,
             )?;
             Ok(Some(scie_pants))
         }
         Commands::Scie {
-            scie_pants: None,
-            tools_pex: None,
+            scie_pants,
+            tools_pex,
         } => {
-            let scie_pants = build_context.build_scie_pants()?;
-            let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            let tools_pex = build_tools_pex(
+            let (scie_pants, _) = maybe_build_components(
                 build_context,
-                &skinny_scie_tools,
+                scie_pants,
+                tools_pex,
                 args.update_lock,
                 args.dest_dir.as_path(),
             )?;
-            Ok(Some(build_scie_pants_scie(
-                build_context,
-                &skinny_scie_tools,
-                &scie_pants,
-                &tools_pex,
-            )?))
-        }
-        Commands::Scie {
-            scie_pants: None,
-            tools_pex: Some(tools_pex),
-        } => {
-            let scie_pants = build_context.build_scie_pants()?;
-            let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            Ok(Some(build_scie_pants_scie(
-                build_context,
-                &skinny_scie_tools,
-                &scie_pants,
-                tools_pex,
-            )?))
-        }
-        Commands::Scie {
-            scie_pants: Some(scie_pants),
-            tools_pex: None,
-        } => {
-            let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            let tools_pex = build_tools_pex(
-                build_context,
-                &skinny_scie_tools,
-                args.update_lock,
-                args.dest_dir.as_path(),
-            )?;
-            Ok(Some(build_scie_pants_scie(
-                build_context,
-                &skinny_scie_tools,
-                scie_pants,
-                &tools_pex,
-            )?))
-        }
-        Commands::Scie {
-            scie_pants: Some(scie_pants),
-            tools_pex: Some(tools_pex),
-        } => {
-            let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
-            Ok(Some(build_scie_pants_scie(
-                build_context,
-                &skinny_scie_tools,
-                scie_pants,
-                tools_pex,
-            )?))
+            Ok(Some(scie_pants))
         }
         Commands::SciePants => {
             let scie_pants = build_context.build_scie_pants()?;
@@ -298,10 +213,10 @@ fn maybe_build(args: &Args, build_context: &BuildContext) -> Result<Option<ScieP
             Ok(None)
         }
         Commands::Tools => {
-            let skinny_scie_tools = fetch_skinny_scie_tools(build_context)?;
+            let science = fetch_science(build_context)?;
             build_tools_pex(
                 build_context,
-                &skinny_scie_tools,
+                &science,
                 args.update_lock,
                 args.dest_dir.as_path(),
             )?;

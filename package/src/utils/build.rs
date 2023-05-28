@@ -170,10 +170,6 @@ impl BuildContext {
     }
 }
 
-pub(crate) struct SkinnyScieTools {
-    pub(crate) science: PathBuf,
-}
-
 fn fetch_a_scie_project(
     build_context: &BuildContext,
     project_name: &str,
@@ -251,11 +247,17 @@ fn fetch_a_scie_project(
     copy(&target_dir.join(&file_name), &dest_dir.join(file_name))
 }
 
-pub(crate) fn fetch_skinny_scie_tools(build_context: &BuildContext) -> Result<SkinnyScieTools> {
-    let skinny_scies = build_context.cargo_output_root.join("skinny-scies");
-    ensure_directory(&skinny_scies, true)?;
-    let science_exe = build_context.obtain_science(&skinny_scies)?;
-    Ok(SkinnyScieTools {
-        science: science_exe,
-    })
+pub(crate) struct Science(PathBuf);
+
+impl Science {
+    pub(crate) fn command(&self) -> Command {
+        Command::new(&self.0)
+    }
+}
+
+pub(crate) fn fetch_science(build_context: &BuildContext) -> Result<Science> {
+    let dest_dir = build_context.cargo_output_root.join("science");
+    ensure_directory(&dest_dir, true)?;
+    let science_exe = build_context.obtain_science(&dest_dir)?;
+    Ok(Science(science_exe))
 }
