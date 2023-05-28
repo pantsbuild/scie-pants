@@ -1,0 +1,63 @@
+[lift]
+name = "pbt"
+description = """\
+Python Build Tool: A BusyBox that provides `python`, `pip`, `pex`, `pex3` and `pex-tools`.\
+"""
+
+[lift.ptex]
+version = "0.7.0"
+
+[lift.scie-jump]
+version = "0.11.0"
+
+[[lift.interpreters]]
+id = "cpython"
+provider = "PythonBuildStandalone"
+release = "20230507"
+lazy = true
+version = "3.8.16"
+
+[[lift.files]]
+name = "pex"
+type = "blob"
+digest = { size = 4098329, fingerprint = "faad51a6a108fba9d40b2a10e82a2646fccbaf8c3d9be47818f4bffae02d94b8" }
+source = { url = "https://github.com/pantsbuild/pex/releases/download/v2.1.137/pex", lazy = true }
+
+[[lift.commands]]
+name = "pex"
+exe = "#{cpython:python}"
+args = [
+    "{pex}"
+]
+
+[[lift.commands]]
+name = "pex3"
+exe = "#{cpython:python}"
+args = [
+    "{pex}"
+]
+
+[lift.commands.env.replace]
+PEX_SCRIPT = "pex3"
+
+[[lift.commands]]
+name = "pex-tools"
+exe = "#{cpython:python}"
+args = [
+    "{pex}"
+]
+
+[lift.commands.env.replace]
+PEX_SCRIPT = "pex-tools"
+
+[[lift.commands]]
+name = "pip"
+exe = "#{cpython:python}"
+args = [
+    "-m",
+    "pip"
+]
+
+[[lift.commands]]
+name = "python"
+exe = "#{cpython:python}"

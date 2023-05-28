@@ -14,14 +14,14 @@ jobs:
   org-check:
     name: Check GitHub Organization
     if: ${{ github.repository_owner == 'pantsbuild' }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Noop
         run: "true"
   determine-tag:
     name: Determine the release tag to operate against.
     needs: org-check
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       release-tag: ${{ steps.determine-tag.outputs.release-tag }}
       release-version: ${{ steps.determine-tag.outputs.release-version }}
@@ -47,7 +47,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-11, macOS-11-ARM64 ]
+        os: [ ubuntu-22.04, macOS-10.15-X64, macOS-11-ARM64 ]
     environment: Release
     steps:
       - name: Checkout scie-pants ${{ needs.determine-tag.outputs.release-tag }}
@@ -55,10 +55,10 @@ jobs:
         with:
           ref: ${{ needs.determine-tag.outputs.release-tag }}
       - name: Package scie-pants ${{ needs.determine-tag.outputs.release-tag }} binary
-        if: ${{ matrix.os != 'ubuntu-20.04' }}
+        if: ${{ matrix.os != 'ubuntu-22.04' }}
         run: cargo run -p package -- --dest-dir dist/ scie
       - name: Package scie-pants ${{ needs.determine-tag.outputs.release-tag }} binary
-        if: ${{ matrix.os == 'ubuntu-20.04' }}
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: |
           mkdir dist
           cargo run -p package -- --dest-dir dist/ tools
@@ -68,15 +68,17 @@ jobs:
             rust:1.69.0-alpine3.17 \
               sh -c '
                 apk add cmake make musl-dev perl && \
-                cargo run -p package -- --dest-dir dist/ scie --tools-pex dist/tools.pex \
+                cargo run -p package -- --dest-dir dist/ scie-pants
               '
+          cargo run -p package -- --dest-dir dist/ scie \
+            --scie-pants dist/scie-pants --tools-pex dist/tools.pex
       - name: Prepare Changelog
         id: prepare-changelog
         uses: a-scie/actions/changelog@v1.5
         with:
           changelog-file: ${{ github.workspace }}/CHANGES.md
           version: ${{ needs.determine-tag.outputs.release-version }}
-          setup-python: ${{ matrix.os != 'macOS-11-ARM64' }}
+          setup-python: ${{ matrix.os == 'ubuntu-22.04' }}
       - name: Create ${{ needs.determine-tag.outputs.release-tag }} Release
         uses: softprops/action-gh-release@v1
         env:
@@ -87,7 +89,7 @@ jobs:
           body_path: ${{ steps.prepare-changelog.outputs.changelog-file }}
           draft: false
           prerelease: false
-          files: dist/scie-pants*
+          files: dist/scie-pants-*
           fail_on_unmatched_files: true
           discussion_category_name: Announcements
   aarch64-release-trigger:
@@ -95,7 +97,7 @@ jobs:
     needs:
       - determine-tag
       - github-release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Trigger aarch64 release
         uses: CircleCI-Public/trigger-circleci-pipeline-action@v1.0.5
@@ -109,7 +111,7 @@ jobs:
       - determine-tag
       - github-release
       - aarch64-release-trigger
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Post Release Announcement to Pants Slack `#announce`
         id: slack
@@ -144,7 +146,7 @@ jobs:
     needs:
       - determine-tag
       - github-release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Bump `scie-pants` version in Casks/pants.rb to ${{ needs.determine-tag.outputs.release-tag }}
         uses: actions/github-script@v6

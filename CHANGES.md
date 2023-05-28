@@ -1,5 +1,12 @@
 # Release Notes
 
+## 0.8.0
+
+This release brings no new features or bug fixes, but it does convert the building of the
+`scie-pants` scie to use `science` from the https://github.com/a-scie project. The only observable
+difference is a new top-level `science` object in the `scie-pants` lift manifest that contains
+build provenance information (see: `SCIE=inspect pants | jq .science`).
+
 ## 0.7.2
 
 This release fixes handling of the Pants native client by ensuring it is executable before trying

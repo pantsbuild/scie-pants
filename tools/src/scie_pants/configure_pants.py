@@ -115,7 +115,8 @@ def main() -> NoReturn:
         finalizers.append(configure_version)
         version = resolve_info.stable_version
 
-    python = "python3.8" if version < Version("2.5") else "python3.9"
+    # N.B.: These values must match the lift TOML interpreter ids.
+    python = "cpython38" if version < Version("2.5") else "cpython39"
 
     for finalizer in finalizers:
         finalizer()

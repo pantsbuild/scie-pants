@@ -55,8 +55,10 @@ jobs:
               rust:1.69.0-alpine3.17 \
                 sh -c '
                   apk add cmake make musl-dev perl && \
-                  cargo run -p package -- --dest-dir dist/ scie --tools-pex dist/tools.pex \
+                  cargo run -p package -- --dest-dir dist/ scie-pants
                 '
+            cargo run -p package -- --dest-dir dist/ scie \
+              --scie-pants dist/scie-pants --tools-pex dist/tools.pex
       - persist_to_workspace:
           root: dist
           paths:
@@ -90,7 +92,7 @@ jobs:
       - run:
           name: Upload scie-pants-linux-aarch64 to << pipeline.parameters.GHA_Meta >> Github Release
           command: |
-            gh release upload << pipeline.parameters.GHA_Meta >> dist/scie-pants* \
+            gh release upload << pipeline.parameters.GHA_Meta >> dist/scie-pants-* \
               --repo pantsbuild/scie-pants
 
 workflows:
