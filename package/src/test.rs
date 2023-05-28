@@ -364,7 +364,12 @@ fn test_ignore_empty_pants_version_pants_sha(scie_pants_scie: &Path) {
     let tmpdir = create_tempdir().unwrap();
 
     let pants_release = "2.15.0";
-    let pants_toml_content = format!(r#"[GLOBAL]\npants_version = "{pants_release}""#);
+    let pants_toml_content = format!(
+        r#"
+        [GLOBAL]
+        pants_version = "{pants_release}"
+        "#
+    );
     let pants_toml = tmpdir.path().join("pants.toml");
     write_file(&pants_toml, false, pants_toml_content).unwrap();
 
