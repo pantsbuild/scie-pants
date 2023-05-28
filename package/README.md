@@ -14,19 +14,19 @@ Packages the scie-pants binary.
 Usage: package [OPTIONS] <COMMAND>
 
 Commands:
-  tools  Builds the `tools.pex` used by the scie-pants scie to perform Pants installs
-  scie   Builds the `scie-pants` scie
-  test   Builds the `scie-pants` scie and runs it through a series of integration tests
-  help   Print this message or the help of the given subcommand(s)
+  tools       Builds the `tools.pex` used by the scie-pants scie to perform Pants installs
+  scie-pants  Builds the `scie-pants` Rust binary
+  scie        Builds the `scie-pants` scie
+  test        Builds the `scie-pants` scie and runs it through a series of integration tests
+  help        Print this message or the help of the given subcommand(s)
 
 Options:
-      --target <TARGET>        Override the default --target for this platform.
-      --ptex <PTEX>            Instead of using the released v0.6.0 ptex, package ptex from the ptex project repo at this directory.
-      --scie-jump <SCIE_JUMP>  Instead of using the released v0.7.1 scie-jump, package the scie-jump from the scie-jump project repo at this directory.
-      --update-lock            Refresh the tools lock before building the tools.pex
-      --dest-dir <DEST_DIR>    The destination directory for the chosen binary and its checksum file. [default: dist]
-  -h, --help                   Print help information
-  -V, --version                Print version information
+      --target <TARGET>      Override the default --target for this platform.
+      --science <SCIENCE>    Instead of using the released v0.1.2 science, package science from the science project repo at this directory.
+      --update-lock          Refresh the tools lock before building the tools.pex
+      --dest-dir <DEST_DIR>  The destination directory for the chosen binary and its checksum file. [default: dist]
+  -h, --help                 Print help
+  -V, --version              Print version
 ```
 
 In the course of development you'll probably only be interested in two invocations:
