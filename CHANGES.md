@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.8.1
+
+This release adjusts the `PANTS_SHA` and `PANTS_VERSION` environment variables to be ignored, if
+they're set to an empty string. For instance, `PANTS_SHA= PANTS_VERSION= pants ...` will now behave
+the same as `pants ...`.
+
 ## 0.8.0
 
 This release brings no new features or bug fixes, but it does convert the building of the

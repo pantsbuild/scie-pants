@@ -74,12 +74,14 @@ impl Process {
 }
 
 fn env_version(env_var_name: &str) -> Result<Option<String>> {
-    if let Some(raw_version) = env::var_os(env_var_name) {
+    let raw_version = env::var_os(env_var_name).unwrap_or(OsString::new());
+    if raw_version.len() == 0 {
+        // setting PANTS_VERSION= or PANTS_SHA= behaves the same as not setting them
+        Ok(None)
+    } else {
         Ok(Some(raw_version.into_string().map_err(|raw| {
             anyhow!("Failed to interpret {env_var_name} {raw:?} as UTF-8 string.")
         })?))
-    } else {
-        Ok(None)
     }
 }
 

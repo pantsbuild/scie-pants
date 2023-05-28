@@ -100,6 +100,7 @@ pub(crate) fn run_integration_tests(
         test_python_repos_repos(scie_pants_scie);
         test_initialize_new_pants_project(scie_pants_scie);
         test_set_pants_version(scie_pants_scie);
+        test_ignore_empty_pants_version_pants_sha(scie_pants_scie);
 
         let clone_root = create_tempdir()?;
         test_use_in_repo_with_pants_script(scie_pants_scie, &clone_root);
@@ -355,6 +356,35 @@ fn test_set_pants_version(scie_pants_scie: &Path) {
         "Y".as_bytes(),
     )
     .unwrap();
+}
+
+fn test_ignore_empty_pants_version_pants_sha(scie_pants_scie: &Path) {
+    integration_test!("Verifying ignoring PANTS_SHA and PANTS_VERSION when set to empty string");
+
+    let tmpdir = create_tempdir().unwrap();
+
+    let pants_release = "2.15.0";
+    let pants_toml_content = format!(
+        r#"
+        [GLOBAL]
+        pants_version = "{pants_release}"
+        "#
+    );
+    let pants_toml = tmpdir.path().join("pants.toml");
+    write_file(&pants_toml, false, pants_toml_content).unwrap();
+
+    let output = execute(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .env("PANTS_SHA", "")
+            .env("PANTS_VERSION", "")
+            .current_dir(&tmpdir)
+            .stdout(Stdio::piped()),
+    );
+    assert_eq!(
+        pants_release,
+        decode_output(output.unwrap().stdout).unwrap().trim()
+    );
 }
 
 fn test_use_in_repo_with_pants_script(scie_pants_scie: &Path, clone_root: &TempDir) {
