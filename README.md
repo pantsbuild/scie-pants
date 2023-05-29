@@ -4,38 +4,28 @@
 [![Github Actions CI (x86_64 Linux / MacOS / Windows)](https://github.com/pantsbuild/scie-pants/actions/workflows/ci.yml/badge.svg)](https://github.com/pantsbuild/scie-pants/actions/workflows/ci.yml)
 [![CircleCI (Linux aarch64)](https://circleci.com/gh/pantsbuild/scie-pants.svg?style=svg)](https://circleci.com/gh/pantsbuild/scie-pants)
 
-The scie-pants binary is intended to be the next-generation `./pants` script.
+The scie-pants binary is the next-generation `./pants` script.
 
-It's currently in a phase of development suitable for trying out in any existing Pants-using
-project. We welcome early adopters who want to try it out and report successes, failures and where
-things work but could be better.
+It's currently in production use as the [recommended way to install Pants](
+https://www.pantsbuild.org/docs/installation) and is suitable for trying out in any existing
+Pants-using project. We welcome reports of successes, failures and where things work but could be
+better.
 
 ## Installing
 
-For now, you'll need to download the correct binary for your system, mark it as executable and place
-it on your $PATH somewhere.
+See the official installation recommendations here for use as your `pants` launcher:
+https://www.pantsbuild.org/docs/installation
 
 The binaries are released via [GitHub Releases](https://github.com/pantsbuild/scie-pants/releases)
-for both Linux and macOS and both aarch64 and x86_64 chip architectures. Pants itself does not
-support Linux aarch64 quite yet, but `scie-pants` is ready for it!
+for both Linux and macOS and both aarch64 and x86_64 chip architectures.
 
-I run on Linux x86_64; so I install a stable release like so:
-```
-curl -fLO \
-  https://github.com/pantsbuild/scie-pants/releases/download/v0.1.9/scie-pants-linux-x86_64
-curl -fL \
-  https://github.com/pantsbuild/scie-pants/releases/download/v0.1.9/scie-pants-linux-x86_64.sha256 \
-  | sha256sum -c -
-chmod +x scie-pants-linux-x86_64 && mv scie-pants-linux-x86_64 ~/bin/scie-pants
-```
-
-You can then run `scie-pants` anywhere you'd use `./pants` and other places besides. It should work
-just like your existing `./pants` script but with ~33% less latency launching Pants.
-
-If you'd like to build you own version, see the [contribution guide](CONTRIBUTING.md). There are
+If you'd like to build your own version, see the [contribution guide](CONTRIBUTING.md). There are
 build instructions there.
 
 ## Features
+
+You can run `scie-pants` anywhere you'd use `./pants` and other places besides. It should work just
+like your existing `./pants` script but with ~33% less latency launching Pants.
 
 Beyond support for all known existing `./pants` script features, the `scie-pants` executable
 provides the following:
@@ -80,14 +70,10 @@ provides the following:
   ```json
   {
     "ptex": {
-      "cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz",
-      "cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
-      "cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-aarch64-apple-darwin-install_only.tar.gz",
-      "cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.8.15+20221106-x86_64-apple-darwin-install_only.tar.gz",
-      "cpython-3.9.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-aarch64-unknown-linux-gnu-install_only.tar.gz",
-      "cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-x86_64-unknown-linux-gnu-install_only.tar.gz",
-      "cpython-3.9.15+20221106-aarch64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-aarch64-apple-darwin-install_only.tar.gz",
-      "cpython-3.9.15+20221106-x86_64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20221106/cpython-3.9.15+20221106-x86_64-apple-darwin-install_only.tar.gz"
+      "cpython-3.8.16+20230507-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20230507/cpython-3.8.16%2B20230507-x86_64-unknown-linux-gnu-install_only.tar.gz",
+      "cpython-3.8.16+20230507-aarch64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20230507/cpython-3.8.16%2B20230507-aarch64-apple-darwin-install_only.tar.gz",
+      "cpython-3.9.16+20230507-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20230507/cpython-3.9.16%2B20230507-x86_64-unknown-linux-gnu-install_only.tar.gz",
+      "cpython-3.9.16+20230507-aarch64-apple-darwin-install_only.tar.gz": "https://github.com/indygreg/python-build-standalone/releases/download/20230507/cpython-3.9.16%2B20230507-aarch64-apple-darwin-install_only.tar.gz",
     }
   }
   ```
@@ -95,14 +81,15 @@ provides the following:
   ```
   $ SCIE=inspect scie-pants | jq .ptex
   ```
+  You'll need to run this once for each platform you use `scie-pants` on to gather all mappings
+  you'll need; e.g.: once for Linux x86_64 and once for Mac ARM.
+
   The keys in your re-mapping must match, but the URLs, of course will be different; presumably from
-  a private network server or file share. You can omit keys for files you know you won't use. For
-  example, for these CPython distributions, you can omit The 2 Linux aarch64 entries if you have no
-  such machines. The full output of the inspect command can be used to examine the expected file
-  size and hash of each of these. Your re-directed URLs must provide the same content; if the hashes
-  of downloaded files do not match those recorded in scie-pants, install will fail fast and let you
-  know about the hash mismatch. Once Pants itself starts shipping scies, those will also be able to
-  redirected using the same file.
+  a private network server or file share. The full output of the inspect command can be used to 
+  examine the expected file size and hash of each of these distributions. Your re-directed URLs must
+  provide the same content; if the hashes of downloaded files do not match those recorded in
+  scie-pants, install will fail fast and let you know about the hash mismatch. Once Pants itself
+  starts shipping scies, those will also be able to redirected using the same file.
 
 ## Caveats
 
