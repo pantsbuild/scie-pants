@@ -962,6 +962,7 @@ fn test_non_utf8_env_vars_issue_198(scie_pants_scie: &Path) {
         Command::new(scie_pants_scie)
             .arg("--no-pantsd")
             .arg("-V")
+            .env("PANTS_NO_NATIVE_CLIENT", "1")
             .stdout(Stdio::piped())
             .current_dir(&tmpdir),
     )
