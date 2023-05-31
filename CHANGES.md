@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.8.2
+
+This release fixes handling of environment variables when non-utf8 variables are present in the
+ambient environment.
+
 ## 0.8.1
 
 This release adjusts the `PANTS_SHA` and `PANTS_VERSION` environment variables to be ignored, if
