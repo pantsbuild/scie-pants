@@ -2,11 +2,13 @@
 // Licensed under the Apache License, Version 2.0 (see LICENSE).
 
 use std::env;
+use std::ffi::OsString;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
 use anyhow::{Context, Result};
+use regex::Regex;
 use tempfile::TempDir;
 use termcolor::{Color, WriteColor};
 
@@ -130,6 +132,9 @@ pub(crate) fn run_integration_tests(
         test_caching_issue_129(scie_pants_scie);
         test_custom_pants_toml_issue_153(scie_pants_scie);
         test_pants_native_client_perms_issue_182(scie_pants_scie);
+
+        #[cfg(unix)]
+        test_non_utf8_env_vars_issue_198(scie_pants_scie);
     }
 
     // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
@@ -887,4 +892,82 @@ fn test_pants_native_client_perms_issue_182(scie_pants_scie: &Path) {
         pants_release,
         decode_output(output.unwrap().stdout).unwrap().trim()
     );
+}
+
+#[cfg(unix)]
+fn test_non_utf8_env_vars_issue_198(scie_pants_scie: &Path) {
+    integration_test!(
+        "Verifying scie-pants is robust to environments with non-utf8 env vars present ({issue})",
+        issue = issue_link(198)
+    );
+
+    let tmpdir = create_tempdir().unwrap();
+
+    let pants_release = "2.17.0a1";
+    let pants_toml_content = format!(
+        r#"
+        [GLOBAL]
+        pants_version = "{pants_release}"
+        "#
+    );
+    let pants_toml = tmpdir.path().join("pants.toml");
+    write_file(&pants_toml, false, pants_toml_content).unwrap();
+
+    use std::os::unix::ffi::OsStringExt;
+    env::set_var("FOO", OsString::from_vec(vec![b'B', 0xa5, b'R']));
+
+    let err = execute(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .env("RUST_LOG", "trace")
+            .stderr(Stdio::piped())
+            .current_dir(&tmpdir),
+    )
+    .unwrap_err();
+    let error_text = err.to_string();
+    // N.B.: This is a very hacky way to confirm the `scie-jump` is done processing env vars and has
+    // exec'd the `scie-pants` native client; which then proceeds to choke on env vars in the same
+    // way scie-jump <= 0.11.0 did using `env::vars()`.
+    assert!(Regex::new(concat!(
+        r#"exe: ".*/bindings/venvs/2\.17\.0a1/lib/python3\.9/"#,
+        r#"site-packages/pants/bin/native_client""#
+    ))
+    .unwrap()
+    .find(&error_text)
+    .is_some());
+    assert!(error_text.contains("[DEBUG TimerFinished] jump::prepare_boot(), Elapsed="));
+    assert!(error_text
+        .contains(r#"panicked at 'called `Result::unwrap()` on an `Err` value: "B\xA5R"'"#));
+
+    // The error path we test below requires flowing through the pantsd path via PyNailgunClient.
+    let err = execute(
+        Command::new(scie_pants_scie)
+            .arg("--pantsd")
+            .arg("-V")
+            .env("PANTS_NO_NATIVE_CLIENT", "1")
+            .stderr(Stdio::piped())
+            .current_dir(&tmpdir),
+    )
+    .unwrap_err();
+    // Here we're asking the native client to exit very early before it processed `env::vars()`; so
+    // the execution makes it into Python code that calls
+    // `PyNailgunClient(...).execute(command, args, modified_env)`. That's Rust code implementing a
+    // Python extension object that also wrongly assumes utf8 when converting env vars.
+    assert!(err.to_string().contains(concat!(
+        r#"UnicodeEncodeError: 'utf-8' codec can't encode character '\udca5' in "#,
+        "position 1: surrogates not allowed"
+    )));
+
+    let output = execute(
+        Command::new(scie_pants_scie)
+            .arg("--no-pantsd")
+            .arg("-V")
+            .env("PANTS_NO_NATIVE_CLIENT", "1")
+            .stdout(Stdio::piped())
+            .current_dir(&tmpdir),
+    )
+    .unwrap();
+    assert_eq!(pants_release, decode_output(output.stdout).unwrap().trim());
+
+    env::remove_var("FOO");
 }

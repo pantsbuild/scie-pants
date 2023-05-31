@@ -12,7 +12,7 @@ version = "0.7.0"
 lazy_argv1 = "{scie.env.PANTS_BOOTSTRAP_URLS={scie.lift}}"
 
 [lift.scie-jump]
-version = "0.11.0"
+version = "0.11.1"
 
 [[lift.interpreters]]
 id = "cpython38"
