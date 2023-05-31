@@ -132,6 +132,8 @@ pub(crate) fn run_integration_tests(
         test_caching_issue_129(scie_pants_scie);
         test_custom_pants_toml_issue_153(scie_pants_scie);
         test_pants_native_client_perms_issue_182(scie_pants_scie);
+
+        #[cfg(unix)]
         test_non_utf8_env_vars_issue_198(scie_pants_scie);
     }
 
@@ -892,6 +894,7 @@ fn test_pants_native_client_perms_issue_182(scie_pants_scie: &Path) {
     );
 }
 
+#[cfg(unix)]
 fn test_non_utf8_env_vars_issue_198(scie_pants_scie: &Path) {
     integration_test!(
         "Verifying scie-pants is robust to environments with non-utf8 env vars present ({issue})",
@@ -959,7 +962,6 @@ fn test_non_utf8_env_vars_issue_198(scie_pants_scie: &Path) {
         Command::new(scie_pants_scie)
             .arg("--no-pantsd")
             .arg("-V")
-            .env("PANTS_NO_NATIVE_CLIENT", "1")
             .stdout(Stdio::piped())
             .current_dir(&tmpdir),
     )
