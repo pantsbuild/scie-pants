@@ -149,12 +149,22 @@ def determine_latest_stable_version(
 ) -> tuple[Callable[[], None], ResolveInfo]:
     info(f"Fetching latest stable Pants version since none is configured")
 
-    latest_tag = ptex.fetch_json(
-        "https://github.com/pantsbuild/pants/releases/latest", Accept="application/json"
-    )["tag_name"]
+    try:
+        latest_tag = ptex.fetch_json(
+            "https://github.com/pantsbuild/pants/releases/latest", Accept="application/json"
+        )["tag_name"]
+    except Exception as e:
+        fatal(
+            "Couldn't get the latest release by fetching https://github.com/pantsbuild/pants/releases/latest.\n\n"
+            + "If this is unexpected (e.g. GitHub isn't down), please reach out on Slack: https://www.pantsbuild.org/docs/getting-help#slack\n\n"
+            + f"Exception:\n\n{e}"
+        )
+
     if not latest_tag.startswith("release_"):
         fatal(
-            f'Expected the GitHub Release tagged "latest" to have the "release_" prefix. Got "{latest_tag}"'
+            f'Expected the GitHub Release tagged "latest" to have the "release_" prefix. Got "{latest_tag}"\n\n'
+            + "Please reach out on Slack: https://www.pantsbuild.org/docs/getting-help#slack or file"
+            + " an issue on GitHub: https://github.com/pantsbuild/pants/issues/new/choose."
         )
 
     pants_version = latest_tag[len("release_") :]
