@@ -18,7 +18,7 @@ import tomlkit
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
-from scie_pants.log import info, warn
+from scie_pants.log import fatal, info, warn
 from scie_pants.ptex import Ptex
 
 log = logging.getLogger(__name__)
@@ -148,9 +148,25 @@ def determine_latest_stable_version(
     ptex: Ptex, pants_config: Path, find_links_dir: Path, github_api_bearer_token: str | None = None
 ) -> tuple[Callable[[], None], ResolveInfo]:
     info(f"Fetching latest stable Pants version since none is configured")
-    pants_version = ptex.fetch_json("https://pypi.org/pypi/pantsbuild.pants/json")["info"][
-        "version"
-    ]
+
+    try:
+        latest_tag = ptex.fetch_json(
+            "https://github.com/pantsbuild/pants/releases/latest", Accept="application/json"
+        )["tag_name"]
+    except Exception as e:
+        fatal(
+            "Couldn't get the latest release by fetching https://github.com/pantsbuild/pants/releases/latest.\n\n"
+            + "If this is unexpected (e.g. GitHub isn't down), please reach out on Slack: https://www.pantsbuild.org/docs/getting-help#slack\n\n"
+            + f"Exception:\n\n{e}"
+        )
+
+    prefix, _, pants_version = latest_tag.partition("_")
+    if prefix != "release" or not pants_version:
+        fatal(
+            f'Expected the GitHub Release tagged "latest" to have the "release_" prefix. Got "{latest_tag}"\n\n'
+            + "Please reach out on Slack: https://www.pantsbuild.org/docs/getting-help#slack or file"
+            + " an issue on GitHub: https://github.com/pantsbuild/pants/issues/new/choose."
+        )
 
     def configure_version():
         backup = None
