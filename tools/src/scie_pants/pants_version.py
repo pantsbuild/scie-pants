@@ -148,9 +148,12 @@ def determine_latest_stable_version(
     ptex: Ptex, pants_config: Path, find_links_dir: Path, github_api_bearer_token: str | None = None
 ) -> tuple[Callable[[], None], ResolveInfo]:
     info(f"Fetching latest stable Pants version since none is configured")
-    pants_version = ptex.fetch_json("https://pypi.org/pypi/pantsbuild.pants/json")["info"][
-        "version"
-    ]
+
+    latest_tag = ptex.fetch_text("https://github.com/pantsbuild/pants/releases/latest", Accept="application/json")["tag_name"]
+    if not latest_tag.startswith("release_"):
+        fatal(f'Expected the GitHub Release tagged "latest" to have the "release_" prefix. Got "{latest_tag}"')
+
+    pants_version = latest_tag[len("release_"):]
 
     def configure_version():
         backup = None
