@@ -20,6 +20,27 @@ from scie_pants.log import fatal, info, init_logging
 log = logging.getLogger(__name__)
 
 
+def venv_pip_install(venv_dir: Path, *args: str, find_links: str | None) -> None:
+    subprocess.run(
+        args=[
+            str(venv_dir / "bin" / "python"),
+            "-sE",
+            "-m",
+            "pip",
+            # This internal 1-use pip need not nag the user about its up-to-date-ness.
+            "--disable-pip-version-check",
+            "--no-python-version-warning",
+            "--log",
+            str(venv_dir / "pants-install.log"),
+            "install",
+            "--quiet",
+            *(("--find-links", find_links) if find_links else ()),
+            *args,
+        ],
+        check=True,
+    )
+
+
 def install_pants(
     venv_dir: Path, prompt: str, pants_requirements: Iterable[str], find_links: str | None
 ) -> None:
@@ -40,26 +61,6 @@ def install_pants(
 
     find_links_options = ("--find-links", find_links) if find_links else ()
 
-    def pip_install(*args: str) -> None:
-        subprocess.run(
-            args=[
-                str(python),
-                "-sE",
-                "-m",
-                "pip",
-                # This internal 1-use pip need not nag the user about its up-to-date-ness.
-                "--disable-pip-version-check",
-                "--no-python-version-warning",
-                "--log",
-                install_log,
-                "install",
-                "--quiet",
-                *find_links_options,
-                *args,
-            ],
-            check=True,
-        )
-
     # Pin Pip to 22.3.1 (currently latest). The key semantic that should be preserved by the Pip
     # we use is that --find-links are used as a fallback only and PyPI is preferred. This saves us
     # money by avoiding fetching wheels from our S3 bucket at https://binaries.pantsbuild.org unless
@@ -67,8 +68,8 @@ def install_pants(
     #
     # Also, we don't advance setuptools past 58 which drops support for the `setup` kwarg `use_2to3`
     # which Pants 1.x sdist dependencies (pystache) use.
-    pip_install("-U", "pip==22.3.1", "setuptools<58", "wheel")
-    pip_install("--progress-bar", "off", *pants_requirements)
+    venv_pip_install(venv_dir, "-U", "pip==22.3.1", "setuptools<58", "wheel", find_links=find_links)
+    venv_pip_install(venv_dir, "--progress-bar", "off", *pants_requirements, find_links=find_links)
 
 
 def chmod_plus_x(path: str) -> None:
