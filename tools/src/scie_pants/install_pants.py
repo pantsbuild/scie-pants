@@ -8,6 +8,7 @@ import os
 import stat
 import subprocess
 import sys
+import tempfile
 from argparse import ArgumentParser
 from glob import glob
 from pathlib import Path
@@ -16,6 +17,8 @@ from typing import Iterable, NoReturn
 from packaging.version import Version
 
 from scie_pants.log import fatal, info, init_logging
+from scie_pants.pants_version import PANTS_PEX_GITHUB_RELEASE_VERSION
+from scie_pants.ptex import Ptex
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +44,7 @@ def venv_pip_install(venv_dir: Path, *args: str, find_links: str | None) -> None
     )
 
 
-def install_pants(
+def install_pants_from_req(
     venv_dir: Path, prompt: str, pants_requirements: Iterable[str], find_links: str | None
 ) -> None:
     subprocess.run(
@@ -56,10 +59,6 @@ def install_pants(
         ],
         check=True,
     )
-    python = venv_dir / "bin" / "python"
-    install_log = venv_dir / "pants-install.log"
-
-    find_links_options = ("--find-links", find_links) if find_links else ()
 
     # Pin Pip to 22.3.1 (currently latest). The key semantic that should be preserved by the Pip
     # we use is that --find-links are used as a fallback only and PyPI is preferred. This saves us
@@ -72,12 +71,63 @@ def install_pants(
     venv_pip_install(venv_dir, "--progress-bar", "off", *pants_requirements, find_links=find_links)
 
 
+def install_pants_from_pex(
+    venv_dir: Path,
+    prompt: str,
+    version: Version,
+    ptex: Ptex,
+    extra_requirements: Iterable[str],
+    find_links: str | None,
+) -> None:
+    """Installs Pants into the venv using the platform-specific pre-built PEX."""
+    uname = os.uname()
+    major, minor = sys.version_info[:2]
+    pex_name = f"pants.cp{major}{minor}-{uname.sysname.lower()}_{uname.machine.lower()}.pex"
+    with tempfile.NamedTemporaryFile(suffix=".pex") as pants_pex:
+        pex_url = (
+            f"https://github.com/pantsbuild/pants/releases/download/release_{version}/{pex_name}"
+        )
+        try:
+            ptex.fetch_to_fp(pex_url, pants_pex.file)
+        except subprocess.CalledProcessError as e:
+            fatal(
+                f"Wasn't able to fetch the Pants PEX at {pex_url}.\n\n"
+                + "Check to see if the URL is reachable (i.e. GitHub isn't down) and if the asset exists."
+                + " If the asset doesn't exist it may be that this platform isn't yet supported."
+                + " If that's the case, please reach out on Slack: https://www.pantsbuild.org/docs/getting-help#slack"
+                + " or file an issue on GitHub: https://github.com/pantsbuild/pants/issues/new/choose.\n\n"
+                + f"Exception:\n\n{e}"
+            )
+        subprocess.run(
+            args=[
+                sys.executable,
+                pants_pex.name,
+                "venv",
+                "--prompt",
+                prompt,
+                "--compile",
+                "--pip",
+                "--collisions-ok",
+                # @TODO: Remove pex? --rm pex
+                str(venv_dir),
+            ],
+            env={"PEX_TOOLS": "1"},
+            check=True,
+        )
+
+    if extra_requirements:
+        venv_pip_install(
+            venv_dir, "--progress-bar", "off", *extra_requirements, find_links=find_links
+        )
+
+
 def chmod_plus_x(path: str) -> None:
     os.chmod(path, os.stat(path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
 def main() -> NoReturn:
     parser = ArgumentParser()
+    get_ptex = Ptex.add_options(parser)
     parser.add_argument(
         "--pants-version", type=Version, required=True, help="The Pants version to install"
     )
@@ -90,6 +140,8 @@ def main() -> NoReturn:
     parser.add_argument("--debugpy-requirement", help="The debugpy requirement to install")
     parser.add_argument("base_dir", nargs=1, help="The base directory to create Pants venvs in.")
     options = parser.parse_args()
+
+    ptex = get_ptex(options)
 
     base_dir = Path(options.base_dir[0])
     init_logging(base_dir=base_dir, log_name="install")
@@ -105,22 +157,36 @@ def main() -> NoReturn:
     info(f"Bootstrapping Pants {version} using {sys.implementation.name} {python_version}")
 
     pants_requirements = [f"pantsbuild.pants=={version}"]
+    extra_requirements = []
     if options.debug:
         debugpy_requirement = options.debugpy_requirement or "debugpy==1.6.0"
-        pants_requirements.append(debugpy_requirement)
+        extra_requirements.append(debugpy_requirement)
         venv_dir = venvs_dir / f"{version}-{debugpy_requirement}"
         prompt = f"Pants {version} [{debugpy_requirement}]"
     else:
         venv_dir = venvs_dir / str(version)
         prompt = f"Pants {version}"
 
-    info(f"Installing {' '.join(pants_requirements)} into a virtual environment at {venv_dir}")
-    install_pants(
-        venv_dir=venv_dir,
-        prompt=prompt,
-        pants_requirements=pants_requirements,
-        find_links=options.find_links,
+    info(
+        f"Installing {' '.join(pants_requirements + extra_requirements)} into a virtual environment at {venv_dir}"
     )
+    if version >= PANTS_PEX_GITHUB_RELEASE_VERSION:
+        install_pants_from_pex(
+            venv_dir=venv_dir,
+            prompt=prompt,
+            version=version,
+            ptex=ptex,
+            extra_requirements=extra_requirements,
+            find_links=options.find_links,
+        )
+    else:
+        install_pants_from_req(
+            venv_dir=venv_dir,
+            prompt=prompt,
+            pants_requirements=pants_requirements + extra_requirements,
+            find_links=options.find_links,
+        )
+
     info(f"New virtual environment successfully created at {venv_dir}.")
 
     pants_server_exe = str(venv_dir / "bin" / "pants")
