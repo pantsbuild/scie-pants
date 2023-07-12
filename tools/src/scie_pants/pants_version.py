@@ -168,7 +168,6 @@ def determine_latest_stable_version(
             + " an issue on GitHub: https://github.com/pantsbuild/pants/issues/new/choose."
         )
 
-
     def configure_version():
         backup = None
         if pants_config.exists():
