@@ -149,7 +149,7 @@ def determine_latest_stable_version(
 ) -> tuple[Callable[[], None], ResolveInfo]:
     info(f"Fetching latest stable Pants version since none is configured")
 
-    latest_tag = ptex.fetch_text("https://github.com/pantsbuild/pants/releases/latest", Accept="application/json")["tag_name"]
+    latest_tag = ptex.fetch_json("https://github.com/pantsbuild/pants/releases/latest", Accept="application/json")["tag_name"]
     if not latest_tag.startswith("release_"):
         fatal(f'Expected the GitHub Release tagged "latest" to have the "release_" prefix. Got "{latest_tag}"')
 
