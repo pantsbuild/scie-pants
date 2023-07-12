@@ -160,7 +160,8 @@ def determine_latest_stable_version(
             + f"Exception:\n\n{e}"
         )
 
-    if not latest_tag.startswith("release_"):
+    prefix, _, pants_version = latest_tag.partition("_")
+    if prefix != "release" or not pants_version:
         fatal(
             f'Expected the GitHub Release tagged "latest" to have the "release_" prefix. Got "{latest_tag}"\n\n'
             + "Please reach out on Slack: https://www.pantsbuild.org/docs/getting-help#slack or file"
