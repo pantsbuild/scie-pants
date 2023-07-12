@@ -168,7 +168,6 @@ def determine_latest_stable_version(
             + " an issue on GitHub: https://github.com/pantsbuild/pants/issues/new/choose."
         )
 
-    pants_version = latest_tag[len("release_") :]
 
     def configure_version():
         backup = None
