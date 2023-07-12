@@ -18,7 +18,7 @@ import tomlkit
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
-from scie_pants.log import info, warn
+from scie_pants.log import fatal, info, warn
 from scie_pants.ptex import Ptex
 
 log = logging.getLogger(__name__)
