@@ -9,7 +9,7 @@ import subprocess
 from argparse import ArgumentParser, Namespace
 from dataclasses import dataclass
 from subprocess import CompletedProcess
-from typing import Any, BinaryIO, Callable, cast
+from typing import IO, Any, Callable, cast
 
 
 @dataclass(frozen=True)
@@ -45,5 +45,5 @@ class Ptex:
     def fetch_text(self, url: str, **headers: str) -> str:
         return self._fetch(url, stdout=subprocess.PIPE, **headers).stdout.decode()
 
-    def fetch_to_fp(self, url: str, fp: BinaryIO, **headers: str) -> None:
+    def fetch_to_fp(self, url: str, fp: IO, **headers: str) -> None:
         self._fetch(url, stdout=fp.fileno(), **headers)
