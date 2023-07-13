@@ -13,7 +13,9 @@ use tempfile::TempDir;
 use termcolor::{Color, WriteColor};
 
 use crate::utils::build::fingerprint;
-use crate::utils::exe::{execute, execute_with_input, execute_no_error, Platform, CURRENT_PLATFORM};
+use crate::utils::exe::{
+    execute, execute_no_error, execute_with_input, Platform, CURRENT_PLATFORM,
+};
 use crate::utils::fs::{
     copy, create_tempdir, ensure_directory, remove_dir, rename, softlink, touch, write_file,
 };
@@ -400,18 +402,14 @@ fn test_bad_pants_version(scie_pants_scie: &Path) {
         Command::new(scie_pants_scie)
             .arg("-V")
             .env("PANTS_VERSION", non_existent_version),
-        vec![
-            "Could not find Pants tag 1.2.3.4.5 in https://github.com/pantsbuild/pants/releases"
-        ],
+        vec!["Could not find Pants tag 1.2.3.4.5 in https://github.com/pantsbuild/pants/releases"],
     );
     let prefix_version = "1";
     assert_stderr_output(
         Command::new(scie_pants_scie)
             .arg("-V")
             .env("PANTS_VERSION", prefix_version),
-        vec![
-            "Could not find Pants tag 1 in https://github.com/pantsbuild/pants/releases"
-        ],
+        vec!["Could not find Pants tag 1 in https://github.com/pantsbuild/pants/releases"],
     );
 }
 
