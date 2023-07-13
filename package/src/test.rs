@@ -13,7 +13,7 @@ use tempfile::TempDir;
 use termcolor::{Color, WriteColor};
 
 use crate::utils::build::fingerprint;
-use crate::utils::exe::{execute, execute_with_input, Platform, CURRENT_PLATFORM};
+use crate::utils::exe::{execute, execute_with_input, execute_no_error, Platform, CURRENT_PLATFORM};
 use crate::utils::fs::{
     copy, create_tempdir, ensure_directory, remove_dir, rename, softlink, touch, write_file,
 };
@@ -38,7 +38,7 @@ fn decode_output(output: Vec<u8>) -> Result<String> {
 }
 
 fn assert_stderr_output(command: &mut Command, expected_messages: Vec<&str>) -> Output {
-    let output = execute(command.stderr(Stdio::piped())).unwrap();
+    let output = execute_no_error(command.stderr(Stdio::piped()));
     let stderr = decode_output(output.stderr.clone()).unwrap();
     for expected_message in expected_messages {
         assert!(
@@ -103,6 +103,7 @@ pub(crate) fn run_integration_tests(
         test_initialize_new_pants_project(scie_pants_scie);
         test_set_pants_version(scie_pants_scie);
         test_ignore_empty_pants_version_pants_sha(scie_pants_scie);
+        test_bad_pants_version(scie_pants_scie);
 
         let clone_root = create_tempdir()?;
         test_use_in_repo_with_pants_script(scie_pants_scie, &clone_root);
@@ -389,6 +390,28 @@ fn test_ignore_empty_pants_version_pants_sha(scie_pants_scie: &Path) {
     assert_eq!(
         pants_release,
         decode_output(output.unwrap().stdout).unwrap().trim()
+    );
+}
+
+fn test_bad_pants_version(scie_pants_scie: &Path) {
+    integration_test!("Verifying Pants gives good error messages for nonexistent version numbers");
+    let non_existent_version = "1.2.3.4.5";
+    assert_stderr_output(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .env("PANTS_VERSION", non_existent_version),
+        vec![
+            "Could not find Pants tag 1.2.3.4.5 in https://github.com/pantsbuild/pants/releases"
+        ],
+    );
+    let prefix_version = "1";
+    assert_stderr_output(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .env("PANTS_VERSION", prefix_version),
+        vec![
+            "Could not find Pants tag 1 in https://github.com/pantsbuild/pants/releases"
+        ],
     );
 }
 
