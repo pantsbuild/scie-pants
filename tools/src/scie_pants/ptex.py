@@ -45,5 +45,5 @@ class Ptex:
     def fetch_text(self, url: str, **headers: str) -> str:
         return self._fetch(url, stdout=subprocess.PIPE, **headers).stdout.decode()
 
-    def fetch_to_fp(self, url: str, fp: IO, **headers: str) -> None:
+    def fetch_to_fp(self, url: str, fp: IO[bytes], **headers: str) -> None:
         self._fetch(url, stdout=fp.fileno(), **headers)

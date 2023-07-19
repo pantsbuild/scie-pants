@@ -92,11 +92,12 @@ def install_pants_from_pex(
         except subprocess.CalledProcessError as e:
             fatal(
                 f"Wasn't able to fetch the Pants PEX at {pex_url}.\n\n"
-                + "Check to see if the URL is reachable (i.e. GitHub isn't down) and if the asset exists."
-                + " If the asset doesn't exist it may be that this platform isn't yet supported."
-                + " If that's the case, please reach out on Slack: https://www.pantsbuild.org/docs/getting-help#slack"
-                + " or file an issue on GitHub: https://github.com/pantsbuild/pants/issues/new/choose.\n\n"
-                + f"Exception:\n\n{e}"
+                "Check to see if the URL is reachable (i.e. GitHub isn't down) and if"
+                f" {pex_name} asset exists within the release: https://github.com/pantsbuild/pants/releases/release_{version}."
+                " If the asset doesn't exist it may be that this platform isn't yet supported."
+                " If that's the case, please reach out on Slack: https://www.pantsbuild.org/docs/getting-help#slack"
+                " or file an issue on GitHub: https://github.com/pantsbuild/pants/issues/new/choose.\n\n"
+                f"Exception:\n\n{e}"
             )
         subprocess.run(
             args=[
