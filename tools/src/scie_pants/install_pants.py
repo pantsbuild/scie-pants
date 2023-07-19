@@ -108,7 +108,8 @@ def install_pants_from_pex(
                 "--compile",
                 "--pip",
                 "--collisions-ok",
-                # @TODO: Remove pex? --rm pex
+                "--no-emit-warnings",  # Silence `PEXWarning: You asked for --pip ...`
+                "--disable-cache",
                 str(venv_dir),
             ],
             env={"PEX_TOOLS": "1"},

@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 
 # After this version, Pants is released as a per-platform PEX using GitHub Release assets.
 # See https://github.com/pantsbuild/pants/pull/19450
-PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.18.0.dev3")
+PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.18.0.dev5")
 
 
 @dataclass(frozen=True)
