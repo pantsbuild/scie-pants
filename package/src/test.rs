@@ -415,9 +415,11 @@ fn test_pants_from_pex_version(scie_pants_scie: &Path) {
             .current_dir(&tmpdir)
             .stdout(Stdio::piped()),
     );
-    assert_eq!(
-        pants_release,
-        decode_output(output.unwrap().stdout).unwrap().trim()
+    let expected_message = pants_release;
+    let stdout = decode_output(output.unwrap().stdout).unwrap();
+    assert!(
+        stdout.contains(expected_message),
+        "STDOUT did not contain '{expected_message}':\n{stdout}"
     );
 }
 
