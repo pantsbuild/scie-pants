@@ -104,6 +104,8 @@ pub(crate) fn run_integration_tests(
         test_set_pants_version(scie_pants_scie);
         test_ignore_empty_pants_version_pants_sha(scie_pants_scie);
 
+        test_pants_from_pex_version(scie_pants_scie);
+
         let clone_root = create_tempdir()?;
         test_use_in_repo_with_pants_script(scie_pants_scie, &clone_root);
         test_dot_env_loading(scie_pants_scie, &clone_root);
@@ -383,6 +385,33 @@ fn test_ignore_empty_pants_version_pants_sha(scie_pants_scie: &Path) {
             .arg("-V")
             .env("PANTS_SHA", "")
             .env("PANTS_VERSION", "")
+            .current_dir(&tmpdir)
+            .stdout(Stdio::piped()),
+    );
+    assert_eq!(
+        pants_release,
+        decode_output(output.unwrap().stdout).unwrap().trim()
+    );
+}
+
+fn test_pants_from_pex_version(scie_pants_scie: &Path) {
+    integration_test!("Verify scie-pants can use Pants released as a 'local' PEX");
+
+    let tmpdir = create_tempdir().unwrap();
+
+    let pants_release = "2.18.0.dev5";
+    let pants_toml_content = format!(
+        r#"
+        [GLOBAL]
+        pants_version = "{pants_release}"
+        "#
+    );
+    let pants_toml = tmpdir.path().join("pants.toml");
+    write_file(&pants_toml, false, pants_toml_content).unwrap();
+
+    let output = execute(
+        Command::new(scie_pants_scie)
+            .arg("-V")
             .current_dir(&tmpdir)
             .stdout(Stdio::piped()),
     );
