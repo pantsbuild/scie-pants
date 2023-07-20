@@ -81,14 +81,22 @@ pub(crate) fn prepare_exe(path: &Path) -> Result<()> {
 }
 
 pub(crate) fn execute_with_input(command: &mut Command, stdin_data: &[u8]) -> Result<Output> {
-    _execute_with_input(command, Some(stdin_data))
+    _execute_with_input(command, Some(stdin_data), true)
 }
 
 pub(crate) fn execute(command: &mut Command) -> Result<Output> {
-    _execute_with_input(command, None)
+    _execute_with_input(command, None, true)
 }
 
-fn _execute_with_input(command: &mut Command, stdin_data: Option<&[u8]>) -> Result<Output> {
+pub(crate) fn execute_no_error(command: &mut Command) -> Output {
+    _execute_with_input(command, None, false).unwrap()
+}
+
+fn _execute_with_input(
+    command: &mut Command,
+    stdin_data: Option<&[u8]>,
+    err_on_command_fail: bool,
+) -> Result<Output> {
     info!("Executing {command:#?}");
     if stdin_data.is_some() {
         command.stdin(std::process::Stdio::piped());
@@ -107,7 +115,7 @@ fn _execute_with_input(command: &mut Command, stdin_data: Option<&[u8]>) -> Resu
     let output = child
         .wait_with_output()
         .with_context(|| format!("Failed to gather exit status of command: {command:?}"))?;
-    if !output.status.success() {
+    if err_on_command_fail && !output.status.success() {
         let mut message_lines = vec![format!(
             "Command {command:?} failed with exit code: {code:?}",
             code = output.status.code()
