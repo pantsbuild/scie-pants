@@ -203,8 +203,8 @@ PEX_PYTHON_PATH = "#{cpython39:python}"
 [[lift.bindings]]
 name = "install"
 description = """\
-Installs a hermetic Pants environment from PyPI or binaries.pantsbuild.org with optional debug \
-support.\
+Installs a hermetic Pants environment from PyPI, binaries.pantsbuild.org, or a GitHub release \
+with optional debug support.\
 """
 exe = "#{cpython:python}"
 args = [
@@ -218,6 +218,8 @@ args = [
     "{scie.env.PANTS_DEBUG}",
     "--debugpy-requirement",
     "{scie.env.PANTS_DEBUGPY_VERSION}",
+    "--ptex-path",
+    "{ptex}",
     "{scie.bindings}",
 ]
 env.remove_re = [

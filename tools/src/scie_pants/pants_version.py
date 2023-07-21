@@ -23,14 +23,22 @@ from scie_pants.ptex import Ptex
 
 log = logging.getLogger(__name__)
 
+# After this version, Pants is released as a per-platform PEX using GitHub Release assets.
+# See https://github.com/pantsbuild/pants/pull/19450
+PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.18.0.dev5")
+
 
 @dataclass(frozen=True)
 class ResolveInfo:
     stable_version: Version
-    sha_version: Version
-    find_links: str
+    sha_version: Version | None
+    find_links: str | None
 
     def pants_find_links_option(self, pants_version_selected: Version) -> str:
+        assert (
+            self.find_links is not None
+        ), "pants_find_links_option shouldn't be called if find_links is None"
+
         # We only want to add the find-links repo for PANTS_SHA invocations so that plugins can
         # resolve Pants the only place it can be found in that case - our ~private
         # binaries.pantsbuild.org S3 find-links bucket.
@@ -88,6 +96,10 @@ def determine_find_links(
 def determine_tag_version(
     ptex: Ptex, pants_version: str, find_links_dir: Path, github_api_bearer_token: str | None = None
 ) -> ResolveInfo:
+    stable_version = Version(pants_version)
+    if stable_version >= PANTS_PEX_GITHUB_RELEASE_VERSION:
+        return ResolveInfo(stable_version, sha_version=None, find_links=None)
+
     tag = f"release_{pants_version}"
 
     # N.B.: The tag database was created with the following in a Pants clone:

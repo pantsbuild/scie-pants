@@ -86,6 +86,7 @@ def main() -> NoReturn:
         resolve_info = determine_sha_version(
             ptex=ptex, sha=options.pants_sha, find_links_dir=find_links_dir
         )
+        assert resolve_info.sha_version is not None
         version = resolve_info.sha_version
     elif options.pants_version:
         resolve_info = determine_tag_version(
@@ -122,10 +123,11 @@ def main() -> NoReturn:
         finalizer()
 
     with open(env_file, "a") as fp:
-        print(f"FIND_LINKS={resolve_info.find_links}", file=fp)
+        if resolve_info.find_links:
+            print(f"FIND_LINKS={resolve_info.find_links}", file=fp)
+            print(f"PANTS_SHA_FIND_LINKS={resolve_info.pants_find_links_option(version)}", file=fp)
         if newly_created_build_root:
             print(f"PANTS_BUILDROOT_OVERRIDE={newly_created_build_root}", file=fp)
-        print(f"PANTS_SHA_FIND_LINKS={resolve_info.pants_find_links_option(version)}", file=fp)
         print(f"PANTS_VERSION={version}", file=fp)
         print(f"PYTHON={python}", file=fp)
 

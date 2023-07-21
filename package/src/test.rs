@@ -104,6 +104,8 @@ pub(crate) fn run_integration_tests(
         test_set_pants_version(scie_pants_scie);
         test_ignore_empty_pants_version_pants_sha(scie_pants_scie);
 
+        test_pants_from_pex_version(scie_pants_scie);
+
         let clone_root = create_tempdir()?;
         test_use_in_repo_with_pants_script(scie_pants_scie, &clone_root);
         test_dot_env_loading(scie_pants_scie, &clone_root);
@@ -392,6 +394,35 @@ fn test_ignore_empty_pants_version_pants_sha(scie_pants_scie: &Path) {
     );
 }
 
+fn test_pants_from_pex_version(scie_pants_scie: &Path) {
+    integration_test!("Verify scie-pants can use Pants released as a 'local' PEX");
+
+    let tmpdir = create_tempdir().unwrap();
+
+    let pants_release = "2.18.0.dev5";
+    let pants_toml_content = format!(
+        r#"
+        [GLOBAL]
+        pants_version = "{pants_release}"
+        "#
+    );
+    let pants_toml = tmpdir.path().join("pants.toml");
+    write_file(&pants_toml, false, pants_toml_content).unwrap();
+
+    let output = execute(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .current_dir(&tmpdir)
+            .stdout(Stdio::piped()),
+    );
+    let expected_message = pants_release;
+    let stdout = decode_output(output.unwrap().stdout).unwrap();
+    assert!(
+        stdout.contains(expected_message),
+        "STDOUT did not contain '{expected_message}':\n{stdout}"
+    );
+}
+
 fn test_use_in_repo_with_pants_script(scie_pants_scie: &Path, clone_root: &TempDir) {
     integration_test!("Verify scie-pants can be used as `pants` in a repo with the `pants` script");
     // This verifies a fix for https://github.com/pantsbuild/scie-pants/issues/28.
@@ -624,7 +655,7 @@ fn test_delegate_pants_in_pants_repo(scie_pants_scie: &Path, pants_2_14_1_clone_
 }
 
 fn test_use_pants_release_in_pants_repo(scie_pants_scie: &Path, pants_2_14_1_clone_dir: &PathBuf) {
-    let pants_release = "2.16.0.dev5";
+    let pants_release = "2.16.0rc2";
     integration_test!("Verify usage of Pants {pants_release} on the pants repo.");
     let output = assert_stderr_output(
         Command::new(scie_pants_scie)
