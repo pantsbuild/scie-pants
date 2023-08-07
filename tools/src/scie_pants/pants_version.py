@@ -115,6 +115,8 @@ def determine_tag_version(
     # git tag --list release_* | \
     #   xargs -I@ bash -c 'jq --arg T @ --arg C $(git rev-parse @^{commit}) -n "{(\$T): \$C}"' | \
     #   jq -s 'add' > pants_release_tags.json
+    # But was trimmed in https://github.com/pantsbuild/scie-pants/pull/235 to remove v2 releases
+    # (as those don't require tag lookups)
     tags = json.loads(importlib.resources.read_text("scie_pants", "pants_release_tags.json"))
     commit_sha = tags.get(tag, "")
 
