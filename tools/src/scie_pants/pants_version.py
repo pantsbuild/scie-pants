@@ -26,6 +26,9 @@ log = logging.getLogger(__name__)
 # After this version, Pants is released as a per-platform PEX using GitHub Release assets.
 # See https://github.com/pantsbuild/pants/pull/19450
 PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.18.0.dev5")
+# v2 of Pants has a cheeseshop at https://wheels.pantsbuild.org/simple/
+# pointing to GitHub Release artifacts of wheels.
+PANTS_GITHUB_WHEELS_START_VERSION = Version("2.0.0.dev0")
 
 
 @dataclass(frozen=True)
@@ -99,6 +102,12 @@ def determine_tag_version(
     stable_version = Version(pants_version)
     if stable_version >= PANTS_PEX_GITHUB_RELEASE_VERSION:
         return ResolveInfo(stable_version, sha_version=None, find_links=None)
+    elif stable_version >= PANTS_GITHUB_WHEELS_START_VERSION:
+        return ResolveInfo(
+            stable_version,
+            sha_version=None,
+            find_links="https://wheels.pantsbuild.org/simple/",
+        )
 
     tag = f"release_{pants_version}"
 
