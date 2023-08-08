@@ -1,5 +1,12 @@
 # Release Notes
 
+## 0.9.0
+
+This release adds support for scie-pants to bootstrap Pants using a "per-platform" PEX uploaded as
+a GitHub release asset. Additionally, the new wheels.pantsbuild.prg/simple wheels index has been wired
+up to support Pants releases back to 2.0.0.dev0. Lastly, the selection of the latest version is now
+deferred to the GitHub Release with the "latest" tag.
+
 ## 0.8.2
 
 This release fixes handling of environment variables when non-utf8 variables are present in the
@@ -50,7 +57,7 @@ build root for Pants configuration file. This was a missed port from the `./pant
 behaves the same: setting the `PANTS_TOML` tells `scie-pants` where to find the config file, but you
 must also tell Pants by using `PANTS_CONFIG_FILES` as well. With these two environment variables set
 and the project's build root demarcated by either a `BUILD_ROOT` or `BUILDROOT` marker file, Pants
-project layouts supported  by `./pants` should now be fully supported by `scie-pants`. Since
+project layouts supported by `./pants` should now be fully supported by `scie-pants`. Since
 `scie-pants` supports `.env` files you can also populate both env vars there as now to streamline
 the setup.
 
@@ -113,10 +120,10 @@ This release adds support for running Pants from a local Pants clone. This is us
 unreleased Pants changes.
 
 This feature used to be provided by a bespoke `pants_from_sources` script copied around to various
-repositories; an example of which is [here](
-https://github.com/pantsbuild/example-python/blob/1b38d08821865e3756024950bc000bdbd0161b95/pants_from_sources).
+repositories; an example of which is [here](https://github.com/pantsbuild/example-python/blob/1b38d08821865e3756024950bc000bdbd0161b95/pants_from_sources).
 
 There are two ways to activate this mode:
+
 1. Execute `pants` with the `PANTS_SOURCE` environment variable set as the path to the Pants repo
    whose Pants code you'd like to run against your repo.
 2. Copy, hardlink or symlink your `pants` binary to `pants_from_sources` and execute that.
@@ -148,8 +155,7 @@ in any repo that already contains the `./pants` bash script.
 
 ## 0.1.10
 
-This release folds [one step setup](
-https://github.com/pantsbuild/setup/blob/gh-pages/one_step_setup.sh)
+This release folds [one step setup](https://github.com/pantsbuild/setup/blob/gh-pages/one_step_setup.sh)
 functionality into `scie-pants`.
 
 ## 0.1.9
