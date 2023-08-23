@@ -1,10 +1,14 @@
 # Release Notes
 
-## 0.9.2
+## 0.9.3
 
 This release propagates the version of the `scie-pants` into the invocation of pants, so that Pants
 itself can [detect if it requires (or will require) features from newer versions of
 `scie-pants`](https://github.com/pantsbuild/pants/issues/19600).
+
+## 0.9.2
+
+Skipped due to a release error.
 
 ## 0.9.0 / 0.9.1
 
