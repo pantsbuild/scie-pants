@@ -17,6 +17,8 @@ use crate::config::PantsConfig;
 mod build_root;
 mod config;
 
+const SCIE_PANTS_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[derive(Debug, Default)]
 struct Process {
     exe: OsString,
@@ -221,6 +223,7 @@ fn get_pants_process() -> Result<Process> {
             "PANTS_DEBUG".into(),
             if pants_debug { "1" } else { "" }.into(),
         ),
+        ("SCIE_PANTS_VERSION".into(), SCIE_PANTS_VERSION.into()),
     ];
     if let Some(debugpy_version) = debugpy_version {
         env.push(("PANTS_DEBUGPY_VERSION".into(), debugpy_version.into()));
@@ -286,6 +289,7 @@ fn get_pants_from_sources_process(pants_repo_location: PathBuf) -> Result<Proces
             build_root.as_os_str().to_os_string(),
         ),
         ("no_proxy".into(), "*".into()),
+        ("SCIE_PANTS_VERSION".into(), SCIE_PANTS_VERSION.into()),
     ];
 
     Ok(Process { exe, args, env })
@@ -313,7 +317,7 @@ fn main() -> Result<()> {
     // scie-pants available.
     if let Ok(value) = env::var("PANTS_BOOTSTRAP_VERSION") {
         if "report" == value.as_str() {
-            println!(env!("CARGO_PKG_VERSION"));
+            println!("{}", SCIE_PANTS_VERSION);
             std::process::exit(0);
         }
     }

@@ -1,11 +1,20 @@
 # Release Notes
 
-## 0.9.0
+## 0.9.2
+
+This release propagates the version of the `scie-pants` into the invocation of pants, so that Pants
+itself can [detect if it requires (or will require) features from newer versions of
+`scie-pants`](https://github.com/pantsbuild/pants/issues/19600).
+
+## 0.9.0 / 0.9.1
 
 This release adds support for scie-pants to bootstrap Pants using a "per-platform" PEX uploaded as
 a GitHub release asset. Additionally, the new wheels.pantsbuild.prg/simple wheels index has been wired
 up to support Pants releases back to 2.0.0.dev0. Lastly, the selection of the latest version is now
 deferred to the GitHub Release with the "latest" tag.
+
+NB. this version was published as 0.9.0, but `PANTS_BOOTSTRAP_VERSION=report pants` reports itself
+as 0.9.1.
 
 ## 0.8.2
 
