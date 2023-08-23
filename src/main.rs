@@ -289,6 +289,7 @@ fn get_pants_from_sources_process(pants_repo_location: PathBuf) -> Result<Proces
             build_root.as_os_str().to_os_string(),
         ),
         ("no_proxy".into(), "*".into()),
+        ("SCIE_PANTS_VERSION".into(), SCIE_PANTS_VERSION.into()),
     ];
 
     Ok(Process { exe, args, env })
