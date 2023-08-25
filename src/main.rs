@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 use anyhow::{anyhow, bail, Context, Result};
 use build_root::BuildRoot;
-use log::{info, trace};
+use log::{info, trace, warn};
 use logging_timer::{time, timer, Level};
 use uuid::Uuid;
 
@@ -173,11 +173,19 @@ fn get_pants_process() -> Result<Process> {
 
     let env_pants_sha = env_version("PANTS_SHA")?;
     let env_pants_version = env_version("PANTS_VERSION")?;
-    if let (Some(pants_sha), Some(pants_version)) = (&env_pants_sha, &env_pants_version) {
-        bail!(
-            "Both PANTS_SHA={pants_sha} and PANTS_VERSION={pants_version} were set. \
-            Please choose one.",
-        )
+    if let Some(pants_sha) = &env_pants_sha {
+        // when support for PANTS_SHA is fully removed, PANTS_SHA_FIND_LINKS can be removed too
+        warn!(
+            "DEPRECATED: Support for PANTS_SHA={pants_sha} will be removed in a future version of the `pants` launcher. \
+            In addition, the artifacts for PANTS_SHA are no longer published for new commits. Use a released version."
+        );
+
+        if let Some(pants_version) = &env_pants_version {
+            bail!(
+                "Both PANTS_SHA={pants_sha} and PANTS_VERSION={pants_version} were set. \
+                Please choose one.",
+            )
+        }
     }
 
     let pants_version = if let Some(env_version) = env_pants_version {

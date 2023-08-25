@@ -38,10 +38,6 @@ class ResolveInfo:
     find_links: str | None
 
     def pants_find_links_option(self, pants_version_selected: Version) -> str:
-        assert (
-            self.find_links is not None
-        ), "pants_find_links_option shouldn't be called if find_links is None"
-
         # We only want to add the find-links repo for PANTS_SHA invocations so that plugins can
         # resolve Pants the only place it can be found in that case - our ~private
         # binaries.pantsbuild.org S3 find-links bucket.
@@ -51,7 +47,11 @@ class ResolveInfo:
             if self.stable_version in SpecifierSet("<2.14.0", prereleases=True)
             else "find-links"
         )
-        return f"--python-repos-{option_name}={operator}['{self.find_links}']"
+        value = f"'{self.find_links}'" if self.find_links else ''
+
+        # we usually pass a no-op, e.g. --python-repos-find-links=-[], because this is only used for
+        # PANTS_SHA support that is now deprecated and will be removed
+        return f"--python-repos-{option_name}={operator}[{value}]"
 
 
 def determine_find_links(
