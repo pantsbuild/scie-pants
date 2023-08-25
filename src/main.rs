@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 use anyhow::{anyhow, bail, Context, Result};
 use build_root::BuildRoot;
-use log::{info, trace, warn};
+use log::{info, trace};
 use logging_timer::{time, timer, Level};
 use uuid::Uuid;
 
@@ -175,9 +175,10 @@ fn get_pants_process() -> Result<Process> {
     let env_pants_version = env_version("PANTS_VERSION")?;
     if let Some(pants_sha) = &env_pants_sha {
         // when support for PANTS_SHA is fully removed, PANTS_SHA_FIND_LINKS can be removed too
-        warn!(
-            "DEPRECATED: Support for PANTS_SHA={pants_sha} will be removed in a future version of the `pants` launcher. \
-            In addition, the artifacts for PANTS_SHA are no longer published for new commits. Use a released version."
+        eprintln!(
+            "DEPRECATED: Support for PANTS_SHA=... will be removed in a future version of the `pants` launcher.\
+             \n\nYou've set PANTS_SHA={pants_sha}. The artifacts for PANTS_SHA are no longer published for new commits. \
+             To resolve, use a released version, and/or let us know about what you're doing at <https://www.pantsbuild.org/docs/getting-help>.\n"
         );
 
         if let Some(pants_version) = &env_pants_version {

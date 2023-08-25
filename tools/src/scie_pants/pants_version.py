@@ -47,7 +47,7 @@ class ResolveInfo:
             if self.stable_version in SpecifierSet("<2.14.0", prereleases=True)
             else "find-links"
         )
-        value = f"'{self.find_links}'" if self.find_links else ''
+        value = f"'{self.find_links}'" if self.find_links else ""
 
         # we usually pass a no-op, e.g. --python-repos-find-links=-[], because this is only used for
         # PANTS_SHA support that is now deprecated and will be removed
