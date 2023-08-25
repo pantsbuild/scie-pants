@@ -176,9 +176,16 @@ fn get_pants_process() -> Result<Process> {
     if let Some(pants_sha) = &env_pants_sha {
         // when support for PANTS_SHA is fully removed, PANTS_SHA_FIND_LINKS can be removed too
         eprintln!(
-            "DEPRECATED: Support for PANTS_SHA=... will be removed in a future version of the `pants` launcher.\
-             \n\nYou've set PANTS_SHA={pants_sha}. The artifacts for PANTS_SHA are no longer published for new commits. \
-             To resolve, use a released version, and/or let us know about what you're doing at <https://www.pantsbuild.org/docs/getting-help>.\n"
+          "\
+DEPRECATED: Support for PANTS_SHA=... will be removed in a future version of the `pants` launcher.
+
+The artifacts for PANTS_SHA are no longer published for new commits. This invocation set PANTS_SHA={pants_sha}.
+
+To resolve, do one of:
+- Use a released version of Pants.
+- Run pants from sources (for example: `PANTS_SOURCE=/path/to/pants-checkout pants ...`).
+- If these are not appropriate, let us know what you're using it for: <https://www.pantsbuild.org/docs/getting-help>.
+"
         );
 
         if let Some(pants_version) = &env_pants_version {
