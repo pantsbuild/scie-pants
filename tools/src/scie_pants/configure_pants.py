@@ -125,7 +125,9 @@ def main() -> NoReturn:
     with open(env_file, "a") as fp:
         if resolve_info.find_links:
             print(f"FIND_LINKS={resolve_info.find_links}", file=fp)
-            print(f"PANTS_SHA_FIND_LINKS={resolve_info.pants_find_links_option(version)}", file=fp)
+        # This can be removed once we stop supporting PANTS_SHA:
+        # NB. this is added unconditionally because it gets set as an argument
+        print(f"PANTS_SHA_FIND_LINKS={resolve_info.pants_find_links_option(version)}", file=fp)
         if newly_created_build_root:
             print(f"PANTS_BUILDROOT_OVERRIDE={newly_created_build_root}", file=fp)
         print(f"PANTS_VERSION={version}", file=fp)

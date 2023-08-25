@@ -1,5 +1,20 @@
 # Release Notes
 
+## 0.10.0
+
+This release deprecates support for running against an arbitrary Pants commit using
+`PANTS_SHA=abc123... pants ...`. Pants no longer
+publishes the artifacts required for this for new commits, and so this is becoming less and less
+useful. To replace use of `PANTS_SHA`, do one of:
+
+- Use a released version of Pants.
+- Run pants from sources (for example: `PANTS_SOURCE=/path/to/pants-checkout pants ...`).
+- If these are not appropriate, [let us know what you're using it for](https://www.pantsbuild.org/docs/getting-help).
+
+
+This release also fixes scie-pants running commands like `pants tailor --check ...` with Pants
+2.18.0.dev5 and newer (releases that use the new "per-platform" PEX).
+
 ## 0.9.3
 
 This release propagates the version of the `scie-pants` into the invocation of pants, so that Pants
