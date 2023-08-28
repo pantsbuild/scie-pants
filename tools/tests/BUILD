@@ -6,9 +6,7 @@ python_test_utils(
 )
 
 python_tests(
-    runtime_package_dependencies=[
-        "//tools"
-    ],
+    runtime_package_dependencies=["//tools"],
     extra_env_vars=[
         "COLUMNS",
         "EXPECTED_COLUMNS",
