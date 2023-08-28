@@ -5,6 +5,4 @@
 # and the `cargo run -p package -- tools` command. The latter uses `pex -D tools/src` which picks up
 # these BUILDs. Moving these targets to `tools/BUILD` would solve that problem but causes Pants
 # issues since the targets contained within are then above the `tools/src` source root.
-resources(
-    sources=["**/*"]
-)
+resources(sources=["**/*"])
