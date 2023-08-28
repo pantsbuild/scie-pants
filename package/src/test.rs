@@ -170,7 +170,17 @@ fn test_tools(scie_pants_scie: &Path, check: bool) {
     }
     execute(
         command
-            .args(["lint", "check", "test", "package", "::"])
+            .args([
+                "tailor",
+                "--check",
+                "update-build-files",
+                "--check",
+                "lint",
+                "check",
+                "test",
+                "package",
+                "::",
+            ])
             .env("PEX_SCRIPT", "Does not exist!")
             .env("EXPECTED_COLUMNS", tput_output("cols").trim())
             .env("EXPECTED_LINES", tput_output("lines").trim()),
