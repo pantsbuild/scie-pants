@@ -82,11 +82,11 @@ def install_pants_from_pex(
     """Installs Pants into the venv using the platform-specific pre-built PEX."""
     uname = os.uname()
     major, minor = sys.version_info[:2]
-    pex_name = f"pants.cp{major}{minor}-{uname.sysname.lower()}_{uname.machine.lower()}.pex"
+    pex_name = (
+        f"pants.{version}-cp{major}{minor}-{uname.sysname.lower()}_{uname.machine.lower()}.pex"
+    )
+    pex_url = f"https://github.com/pantsbuild/pants/releases/download/release_{version}/{pex_name}"
     with tempfile.NamedTemporaryFile(suffix=".pex") as pants_pex:
-        pex_url = (
-            f"https://github.com/pantsbuild/pants/releases/download/release_{version}/{pex_name}"
-        )
         try:
             ptex.fetch_to_fp(pex_url, pants_pex.file)
         except subprocess.CalledProcessError as e:
