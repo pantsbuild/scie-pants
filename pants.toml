@@ -12,31 +12,8 @@ backend_packages = [
 enabled = true
 repo_id = "e0b99427-9bc2-4f6a-b197-f5f378849b15"
 
-[black]
-version = "black~=23.1"
-lockfile = "pants-support/tool-locks/black.lock"
-
-[isort]
-version = "isort~=5.11"
-lockfile = "pants-support/tool-locks/isort.lock"
-
 [mypy]
-version = "mypy~=1.0"
 config = "tools/pyproject.toml"
-lockfile = "pants-support/tool-locks/mypy.lock"
-
-[pex-cli]
-version = "v2.1.126"
-known_versions = [
-    "v2.1.126|macos_arm64|3bfd60f037b2edd4149067266536e37b4c67263d0db681e492e6071cb1a9adda|4080751",
-    "v2.1.126|macos_x86_64|3bfd60f037b2edd4149067266536e37b4c67263d0db681e492e6071cb1a9adda|4080751",
-    "v2.1.126|linux_x86_64|3bfd60f037b2edd4149067266536e37b4c67263d0db681e492e6071cb1a9adda|4080751",
-    "v2.1.126|linux_arm64|3bfd60f037b2edd4149067266536e37b4c67263d0db681e492e6071cb1a9adda|4080751"
-]
-
-[pytest]
-version = "pytest~=7.2"
-lockfile = "pants-support/tool-locks/pytest.lock"
 
 [python]
 enable_resolves = true
