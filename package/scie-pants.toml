@@ -218,6 +218,8 @@ args = [
     "{scie.env.PANTS_DEBUG}",
     "--debugpy-requirement",
     "{scie.env.PANTS_DEBUGPY_VERSION}",
+    "--pants-pex-release-url-base",
+    "{scie.env.SCIE_PANTS_PANTS_PEX_RELEASE_URL_BASE}",
     "--ptex-path",
     "{ptex}",
     "{scie.bindings}",
