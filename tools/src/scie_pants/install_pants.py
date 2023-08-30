@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import stat
@@ -78,19 +79,24 @@ def install_pants_from_pex(
     ptex: Ptex,
     extra_requirements: Iterable[str],
     find_links: str | None,
-    pants_pex_release_url_base: str | None,
+    bootstrap_urls_path: str | None,
 ) -> None:
     """Installs Pants into the venv using the platform-specific pre-built PEX."""
     uname = os.uname()
-    major, minor = sys.version_info[:2]
     pex_name = (
-        f"pants.{version}-cp{major}{minor}-{uname.sysname.lower()}_{uname.machine.lower()}.pex"
+        f"pants.{version}-cp39-{uname.sysname.lower()}_{uname.machine.lower()}.pex"
     )
-    base_url = (
-        pants_pex_release_url_base
-        or f"https://github.com/pantsbuild/pants/releases/download/release_{version}"
-    )
-    pex_url = f"{base_url}/{pex_name}"
+
+    pex_url = f"https://github.com/pantsbuild/pants/releases/download/release_{version}/{pex_name}"
+    if bootstrap_urls_path:
+        bootstrap_urls = json.loads(Path(bootstrap_urls_path).read_text())
+        urls_info = bootstrap_urls["ptex"]
+        pex_url = urls_info.get(pex_name)
+        if pex_url is None:
+            raise ValueError(
+                f"Couldn't find '{pex_name}' in '{bootstrap_urls_path}' under the 'ptex' key."
+            )
+
     with tempfile.NamedTemporaryFile(suffix=".pex") as pants_pex:
         try:
             ptex.fetch_to_fp(pex_url, pants_pex.file)
@@ -98,7 +104,7 @@ def install_pants_from_pex(
             fatal(
                 f"Wasn't able to fetch the Pants PEX at {pex_url}.\n\n"
                 "Check to see if the URL is reachable (i.e. GitHub isn't down) and if"
-                f" {pex_name} asset exists within the release: {base_url}."
+                f" {pex_name} asset exists within the release."
                 " If the asset doesn't exist it may be that this platform isn't yet supported."
                 " If that's the case, please reach out on Slack: https://www.pantsbuild.org/docs/getting-help#slack"
                 " or file an issue on GitHub: https://github.com/pantsbuild/pants/issues/new/choose.\n\n"
@@ -144,9 +150,9 @@ def main() -> NoReturn:
         help="The find links repo pointing to Pants pre-built wheels for the given Pants version",
     )
     parser.add_argument(
-        "--pants-pex-release-url-base",
+        "--pants-bootstrap-urls",
         type=str,
-        help="The base URL to find Pants PEXs.",
+        help="The path to the JSON file containing alternate URLs for downloaded artifacts.",
     )
     parser.add_argument("--debug", type=bool, help="Install with debug capabilities.")
     parser.add_argument("--debugpy-requirement", help="The debugpy requirement to install")
@@ -190,7 +196,7 @@ def main() -> NoReturn:
             ptex=ptex,
             extra_requirements=extra_requirements,
             find_links=options.find_links,
-            pants_pex_release_url_base=options.pants_pex_release_url_base,
+            bootstrap_urls_path=options.pants_bootstrap_urls,
         )
     else:
         install_pants_from_req(
