@@ -83,18 +83,25 @@ provides the following:
     }
   }
   ```
-  To see the current mapping used by your version of `scie-pants` for Python Build Standalone you
-  can run:
+
+  For keys that are "embedded" into `scie-pants` itself (such as Python Build Standalone), you can run:
   ```
   $ SCIE=inspect scie-pants | jq .ptex
   ```
   You'll need to run this once for each platform you use `scie-pants` on to gather all mappings
   you'll need; e.g.: once for Linux x86_64 and once for Mac ARM.
 
-  The keys in your re-mapping must match, but the URLs, of course will be different; presumably from
-  a private network server or file share. Your re-directed URLs must provide the same content as
-  the canonical URLs; if the hashes of downloaded files do not match those recorded in
-  scie-pants, install will fail fast and let you know about the hash mismatch.
+  The embedded artifact references also contain expected hashes of the downloaded content. Your
+  re-directed URLs must provide the same content as the canonical URLs; if the hashes of downloaded
+  files do not match those recorded in `scie-pants`, install will fail fast and let you know about
+  the hash mismatch.
+
+  For other keys that aren't embedded, and are generated on-the-fly (such as the Pants PEX), there
+  is no single source of truth that can be easily scraped out. For the Pants PEX, the key is the versioned
+  PEX name (E.g. `pants.<version>-<python>-<plat>-<machine>.pex`). These can be found on the relevant
+  GitHub Release page's Assets (e.g. https://github.com/pantsbuild/pants/releases/tag/release_2.18.0a0).
+  (Note that for 2.18.x, PEX exist versioned and unversioned. `scie-pants` only uses the versioned
+  name as the key).
 
 ## Caveats
 
