@@ -83,9 +83,7 @@ def install_pants_from_pex(
 ) -> None:
     """Installs Pants into the venv using the platform-specific pre-built PEX."""
     uname = os.uname()
-    pex_name = (
-        f"pants.{version}-cp39-{uname.sysname.lower()}_{uname.machine.lower()}.pex"
-    )
+    pex_name = f"pants.{version}-cp39-{uname.sysname.lower()}_{uname.machine.lower()}.pex"
 
     pex_url = f"https://github.com/pantsbuild/pants/releases/download/release_{version}/{pex_name}"
     if bootstrap_urls_path:
