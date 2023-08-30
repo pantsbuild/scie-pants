@@ -261,7 +261,7 @@ To resolve, do one of:
     }
     if let Some(version) = pants_version {
         if delegate_bootstrap {
-            env.push(("_PANTS_OVERRIDE_VERSION".into(), version.clone().into()));
+            env.push(("_PANTS_VERSION_OVERRIDE".into(), version.clone().into()));
         }
         env.push(("PANTS_VERSION".into(), version.into()));
     } else if env_pants_sha.is_none() {
