@@ -92,7 +92,13 @@ def install_pants_from_pex(
         pex_url = urls_info.get(pex_name)
         if pex_url is None:
             raise ValueError(
-                f"Couldn't find '{pex_name}' in '{bootstrap_urls_path}' under the 'ptex' key."
+                f"Couldn't find '{pex_name}' in PANTS_BOOTSTRAP_URLS file: '{bootstrap_urls_path}' "
+                "under the 'ptex' key."
+            )
+        if not isinstance(pex_url, str):
+            raise TypeError(
+                f"The value for the key '{pex_name}' in PANTS_BOOTSTRAP_URLS file: '{bootstrap_urls_path}' "
+                f"under the 'ptex' key was expected to be a string. Got a {type(pex_url).__name__}"
             )
 
     with tempfile.NamedTemporaryFile(suffix=".pex") as pants_pex:
