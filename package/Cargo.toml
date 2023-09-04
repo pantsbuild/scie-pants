@@ -10,7 +10,7 @@ publish = false
 
 [dependencies]
 anyhow = { workspace = true }
-clap = { version = "4.3", features = ["derive"] }
+clap = { version = "4.4", features = ["derive"] }
 dirs = "5.0"
 fd-lock = "4.0"
 lazy_static = "1.4"
