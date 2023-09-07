@@ -26,9 +26,6 @@ log = logging.getLogger(__name__)
 # After this version, Pants is released as a per-platform PEX using GitHub Release assets.
 # See https://github.com/pantsbuild/pants/pull/19450
 PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.18.0.dev5")
-# v2 of Pants has a cheeseshop at https://wheels.pantsbuild.org/simple/
-# pointing to GitHub Release artifacts of wheels.
-PANTS_GITHUB_WHEELS_START_VERSION = Version("2.0.0.dev0")
 
 
 @dataclass(frozen=True)
@@ -88,6 +85,9 @@ def determine_find_links(
                 f"{sha}/{urllib.parse.quote(str(sha_version))}/index.html"
             )
             ptex.fetch_to_fp(pantsbuild_pants_find_links, fp)
+        fp.flush()
+
+        ptex.fetch_to_fp("https://wheels.pantsbuild.org/simple/", fp)
 
     return ResolveInfo(
         stable_version=Version(pants_version),
@@ -102,12 +102,6 @@ def determine_tag_version(
     stable_version = Version(pants_version)
     if stable_version >= PANTS_PEX_GITHUB_RELEASE_VERSION:
         return ResolveInfo(stable_version, sha_version=None, find_links=None)
-    elif stable_version >= PANTS_GITHUB_WHEELS_START_VERSION:
-        return ResolveInfo(
-            stable_version,
-            sha_version=None,
-            find_links="https://wheels.pantsbuild.org/simple/",
-        )
 
     tag = f"release_{pants_version}"
 
@@ -115,8 +109,6 @@ def determine_tag_version(
     # git tag --list release_* | \
     #   xargs -I@ bash -c 'jq --arg T @ --arg C $(git rev-parse @^{commit}) -n "{(\$T): \$C}"' | \
     #   jq -s 'add' > pants_release_tags.json
-    # But was trimmed in https://github.com/pantsbuild/scie-pants/pull/235 to remove v2 releases
-    # (as those don't require tag lookups)
     tags = json.loads(importlib.resources.read_text("scie_pants", "pants_release_tags.json"))
     commit_sha = tags.get(tag, "")
 
