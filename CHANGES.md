@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.10.1
+
+This release fixes an issue where some Mac machines were unable to install Pants due to a missing
+`--find-links` argument.
+
 ## 0.10.0
 
 This release deprecates support for running against an arbitrary Pants commit using
