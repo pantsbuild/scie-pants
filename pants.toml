@@ -17,7 +17,7 @@ config = "tools/pyproject.toml"
 
 [python]
 enable_resolves = true
-interpreter_constraints = [">=3.9,<3.10"]
+interpreter_constraints = [">=3.8,<3.10"]
 
 # We generate this via cargo run -p package -- --update-lock.
 resolves_generate_lockfiles = false
