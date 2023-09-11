@@ -13,5 +13,9 @@
 /.pants.d/
 /.pids/
 
-# Python bytecode
+# Python bytecode.
 __pycache__/
+
+# Misc cruft.
+.DS_Store
+*~
