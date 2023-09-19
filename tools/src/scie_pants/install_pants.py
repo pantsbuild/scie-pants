@@ -176,7 +176,8 @@ def main() -> NoReturn:
 
     version = options.pants_version
     python_version = ".".join(map(str, sys.version_info[:3]))
-    debug(f"Bootstrapping Pants {version} using {sys.implementation.name} {python_version}")
+    info(f"Bootstrapping Pants {version}")
+    debug(f"Pants itself is using: {sys.implementation.name} {python_version}")
 
     pants_requirements = [f"pantsbuild.pants=={version}"]
     extra_requirements = []
