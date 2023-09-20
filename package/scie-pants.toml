@@ -12,7 +12,7 @@ version = "0.7.0"
 lazy_argv1 = "{scie.env.PANTS_BOOTSTRAP_URLS={scie.lift}}"
 
 [lift.scie-jump]
-version = "0.11.1"
+version = "0.13.0"
 
 [[lift.interpreters]]
 id = "cpython38"
@@ -53,7 +53,9 @@ exe = "{scie-pants.bin}"
 # Run Pants
 [[lift.commands]]
 name = "pants"
-description = "Runs a hermetic Pants installation."
+# No description because this command shouldn't render in the help output (it's invoked as
+# appropriate by the default "Boot" one above)
+# description = "Runs a hermetic Pants installation."
 exe = "{scie.bindings.install:PANTS_CLIENT_EXE}"
 args = [
     "{scie.bindings.configure:PANTS_SHA_FIND_LINKS}",
@@ -69,7 +71,9 @@ _PANTS_SERVER_EXE = "{scie.bindings.install:PANTS_SERVER_EXE}"
 # Run Pants Debug Mode
 [[lift.commands]]
 name = "pants-debug"
-description = "Runs a hermetic Pants installation with a debug server for debugging Pants code."
+# No description because this command shouldn't render in the help output (it's invoked as
+# appropriate by the default "Boot" one above)
+# description = "Runs a hermetic Pants installation with a debug server for debugging Pants code."
 exe = "{scie.bindings.install:VIRTUAL_ENV}/bin/pants"
 args = [
     "-c",
