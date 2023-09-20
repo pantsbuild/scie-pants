@@ -137,6 +137,8 @@ pub(crate) fn run_integration_tests(
 
         #[cfg(unix)]
         test_non_utf8_env_vars_issue_198(scie_pants_scie);
+
+        test_bad_boot_error_text(scie_pants_scie);
     }
 
     // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
@@ -1011,4 +1013,40 @@ fn test_non_utf8_env_vars_issue_198(scie_pants_scie: &Path) {
     assert_eq!(pants_release, decode_output(output.stdout).unwrap().trim());
 
     env::remove_var("FOO");
+}
+
+fn test_bad_boot_error_text(scie_pants_scie: &Path) {
+    integration_test!(
+        "Verifying the output of scie-pants is user-friendly if they provide an unexpected SCIE_BOOT argument",
+    );
+    // (Avoids `execute` because this is expected to fail.)
+    let child = Command::new(scie_pants_scie)
+        .env("SCIE_BOOT", "does-not-exist")
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let output = child.wait_with_output().unwrap();
+    let stderr = decode_output(output.stderr).unwrap();
+
+    for expected in [
+        "`SCIE_BOOT=does-not-exist` was found in the environment",
+        // the various boot commands we want users to know about
+        "\n<default> ",
+        "\nbootstrap-tools ",
+        "\nupdate ",
+    ] {
+        assert!(
+            stderr.contains(expected),
+            "STDERR does not contain '{expected:?}':\n{stderr}"
+        );
+    }
+
+    // Check that boot commands that users shouldn't see (used internally, only) aren't included.
+    for bad_boot in ["pants", "pants-debug"] {
+        let pattern = format!("\n{bad_boot} ");
+        assert!(
+            !stderr.contains(&pattern),
+            "STDERR contains '{pattern:?} ' at the start of a line, potentially referring to SCIE_BOOT=pants command that shouldn't appear:\n{stderr}"
+        );
+    }
 }
