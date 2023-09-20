@@ -29,7 +29,7 @@ use crate::utils::fs::{base_name, canonicalize, copy, ensure_directory};
 
 const BINARY: &str = "scie-pants";
 
-const SCIENCE_TAG: &str = "v0.1.2";
+const SCIENCE_TAG: &str = "v0.2.1";
 
 #[derive(Clone)]
 struct SpecifiedPath(PathBuf);
