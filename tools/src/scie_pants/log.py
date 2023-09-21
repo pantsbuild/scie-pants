@@ -15,6 +15,10 @@ def _log(message: str) -> None:
     print(message, file=sys.stderr)
 
 
+def debug(message: str) -> None:
+    logging.debug(message)
+
+
 def info(message: str) -> None:
     logging.info(message)
     _log(green(message))

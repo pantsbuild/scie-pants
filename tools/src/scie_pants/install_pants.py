@@ -17,7 +17,7 @@ from typing import Iterable, NoReturn
 
 from packaging.version import Version
 
-from scie_pants.log import fatal, info, init_logging
+from scie_pants.log import debug, fatal, info, init_logging
 from scie_pants.pants_version import PANTS_PEX_GITHUB_RELEASE_VERSION
 from scie_pants.ptex import Ptex
 
@@ -176,7 +176,8 @@ def main() -> NoReturn:
 
     version = options.pants_version
     python_version = ".".join(map(str, sys.version_info[:3]))
-    info(f"Bootstrapping Pants {version} using {sys.implementation.name} {python_version}")
+    info(f"Bootstrapping Pants {version}")
+    debug(f"Pants itself is using: {sys.implementation.name} {python_version}")
 
     pants_requirements = [f"pantsbuild.pants=={version}"]
     extra_requirements = []
