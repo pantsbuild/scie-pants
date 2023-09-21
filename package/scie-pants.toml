@@ -11,7 +11,7 @@ id = "ptex"
 version = "0.7.0"
 lazy_argv1 = "{scie.env.PANTS_BOOTSTRAP_URLS={scie.lift}}"
 
-[lift.scie-jump]
+[lift.scie_jump]
 version = "0.13.0"
 
 [[lift.interpreters]]
