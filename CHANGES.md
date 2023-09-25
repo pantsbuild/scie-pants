@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.10.2
+
+This release improves diagnostics and logging.
+
 ## 0.10.1
 
 This release fixes an issue where some Mac machines were unable to install Pants due to a missing
