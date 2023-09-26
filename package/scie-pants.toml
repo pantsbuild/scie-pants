@@ -9,7 +9,7 @@ repo = "https://github.com/pantsbuild/scie-pants"
 [lift.ptex]
 id = "ptex"
 version = "0.7.0"
-lazy_argv1 = "{scie.env.PANTS_BOOTSTRAP_URLS={scie.lift}}"
+argv1 = "{scie.env.PANTS_BOOTSTRAP_URLS={scie.lift}}"
 
 [lift.scie_jump]
 version = "0.13.0"
@@ -40,7 +40,7 @@ members = [
 # N.B.: We name the scie-pants binary scie-pants.bin since the scie itself is named scie-pants
 # which would conflict when packaging.
 name = "scie-pants.bin"
-executable = true
+is_executable = true
 
 [[lift.files]]
 name = "tools.pex"
