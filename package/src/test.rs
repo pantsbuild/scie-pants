@@ -444,6 +444,15 @@ fn test_use_in_repo_with_pants_script(scie_pants_scie: &Path, clone_root: &TempD
             .current_dir(clone_root.path()),
     )
     .unwrap();
+
+    let django_dir = clone_root.path().join("example-django");
+    execute(
+        Command::new("git")
+            .args(["checkout", "ff20d1126b5d67b6a77f7d6a39f3063d1897ceb4"])
+            .current_dir(&django_dir),
+    )
+    .unwrap();
+
     let bin_dir = clone_root.path().join("bin");
     ensure_directory(&bin_dir, false).unwrap();
     copy(scie_pants_scie, bin_dir.join("pants").as_path()).unwrap();
@@ -460,7 +469,7 @@ fn test_use_in_repo_with_pants_script(scie_pants_scie: &Path, clone_root: &TempD
         Command::new("pants")
             .arg("-V")
             .env("PATH", new_path)
-            .current_dir(clone_root.path().join("example-django")),
+            .current_dir(django_dir),
     )
     .unwrap();
 }
