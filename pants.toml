@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.16.0"
+pants_version = "2.17.0"
 
 backend_packages = [
     "pants.backend.python",
@@ -24,6 +24,9 @@ resolves_generate_lockfiles = false
 
 [python.resolves]
 python-default = "tools/lock.json"
+
+[python-infer]
+use_rust_parser = true
 
 [pex-cli]
 version = "v2.1.137"
