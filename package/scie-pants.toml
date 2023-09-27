@@ -40,7 +40,6 @@ members = [
 # N.B.: We name the scie-pants binary scie-pants.bin since the scie itself is named scie-pants
 # which would conflict when packaging.
 name = "scie-pants.bin"
-is_executable = true
 
 [[lift.files]]
 name = "tools.pex"
