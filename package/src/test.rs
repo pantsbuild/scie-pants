@@ -37,8 +37,32 @@ fn decode_output(output: Vec<u8>) -> Result<String> {
     String::from_utf8(output).context("Failed to decode Pants output.")
 }
 
-fn assert_stderr_output(command: &mut Command, expected_messages: Vec<&str>) -> Output {
-    let output = execute(command.stderr(Stdio::piped())).unwrap();
+enum ExpectedResult {
+    Success,
+    Failure,
+}
+
+fn assert_stderr_output(
+    command: &mut Command,
+    expected_messages: Vec<&str>,
+    expected_result: ExpectedResult,
+) -> (Output, String) {
+    command.stderr(Stdio::piped());
+
+    let output = match expected_result {
+        ExpectedResult::Success => execute(command).unwrap(),
+        ExpectedResult::Failure => {
+            let output = command.spawn().unwrap().wait_with_output().unwrap();
+            assert!(
+                !output.status.success(),
+                "Command {:?} unexpectedly succeeded, STDERR: {}",
+                command,
+                decode_output(output.stderr).unwrap()
+            );
+            output
+        }
+    };
+
     let stderr = decode_output(output.stderr.clone()).unwrap();
     for expected_message in expected_messages {
         assert!(
@@ -46,7 +70,7 @@ fn assert_stderr_output(command: &mut Command, expected_messages: Vec<&str>) -> 
             "STDERR did not contain '{expected_message}':\n{stderr}"
         );
     }
-    output
+    (output, stderr)
 }
 
 pub(crate) fn run_integration_tests(
@@ -628,6 +652,7 @@ index b70ae75..271706a 100644
             "The PANTS_SOURCE mode is working.",
             "Pants from sources argv: --no-verify-config -V.",
         ],
+        ExpectedResult::Success,
     );
 }
 
@@ -658,6 +683,7 @@ fn test_pants_from_sources_mode(
             "The pants_from_sources mode is working.",
             "Pants from sources argv: --no-verify-config -V.",
         ],
+        ExpectedResult::Success,
     );
 }
 
@@ -672,13 +698,14 @@ fn test_delegate_pants_in_pants_repo(scie_pants_scie: &Path, pants_2_14_1_clone_
             "The delegate_bootstrap mode is working.",
             "Pants from sources argv: -V.",
         ],
+        ExpectedResult::Success,
     );
 }
 
 fn test_use_pants_release_in_pants_repo(scie_pants_scie: &Path, pants_2_14_1_clone_dir: &PathBuf) {
     let pants_release = "2.16.0rc2";
     integration_test!("Verify usage of Pants {pants_release} on the pants repo.");
-    let output = assert_stderr_output(
+    let (output, stderr) = assert_stderr_output(
         Command::new(scie_pants_scie)
             .arg("help")
             .env("PANTS_VERSION", pants_release)
@@ -692,6 +719,7 @@ fn test_use_pants_release_in_pants_repo(scie_pants_scie: &Path, pants_2_14_1_clo
             .current_dir(pants_2_14_1_clone_dir)
             .stdout(Stdio::piped()),
         vec![],
+        ExpectedResult::Success,
     );
     let expected_message = pants_release;
     let stdout = decode_output(output.stdout).unwrap();
@@ -700,7 +728,6 @@ fn test_use_pants_release_in_pants_repo(scie_pants_scie: &Path, pants_2_14_1_clo
         "STDOUT did not contain '{expected_message}':\n{stdout}"
     );
     let unexpected_message = "Pants from sources argv";
-    let stderr = decode_output(output.stderr).unwrap();
     assert!(
         !stderr.contains(unexpected_message),
         "STDERR unexpectedly contained '{unexpected_message}':\n{stderr}"
@@ -1028,27 +1055,17 @@ fn test_bad_boot_error_text(scie_pants_scie: &Path) {
     integration_test!(
         "Verifying the output of scie-pants is user-friendly if they provide an unexpected SCIE_BOOT argument",
     );
-    // (Avoids `execute` because this is expected to fail.)
-    let child = Command::new(scie_pants_scie)
-        .env("SCIE_BOOT", "does-not-exist")
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    let output = child.wait_with_output().unwrap();
-    let stderr = decode_output(output.stderr).unwrap();
-
-    for expected in [
-        "`SCIE_BOOT=does-not-exist` was found in the environment",
-        // the various boot commands we want users to know about
-        "\n<default> ",
-        "\nbootstrap-tools ",
-        "\nupdate ",
-    ] {
-        assert!(
-            stderr.contains(expected),
-            "STDERR does not contain '{expected:?}':\n{stderr}"
-        );
-    }
+    let (_, stderr) = assert_stderr_output(
+        Command::new(scie_pants_scie).env("SCIE_BOOT", "does-not-exist"),
+        vec![
+            "`SCIE_BOOT=does-not-exist` was found in the environment",
+            // the various boot commands we want users to know about
+            "\n<default> ",
+            "\nbootstrap-tools ",
+            "\nupdate ",
+        ],
+        ExpectedResult::Failure,
+    );
 
     // Check that boot commands that users shouldn't see (used internally, only) aren't included.
     for bad_boot in ["pants", "pants-debug"] {
