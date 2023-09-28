@@ -60,48 +60,50 @@ provides the following:
   `scie-pants` executable to `pants_from_sources` and execute that. In this case `PANTS_SOURCE` will
   default to `../pants` just as was the case in the bespoke `./pants_from_sources` scripts.
 
-+ Partial support for firewalls:
++ Partial support for firewalls
 
-  Currently, you can re-direct the URLs used to fetch:
+### Firewall support
 
-    + [Python Build Standalone](https://python-build-standalone.readthedocs.io/en/latest/) CPython
-      distributions used to bootstrap Pants.
-    + Pants PEX release assets which contain Pants as a single-file application.
+Currently, you can re-direct the URLs used to fetch:
 
-  This is done by exporting a `PANTS_BOOTSTRAP_URLS` environment variable
-  specifying the path to a JSON file containing a mapping of file names to URLS to fetch them from
-  under a top-level `"ptex"` key. For example:
-  ```json
-  {
-    "ptex": {
-      "cpython-3.8.16+20230507-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://example.com/cpython-3.8.16%2B20230507-x86_64-unknown-linux-gnu-install_only.tar.gz",
-      "cpython-3.8.16+20230507-aarch64-apple-darwin-install_only.tar.gz": "https://example.com/cpython-3.8.16%2B20230507-aarch64-apple-darwin-install_only.tar.gz",
-      "cpython-3.9.16+20230507-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://example.com/cpython-3.9.16%2B20230507-x86_64-unknown-linux-gnu-install_only.tar.gz",
-      "cpython-3.9.16+20230507-aarch64-apple-darwin-install_only.tar.gz": "https://example.com/cpython-3.9.16%2B20230507-aarch64-apple-darwin-install_only.tar.gz",
-      "pants.2.18.0-cp9-linux-x86_64.pex": "https://example.com/pants.2.18.0-cp9-linux-x86_64.pex",
-      ...
-    }
+  + [Python Build Standalone](https://python-build-standalone.readthedocs.io/en/latest/) CPython
+    distributions used to bootstrap Pants.
+  + Pants PEX release assets which contain Pants as a single-file application.
+
+This is done by exporting a `PANTS_BOOTSTRAP_URLS` environment variable
+specifying the path to a JSON file containing a mapping of file names to URLS to fetch them from
+under a top-level `"ptex"` key. For example:
+```json
+{
+  "ptex": {
+    "cpython-3.8.16+20230507-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://example.com/cpython-3.8.16%2B20230507-x86_64-unknown-linux-gnu-install_only.tar.gz",
+    "cpython-3.8.16+20230507-aarch64-apple-darwin-install_only.tar.gz": "https://example.com/cpython-3.8.16%2B20230507-aarch64-apple-darwin-install_only.tar.gz",
+    "cpython-3.9.16+20230507-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://example.com/cpython-3.9.16%2B20230507-x86_64-unknown-linux-gnu-install_only.tar.gz",
+    "cpython-3.9.16+20230507-aarch64-apple-darwin-install_only.tar.gz": "https://example.com/cpython-3.9.16%2B20230507-aarch64-apple-darwin-install_only.tar.gz",
+    "pants.2.18.0-cp39-linux_x86_64.pex": "https://example.com/pants.2.18.0-cp39-linux_x86_64.pex",
+    ...
   }
-  ```
+}
+```
 
-  For keys that are "embedded" into `scie-pants` itself (such as Python Build Standalone), you can run:
-  ```
-  $ SCIE=inspect scie-pants | jq .ptex
-  ```
-  You'll need to run this once for each platform you use `scie-pants` on to gather all mappings
-  you'll need; e.g.: once for Linux x86_64 and once for Mac ARM.
+For keys that are "embedded" into `scie-pants` itself (such as Python Build Standalone), you can run:
+```
+$ SCIE=inspect scie-pants | jq .ptex
+```
+You'll need to run this once for each platform you use `scie-pants` on to gather all mappings
+you'll need; e.g.: once for Linux x86_64 and once for Mac ARM.
 
-  The embedded artifact references also contain expected hashes of the downloaded content. Your
-  re-directed URLs must provide the same content as the canonical URLs; if the hashes of downloaded
-  files do not match those recorded in `scie-pants`, install will fail fast and let you know about
-  the hash mismatch.
+The embedded artifact references also contain expected hashes of the downloaded content. Your
+re-directed URLs must provide the same content as the canonical URLs; if the hashes of downloaded
+files do not match those recorded in `scie-pants`, install will fail fast and let you know about
+the hash mismatch.
 
-  For other keys that aren't embedded, and are generated on-the-fly (such as the Pants PEX), there
-  is no single source of truth that can be easily scraped out. For the Pants PEX, the key is the versioned
-  PEX name (E.g. `pants.<version>-<python>-<plat>-<machine>.pex`). These can be found on the relevant
-  GitHub Release page's Assets (e.g. https://github.com/pantsbuild/pants/releases/tag/release_2.18.0a0).
-  (Note that for 2.18.x, PEX exist versioned and unversioned. `scie-pants` only uses the versioned
-  name as the key).
+For other keys that aren't embedded, and are generated on-the-fly (such as the Pants PEX), there
+is no single source of truth that can be easily scraped out. For the Pants PEX, the key is the versioned
+PEX name (E.g. `pants.<version>-<python>-<plat>_<machine>.pex`). These can be found on the relevant
+GitHub Release page's Assets (e.g. https://github.com/pantsbuild/pants/releases/tag/release_2.18.0a0).
+(Note that for 2.18.x, PEX exist versioned and unversioned. `scie-pants` only uses the versioned
+name as the key).
 
 ## Caveats
 
