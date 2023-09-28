@@ -1,5 +1,12 @@
 # Release Notes
 
+## 0.10.3
+
+This release ensures scie-pants obeys the `PANTS_BOOTSTRAP_URLS` environment variable. This
+environment variable can be set to the path of JSON file, and (now) allows overriding the default
+locations from which scie-pants fetches Python interpreters and Pants PEXes, to [support
+firewalls](https://github.com/pantsbuild/scie-pants#firewall-support).
+
 ## 0.10.2
 
 This release improves diagnostics and logging.
