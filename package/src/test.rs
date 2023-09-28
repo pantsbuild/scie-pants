@@ -163,6 +163,7 @@ pub(crate) fn run_integration_tests(
         test_non_utf8_env_vars_issue_198(scie_pants_scie);
 
         test_bad_boot_error_text(scie_pants_scie);
+        test_pants_bootstrap_urls(scie_pants_scie);
     }
 
     // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
@@ -1075,4 +1076,120 @@ fn test_bad_boot_error_text(scie_pants_scie: &Path) {
             "STDERR contains '{pattern:?} ' at the start of a line, potentially referring to SCIE_BOOT=pants command that shouldn't appear:\n{stderr}"
         );
     }
+}
+
+fn test_pants_bootstrap_urls(scie_pants_scie: &Path) {
+    integration_test!(
+      "Verifying PANTS_BOOTSTRAP_URLS is used for both CPython interpreter and Pants PEX ({issue})",
+      issue = issue_link(243)
+    );
+
+    // This test runs in 4 parts:
+    //
+    // 0. Setup tempdirs, common values etc.
+    // 1. Verify interpreter download uses URL (by checking errors with a non-existent URL)
+    // 2. The same, but for the Pants PEX
+    // 3. Verify that specifying valid URLs works too (no good if we're just succesfully failing)
+
+    // Part 0: Setup
+    let tmpdir = create_tempdir().unwrap();
+
+    // A fresh directory to ensure the downloads happen fresh.
+    let scie_base = tmpdir.path().join("scie-base");
+
+    // The file that we'll plop our URL overrides into...
+    let urls_json = tmpdir.path().join("urls.json");
+    // ... plus helpers to write to it, we start with the `ptex` key/value of this scie-pants's
+    // `SCIE=inspect` output (which will be the Python interpreters and their default URLs), but
+    // allow the tests to update it.
+    let output = execute(
+        Command::new(scie_pants_scie)
+            .env("SCIE", "inspect")
+            .stdout(Stdio::piped()),
+    )
+    .unwrap();
+    let mut ptex_json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    ptex_json
+        .as_object_mut()
+        .unwrap()
+        .retain(|key, _| key == "ptex");
+
+    let write_urls_json =
+        |update_ptex_map: &dyn Fn(&mut serde_json::Map<String, serde_json::Value>)| {
+            let mut json = ptex_json.clone();
+            // Transform the "ptex": {...} map as appropriate.
+            update_ptex_map(json["ptex"].as_object_mut().unwrap());
+            write_file(&urls_json, false, serde_json::to_vec(&json).unwrap()).unwrap();
+        };
+
+    // Reference data for the Pants we'll try to install (NB. we have to force new-enough version of
+    // Pants to install via PEXes, older versions go via PyPI which isn't managed by
+    // PANTS_BOOTSTRAP_URLS)
+    let pants_release = "2.18.0rc1";
+    let platforms = [
+        "darwin_arm64",
+        "darwin_x86_64",
+        "linux_aarch64",
+        "linux_x86_64",
+    ];
+    let pexes = platforms
+        .iter()
+        .map(|platform| format!("pants.{pants_release}-cp39-{platform}.pex"))
+        .collect::<Vec<_>>();
+
+    // we run the exact same command each time
+    let mut command = Command::new(scie_pants_scie);
+    command
+        .arg("-V")
+        .env("PANTS_BOOTSTRAP_URLS", &urls_json)
+        .env("SCIE_BASE", &scie_base)
+        .env("PANTS_VERSION", pants_release);
+
+    // Part 1: Validate that we attempt to download the CPython interpreter from (invalid) override
+    // URLs
+
+    // Set every ptex file value to the substitute URL, that doesn't exist
+    let doesnt_exist_interpreter = tmpdir.path().join("doesnt-exist-interpreter");
+    let doesnt_exist_interpreter_url = format!("file://{}", doesnt_exist_interpreter.display());
+    write_urls_json(&|ptex_map| {
+        for value in ptex_map.values_mut() {
+            *value = doesnt_exist_interpreter_url.clone().into();
+        }
+    });
+
+    assert_stderr_output(
+        &mut command,
+        vec![&format!("Failed to fetch {doesnt_exist_interpreter_url}")],
+        ExpectedResult::Failure,
+    );
+
+    // Part 2: Validate that we attempt to download Pants PEXes from (invalid) override URLs
+
+    // Leave the interpreters and add new URLs for the various PEXes that this test might need (all
+    // the different platforms); as above, the URL doesn't exist
+    let doesnt_exist_pex = tmpdir.path().join("doesnt-exist-pex");
+    let doesnt_exist_pex_url = format!("file://{}", doesnt_exist_pex.display());
+    write_urls_json(&|ptex_map| {
+        for pex in &pexes {
+            ptex_map.insert(pex.clone(), doesnt_exist_pex_url.clone().into());
+        }
+    });
+
+    assert_stderr_output(
+        &mut command,
+        vec![&format!("Failed to fetch {doesnt_exist_pex_url}")],
+        ExpectedResult::Failure,
+    );
+
+    // Part 3: Validate that we can bootstrap pants fully from these override URLs (by manually
+    // re-specifying the defaults)
+    write_urls_json(&|ptex_map| {
+        for pex in &pexes {
+            ptex_map.insert(pex.clone(), format!("https://github.com/pantsbuild/pants/releases/download/release_{pants_release}/{pex}").into());
+        }
+    });
+
+    let output = execute(&mut command.stdout(Stdio::piped())).unwrap();
+    let stdout = decode_output(output.stdout).unwrap();
+    assert!(stdout.contains(pants_release));
 }
