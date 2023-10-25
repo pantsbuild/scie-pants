@@ -73,7 +73,7 @@ name = "pants-debug"
 # No description because this command shouldn't render in the help output (it's invoked as
 # appropriate by the default "Boot" one above)
 # description = "Runs a hermetic Pants installation with a debug server for debugging Pants code."
-exe = "{scie.bindings.install:VIRTUAL_ENV}/bin/pants"
+exe = "{scie.bindings.install:VIRTUAL_ENV}/bin/python"
 args = [
     "-c",
     """\
