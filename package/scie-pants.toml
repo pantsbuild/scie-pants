@@ -17,16 +17,16 @@ version = "0.13.0"
 [[lift.interpreters]]
 id = "cpython38"
 provider = "PythonBuildStandalone"
-release = "20230507"
+release = "20231002"
 lazy = true
-version = "3.8.16"
+version = "3.8.18"
 
 [[lift.interpreters]]
 id = "cpython39"
 provider = "PythonBuildStandalone"
-release = "20230507"
+release = "20231002"
 lazy = true
-version = "3.9.16"
+version = "3.9.18"
 
 [[lift.interpreter_groups]]
 id = "cpython"
