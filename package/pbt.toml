@@ -13,9 +13,9 @@ version = "0.13.0"
 [[lift.interpreters]]
 id = "cpython"
 provider = "PythonBuildStandalone"
-release = "20230507"
+release = "20231002"
 lazy = true
-version = "3.8.16"
+version = "3.8.18"
 
 [[lift.files]]
 name = "pex"

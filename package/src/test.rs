@@ -1189,7 +1189,7 @@ fn test_pants_bootstrap_urls(scie_pants_scie: &Path) {
         }
     });
 
-    let output = execute(&mut command.stdout(Stdio::piped())).unwrap();
+    let output = execute(command.stdout(Stdio::piped())).unwrap();
     let stdout = decode_output(output.stdout).unwrap();
     assert!(stdout.contains(pants_release));
 }
