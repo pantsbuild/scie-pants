@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.10.4
+
+This release fixes a regression when using `PANTS_DEBUG`. The bundled Python interpreter has also
+been upgraded to release `20231002` to address a potential issue with `libcrypt.so.1` on Linux
+systems.
+
 ## 0.10.3
 
 This release ensures scie-pants obeys the `PANTS_BOOTSTRAP_URLS` environment variable. This
