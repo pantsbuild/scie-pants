@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.11.0
+
+This releases ensures that `scie-pants` emits an error if there's an `.env` file cannot be
+understood, rather than silently ignoring the invalid contents (and everything after). In
+particular, `"`s are not supported, a line like `A="B C"` should be `A='B C'`.
+
 ## 0.10.4
 
 This release fixes a regression when using `PANTS_DEBUG`. The bundled Python interpreter has also
