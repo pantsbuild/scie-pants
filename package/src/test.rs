@@ -133,6 +133,7 @@ pub(crate) fn run_integration_tests(
         let clone_root = create_tempdir()?;
         test_use_in_repo_with_pants_script(scie_pants_scie, &clone_root);
         test_dot_env_loading(scie_pants_scie, &clone_root);
+        test_dot_env_error(scie_pants_scie);
 
         let dev_cache_dir = crate::utils::fs::dev_cache_dir()?;
         let clone_dir = dev_cache_dir.join("clones");
@@ -515,6 +516,26 @@ fn test_dot_env_loading(scie_pants_scie: &Path, clone_root: &TempDir) {
             .current_dir(clone_root.path().join("example-django")),
     )
     .unwrap();
+}
+
+fn test_dot_env_error(scie_pants_scie: &Path) {
+    integration_test!("Verify `.env` loading emits errors if invalid");
+
+    let tempdir = create_tempdir().unwrap();
+    write_file(
+        &tempdir.path().join(".env"),
+        false,
+        "CABBAGE=cabbagee\ntotally invalid line\nPOTATO=potato",
+    )
+    .unwrap();
+
+    assert_stderr_output(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .current_dir(tempdir.path()),
+        vec!["requested .env files be loaded but there was an error doing so: Error parsing line: 'totally invalid line'"],
+        ExpectedResult::Failure
+    );
 }
 
 fn test_pants_source_mode(
