@@ -2,7 +2,7 @@
 
 ## 0.11.0
 
-This releases ensures that `scie-pants` emits an error if there's an `.env` file cannot be
+This release ensures that `scie-pants` emits an error if there's an `.env` file that cannot be
 understood, rather than silently ignoring the invalid contents (and everything after). In
 particular, `"`s are not supported, a line like `A="B C"` should be `A='B C'`.
 
