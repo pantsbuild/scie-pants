@@ -34,7 +34,7 @@ nix = { version = "0.27", features = ["process"] }
 serde = { version = "1.0", features = ["derive"] }
 tempfile = { workspace = true }
 toml = "0.8"
-uuid = { version = "1.4", features = ["v4"] }
+uuid = { version = "1.6", features = ["v4"] }
 
 [target.'cfg(unix)'.dependencies]
 shell-quote = "0.3.1"
