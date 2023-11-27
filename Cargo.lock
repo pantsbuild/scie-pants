@@ -660,9 +660,9 @@ dependencies = [
 
 [[package]]
 name = "shell-quote"
-version = "0.3.1"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7a904882fd5e7723d9113c65cd69c624dddd128f92ac1540c23cd663faba84b"
+checksum = "aa19afd2451f16c915aa675202c353b5cbc829e9292e9c38cd3b81a55c8e41b2"
 
 [[package]]
 name = "strsim"
