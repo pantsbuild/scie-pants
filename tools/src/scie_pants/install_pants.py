@@ -105,8 +105,15 @@ def install_pants_from_pex(
         try:
             ptex.fetch_to_fp(pex_url, pants_pex.file)
         except subprocess.CalledProcessError as e:
+            #  if there's only one dot in version, specifically suggest adding the `.patch`)
+            suggestion = (
+                "Pants version format not recognized. Please add `.<patch_version>` to the end of the version. For example: `2.18` -> `2.18.0`"
+                if version.base_version.count(".") < 2
+                else ""
+            )
             fatal(
                 f"Wasn't able to fetch the Pants PEX at {pex_url}.\n\n"
+                f"{suggestion}\n\n"
                 "Check to see if the URL is reachable (i.e. GitHub isn't down) and if"
                 f" {pex_name} asset exists within the release."
                 " If the asset doesn't exist it may be that this platform isn't yet supported."

@@ -99,11 +99,6 @@ def determine_find_links(
 def determine_tag_version(
     ptex: Ptex, pants_version: str, find_links_dir: Path, github_api_bearer_token: str | None = None
 ) -> ResolveInfo:
-    # `pants_version` should be in the format `major.minor.micro`, e.g., `2.17.0`.
-    # Raise an error if it does not follow this format.
-    if not pants_version.count(".") == 2:
-        fatal(f"Expected a pants version like `major.minor.micro`, but got `{pants_version}`.\n\n")
-
     stable_version = Version(pants_version)
     if stable_version >= PANTS_PEX_GITHUB_RELEASE_VERSION:
         return ResolveInfo(stable_version, sha_version=None, find_links=None)
