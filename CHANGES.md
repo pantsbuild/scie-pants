@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.10.5
+
+This release upgrades the underlying version of scie-jump to a version that statically links xz,
+thus avoiding a dynamic linking dependency on a (Homebrew-installed) package that may not be
+present at runtime on MacOS.
+
 ## 0.10.4
 
 This release fixes a regression when using `PANTS_DEBUG`. The bundled Python interpreter has also
