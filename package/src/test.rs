@@ -129,6 +129,7 @@ pub(crate) fn run_integration_tests(
         test_ignore_empty_pants_version_pants_sha(scie_pants_scie);
 
         test_pants_from_pex_version(scie_pants_scie);
+        test_pants_from_bad_pex_version(scie_pants_scie);
 
         let clone_root = create_tempdir()?;
         test_use_in_repo_with_pants_script(scie_pants_scie, &clone_root);
@@ -458,6 +459,36 @@ fn test_pants_from_pex_version(scie_pants_scie: &Path) {
         stdout.contains(expected_message),
         "STDOUT did not contain '{expected_message}':\n{stdout}"
     );
+}
+
+fn test_pants_from_bad_pex_version(scie_pants_scie: &Path) {
+    integration_test!(
+        "Verify the output of scie-pants is user-friendly if they provide an invalid pants version"
+    );
+
+    let tmpdir = create_tempdir().unwrap();
+
+    let pants_release = "2.18";
+    let pants_toml_content = format!(
+        r#"
+        [GLOBAL]
+        pants_version = "{pants_release}"
+        "#
+    );
+    let pants_toml = tmpdir.path().join("pants.toml");
+    write_file(&pants_toml, false, pants_toml_content).unwrap();
+
+    let err = execute(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .current_dir(&tmpdir)
+            .stderr(Stdio::piped()),
+    )
+    .unwrap_err();
+
+    let error_text = err.to_string();
+    assert!(error_text.contains("Wasn't able to fetch the Pants PEX at"));
+    assert!(error_text.contains("Pants version format not recognized. Please add `.<patch_version>` to the end of the version. For example: `2.18` -> `2.18.0`"));
 }
 
 fn test_use_in_repo_with_pants_script(scie_pants_scie: &Path, clone_root: &TempDir) {
