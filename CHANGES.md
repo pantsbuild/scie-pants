@@ -2,9 +2,11 @@
 
 ## 0.10.5
 
-This release upgrades the underlying version of scie-jump to a version that statically links xz,
-thus avoiding a dynamic linking dependency on a (Homebrew-installed) package that may not be
-present at runtime on MacOS.
+This release upgrades the underlying version of scie-jump to 0.14.0, which provides the
+following fixes:
+- It statically links xz, thus avoiding a dynamic linking dependency on a (Homebrew-installed)
+  package that may not be present at runtime on MacOS.
+- It supports variable substitution in double quoted values in `.env` files.
 
 ## 0.10.4
 
