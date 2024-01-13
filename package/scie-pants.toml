@@ -12,7 +12,7 @@ version = "0.7.0"
 argv1 = "{scie.env.PANTS_BOOTSTRAP_URLS={scie.lift}}"
 
 [lift.scie_jump]
-version = "0.13.0"
+version = "0.14.0"
 
 [[lift.interpreters]]
 id = "cpython38"
