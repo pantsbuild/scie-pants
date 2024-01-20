@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.10.6
+
+The bundled Python interpreter has been upgraded to release [`20240107`](
+https://github.com/indygreg/python-build-standalone/releases/tag/20240107) to avoid issues linking
+against missing `libcrypt.so.1` on Linux systems.
+
 ## 0.10.5
 
 This release upgrades the underlying version of scie-jump to 0.14.0, which provides the
