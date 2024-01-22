@@ -7,11 +7,12 @@ import importlib.resources
 import json
 import logging
 import os
+import re
 import urllib.parse
 from dataclasses import dataclass
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Callable, Iterator
+from typing import Any, Callable, Iterator, cast
 from xml.etree import ElementTree
 
 import tomlkit
@@ -23,16 +24,14 @@ from scie_pants.ptex import Ptex
 
 log = logging.getLogger(__name__)
 
-# After this version, Pants is released as a per-platform PEX using GitHub Release assets.
-# See https://github.com/pantsbuild/pants/pull/19450
-PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.18.0.dev5")
-
 
 @dataclass(frozen=True)
 class ResolveInfo:
     stable_version: Version
     sha_version: Version | None
     find_links: str | None
+    pex_name: str | None
+    python: str
 
     def pants_find_links_option(self, pants_version_selected: Version) -> str:
         # We only want to add the find-links repo for PANTS_SHA invocations so that plugins can
@@ -89,10 +88,13 @@ def determine_find_links(
 
         ptex.fetch_to_fp("https://wheels.pantsbuild.org/simple/", fp)
 
+    version = Version(pants_version)
     return ResolveInfo(
-        stable_version=Version(pants_version),
+        stable_version=version,
         sha_version=sha_version,
         find_links=f"file://{find_links_file}",
+        pex_name=None,
+        python="cpython38" if version < Version("2.5") else "cpython39",
     )
 
 
@@ -100,52 +102,15 @@ def determine_tag_version(
     ptex: Ptex, pants_version: str, find_links_dir: Path, github_api_bearer_token: str | None = None
 ) -> ResolveInfo:
     stable_version = Version(pants_version)
-    if stable_version >= PANTS_PEX_GITHUB_RELEASE_VERSION:
-        return ResolveInfo(stable_version, sha_version=None, find_links=None)
-
-    tag = f"release_{pants_version}"
-
-    # N.B.: The tag database was created with the following in a Pants clone:
-    # git tag --list release_* | \
-    #   xargs -I@ bash -c 'jq --arg T @ --arg C $(git rev-parse @^{commit}) -n "{(\$T): \$C}"' | \
-    #   jq -s 'add' > pants_release_tags.json
-    tags = json.loads(importlib.resources.read_text("scie_pants", "pants_release_tags.json"))
-    commit_sha = tags.get(tag, "")
-
-    if not commit_sha:
-        mapping_file_url = f"https://binaries.pantsbuild.org/tags/pantsbuild.pants/{tag}"
-        log.debug(
-            f"Failed to look up the commit for Pants {tag} in the local database, trying a lookup "
-            f"at {mapping_file_url} next."
-        )
-        try:
-            commit_sha = ptex.fetch_text(mapping_file_url).strip()
-        except CalledProcessError as e:
-            log.debug(
-                f"Failed to look up the commit for Pants {tag} at binaries.pantsbuild.org, trying "
-                f"GitHub API requests next: {e}"
-            )
-
-    # The GitHub API requests are rate limited to 60 per hour un-authenticated; so we guard
-    # these with the database of old releases and then the binaries.pantsbuild.org lookups above.
-    if not commit_sha:
-        github_api_url = (
-            f"https://api.github.com/repos/pantsbuild/pants/git/refs/tags/{urllib.parse.quote(tag)}"
-        )
-        headers = (
-            {"Authorization": f"Bearer {github_api_bearer_token}"}
-            if github_api_bearer_token
-            else {}
-        )
-        github_api_tag_url = ptex.fetch_json(github_api_url, **headers)["object"]["url"]
-        commit_sha = ptex.fetch_json(github_api_tag_url, **headers)["object"]["sha"]
-
-    return determine_find_links(
-        ptex,
-        pants_version,
-        commit_sha,
-        find_links_dir,
-        include_nonrelease_pants_distributions_in_findlinks=False,
+    pex_name, python = determine_pex_name_and_python_id(
+        ptex, stable_version, github_api_bearer_token
+    )
+    return ResolveInfo(
+        stable_version,
+        sha_version=None,
+        find_links=None,
+        pex_name=pex_name,
+        python=python,
     )
 
 
@@ -206,3 +171,58 @@ def determine_latest_stable_version(
     return configure_version, determine_tag_version(
         ptex, pants_version, find_links_dir, github_api_bearer_token
     )
+
+
+PYTHON_IDS = {
+    # N.B.: These values must match the lift TOML interpreter ids.
+    "cp38": "cpython38",
+    "cp39": "cpython39",
+    "cp310": "cpython310",
+    "cp311": "cpython311",
+}
+
+
+def determine_pex_name_and_python_id(
+    ptex: Ptex, version: Version, github_api_bearer_token: str | None = None
+) -> tuple[str, str]:
+    uname = os.uname()
+    platform = f"{uname.sysname.lower()}_{uname.machine.lower()}"
+    res = get_release_asset_and_python_id(ptex, version, platform, github_api_bearer_token)
+    if not res:
+        fatal(f"Failed to get Python version to use for Pants {version} for platform {platform!r}.")
+    pex_name, python = res
+    if python not in PYTHON_IDS:
+        fatal(f"This version of scie-pants does not support {python!r}.")
+    return pex_name, PYTHON_IDS[python]
+
+
+GITHUB_API_BASE_URL = "https://api.github.com/repos/pantsbuild/pants"
+
+
+def fetch_github_api(ptex: Ptex, path: str, github_api_bearer_token: str | None = None) -> Any:
+    headers = (
+        {"Authorization": f"Bearer {github_api_bearer_token}"} if github_api_bearer_token else {}
+    )
+    return ptex.fetch_json(f"{GITHUB_API_BASE_URL}/{path}", **headers)
+
+
+def get_release_asset_and_python_id(
+    ptex: Ptex, version: Version, platform: str, github_api_bearer_token: str | None = None
+) -> tuple[str, str] | None:
+    try:
+        release_data = cast(
+            dict[str, Any],
+            fetch_github_api(
+                ptex,
+                f"releases/tags/release_{version}",
+                github_api_bearer_token=github_api_bearer_token,
+            ),
+        )
+    except (CalledProcessError, OSError) as e:
+        return None
+
+    for asset in release_data.get("assets", []):
+        name = asset.get("name")
+        if name and (m := re.match(f"pants\\.{version}-([^-]+)-{platform}\\.pex", name)):
+            return name, m.group(1)
+    return None

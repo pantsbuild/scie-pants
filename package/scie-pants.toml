@@ -28,12 +28,28 @@ release = "20240107"
 lazy = true
 version = "3.9.18"
 
+[[lift.interpreters]]
+id = "cpython310"
+provider = "PythonBuildStandalone"
+release = "20240107"
+lazy = true
+version = "3.10.13"
+
+[[lift.interpreters]]
+id = "cpython311"
+provider = "PythonBuildStandalone"
+release = "20240107"
+lazy = true
+version = "3.11.7"
+
 [[lift.interpreter_groups]]
 id = "cpython"
 selector = "{scie.bindings.configure:PYTHON}"
 members = [
     "cpython38",
     "cpython39",
+    "cpython310",
+    "cpython311",
 ]
 
 [[lift.files]]
@@ -215,6 +231,8 @@ args = [
     "install-pants",
     "--pants-version",
     "{scie.bindings.configure:PANTS_VERSION}",
+    "--pants-pex",
+    "{scie.bindings.configure:PANTS_PEX}",
     "--find-links",
     "{scie.bindings.configure:FIND_LINKS}",
     "--debug",

@@ -28,7 +28,7 @@ quickly.
 One is the ability to fetch binaries check-summed in advance just in time and exactly once.
 It does this with a `"ptex"` configuration described [here](
 https://github.com/a-scie/ptex/blob/main/README.md#how-ptex-works) and employed in both the [`pbt`](
-../package/pbt.lift.json) binary and the [`scie-jump`](../package/scie-pants.lift.json) itself. This
+../package/pbt.toml) binary and the [`scie-pants`](../package/scie-pants.toml) itself. This
 allows the `scie-pants` to ship as a small binary that lazily fetches a Python distribution to run
 the tools with / install Pants with. This also gives Python tools code access to a `ptex` binary
 to use when fetching content from the internet. Although the Python code can always reach out to

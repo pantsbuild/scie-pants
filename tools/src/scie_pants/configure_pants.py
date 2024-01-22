@@ -116,9 +116,6 @@ def main() -> NoReturn:
         finalizers.append(configure_version)
         version = resolve_info.stable_version
 
-    # N.B.: These values must match the lift TOML interpreter ids.
-    python = "cpython38" if version < Version("2.5") else "cpython39"
-
     for finalizer in finalizers:
         finalizer()
 
@@ -131,7 +128,8 @@ def main() -> NoReturn:
         if newly_created_build_root:
             print(f"PANTS_BUILDROOT_OVERRIDE={newly_created_build_root}", file=fp)
         print(f"PANTS_VERSION={version}", file=fp)
-        print(f"PYTHON={python}", file=fp)
+        print(f"PYTHON={resolve_info.python}", file=fp)
+        print(f"PANTS_PEX={resolve_info.pex_name}", file=fp)
 
     sys.exit(0)
 

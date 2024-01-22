@@ -1,5 +1,12 @@
 # Release Notes
 
+## 0.10.7
+
+Internal only tweaks:
+
+- Select Python version for running Pants based on the python tag on the pants pex file name.
+- Always installs Pants from pants pex downloaded from Github releases.
+
 ## 0.10.6
 
 The bundled Python interpreter has been upgraded to release [`20240107`](

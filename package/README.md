@@ -42,7 +42,7 @@ In the course of development you'll probably only be interested in two invocatio
 The primary goal of the package crate as build system is to support development of the `scie-pants`
 binary with an install of Rust as the ~only requirement (CMake is currently needed as well). This
 necessitates dogfooding the same scie mechanism the final `scie-pants` binary uses in production in
-order to bootstrap a [Python tool chain](pbt.lift.json). This is used build the [`tools.pex`](
+order to bootstrap a [Python tool chain](pbt.toml). This is used to build the [`tools.pex`](
 ../tools/README.md) embedded in the final `scie-pants` for use in all the slow-path / high-logic
 steps like Pants configuration, Pants installation and self-update.
 
@@ -53,9 +53,9 @@ src/main.rs):
 1. A [`ptex` binary](https://github.com/a-scie/ptex) is built via `cargo install`. This bootstraps
    the ability to fetch further requirements.
 2. The current production pins of `ptex` and `scie-jump` are fetched and checksum-verified.
-3. A [`pbt`](pbt.lift.json) scie binary is built to facilitate running Python, Pip and Pex tools.
+3. A [`pbt`](pbt.toml) scie binary is built to facilitate running Python, Pip and Pex tools.
 4. The [tools.pex](../tools) is built.
-5. The `scie-pants` scie binary is built.
+5. The [`scie-pants`](scie-pants.toml) scie binary is built.
 6. The `scie-pants` binary is used to run Pants against the Python tools codebase and then to run a
    series of integration tests exercising the ability to install different Pants vintages and
    configure new Pants projects.
