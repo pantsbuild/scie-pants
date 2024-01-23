@@ -75,6 +75,8 @@ def main() -> NoReturn:
 
     ptex = get_ptex(options)
 
+    find_links_dir = base_dir / "find_links"
+
     finalizers = []
     newly_created_build_root = None
     pants_config = Path(options.pants_config) if options.pants_config else None
@@ -82,6 +84,7 @@ def main() -> NoReturn:
         resolve_info = determine_tag_version(
             ptex=ptex,
             pants_version=options.pants_version,
+            find_links_dir=find_links_dir,
             github_api_bearer_token=options.github_api_bearer_token,
         )
     else:
@@ -98,6 +101,7 @@ def main() -> NoReturn:
         configure_version, resolve_info = determine_latest_stable_version(
             ptex=ptex,
             pants_config=pants_config,
+            find_links_dir=find_links_dir,
             github_api_bearer_token=options.github_api_bearer_token,
         )
         finalizers.append(configure_version)
@@ -106,6 +110,8 @@ def main() -> NoReturn:
         finalizer()
 
     with open(env_file, "a") as fp:
+        if resolve_info.find_links:
+            print(f"FIND_LINKS={resolve_info.find_links}", file=fp)
         if newly_created_build_root:
             print(f"PANTS_BUILDROOT_OVERRIDE={newly_created_build_root}", file=fp)
         print(f"PANTS_VERSION={resolve_info.version}", file=fp)

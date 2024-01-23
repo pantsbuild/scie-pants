@@ -23,7 +23,7 @@ from scie_pants.ptex import Ptex
 log = logging.getLogger(__name__)
 
 
-def venv_pip_install(venv_dir: Path, *args: str) -> None:
+def venv_pip_install(venv_dir: Path, *args: str, find_links: str | None = None) -> None:
     subprocess.run(
         args=[
             str(venv_dir / "bin" / "python"),
@@ -37,10 +37,38 @@ def venv_pip_install(venv_dir: Path, *args: str) -> None:
             str(venv_dir / "pants-install.log"),
             "install",
             "--quiet",
+            *(("--find-links", find_links) if find_links else ()),
             *args,
         ],
         check=True,
     )
+
+
+def install_pants_from_req(
+    venv_dir: Path, prompt: str, pants_requirements: Iterable[str], find_links: str | None
+) -> None:
+    subprocess.run(
+        args=[
+            sys.executable,
+            "-m",
+            "venv",
+            "--clear",
+            "--prompt",
+            prompt,
+            str(venv_dir),
+        ],
+        check=True,
+    )
+
+    # Pin Pip to 22.3.1 (currently latest). The key semantic that should be preserved by the Pip
+    # we use is that --find-links are used as a fallback only and PyPI is preferred. This saves us
+    # money by avoiding fetching wheels from our S3 bucket at https://binaries.pantsbuild.org unless
+    # absolutely needed.
+    #
+    # Also, we don't advance setuptools past 58 which drops support for the `setup` kwarg `use_2to3`
+    # which Pants 1.x sdist dependencies (pystache) use.
+    venv_pip_install(venv_dir, "-U", "pip==22.3.1", "setuptools<58", "wheel", find_links=find_links)
+    venv_pip_install(venv_dir, "--progress-bar", "off", *pants_requirements, find_links=find_links)
 
 
 def install_pants_from_pex(
@@ -129,6 +157,11 @@ def main() -> NoReturn:
     )
     parser.add_argument("--pants-pex", type=str, help="The pants pex release asset name.")
     parser.add_argument(
+        "--find-links",
+        type=str,
+        help="The find links repo pointing to Pants pre-built wheels for the given Pants 1.x version.",
+    )
+    parser.add_argument(
         "--pants-bootstrap-urls",
         type=str,
         help="The path to the JSON file containing alternate URLs for downloaded artifacts.",
@@ -168,15 +201,23 @@ def main() -> NoReturn:
     info(
         f"Installing {' '.join(pants_requirements + extra_requirements)} into a virtual environment at {venv_dir}"
     )
-    install_pants_from_pex(
-        venv_dir=venv_dir,
-        prompt=prompt,
-        version=version,
-        pex_name=options.pants_pex,
-        ptex=ptex,
-        extra_requirements=extra_requirements,
-        bootstrap_urls_path=options.pants_bootstrap_urls,
-    )
+    if options.pants_pex:
+        install_pants_from_pex(
+            venv_dir=venv_dir,
+            prompt=prompt,
+            version=version,
+            pex_name=options.pants_pex,
+            ptex=ptex,
+            extra_requirements=extra_requirements,
+            bootstrap_urls_path=options.pants_bootstrap_urls,
+        )
+    else:
+        install_pants_from_req(
+            venv_dir=venv_dir,
+            prompt=prompt,
+            pants_requirements=pants_requirements + extra_requirements,
+            find_links=options.find_links,
+        )
 
     info(f"New virtual environment successfully created at {venv_dir}")
 

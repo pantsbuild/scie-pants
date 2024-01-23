@@ -227,6 +227,8 @@ args = [
     "{scie.bindings.configure:PANTS_VERSION}",
     "--pants-pex",
     "{scie.bindings.configure:PANTS_PEX}",
+    "--find-links",
+    "{scie.bindings.configure:FIND_LINKS}",
     "--debug",
     "{scie.env.PANTS_DEBUG}",
     "--debugpy-requirement",
