@@ -110,13 +110,14 @@ def main() -> NoReturn:
         finalizer()
 
     with open(env_file, "a") as fp:
+        print(f"PANTS_VERSION={resolve_info.version}", file=fp)
+        print(f"PYTHON={resolve_info.python}", file=fp)
+        if resolve_info.pex_name:
+            print(f"PANTS_PEX={resolve_info.pex_name}", file=fp)
         if resolve_info.find_links:
             print(f"FIND_LINKS={resolve_info.find_links}", file=fp)
         if newly_created_build_root:
             print(f"PANTS_BUILDROOT_OVERRIDE={newly_created_build_root}", file=fp)
-        print(f"PANTS_VERSION={resolve_info.version}", file=fp)
-        print(f"PYTHON={resolve_info.python}", file=fp)
-        print(f"PANTS_PEX={resolve_info.pex_name}", file=fp)
 
     sys.exit(0)
 
