@@ -1,8 +1,9 @@
 name: CI
 on:
   push:
+    # Ignore non top-level branches.
     branches-ignore:
-    - dependabot/**
+    - */**
   pull_request:
 defaults:
   run:
