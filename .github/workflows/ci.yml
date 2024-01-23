@@ -3,7 +3,7 @@ on:
   push:
     # Ignore non top-level branches.
     branches-ignore:
-    - */**
+    - '*/**'
   pull_request:
 defaults:
   run:
