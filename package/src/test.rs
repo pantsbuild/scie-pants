@@ -117,16 +117,16 @@ pub(crate) fn run_integration_tests(
         // Thread 0x00007efe30b75540 (most recent call first):
         // <no Python frame>
         // Error: Command "/home/runner/work/scie-pants/scie-pants/dist/scie-pants-linux-x86_64" "--no-verify-config" "-V" failed with exit code: None
-        if matches!(*CURRENT_PLATFORM, Platform::LinuxX86_64) {
+        //
+        // TODO: See if the issue has gone away as we are no longer using PANTS_SHA.
+        /*if matches!(*CURRENT_PLATFORM, Platform::LinuxX86_64) {
             log!(Color::Yellow, "Turning off pantsd for remaining tests.");
             env::set_var("PANTS_PANTSD", "False");
-        }
+        }*/
 
-        test_pants_shas(scie_pants_scie);
-        test_python_repos_repos(scie_pants_scie);
         test_initialize_new_pants_project(scie_pants_scie);
         test_set_pants_version(scie_pants_scie);
-        test_ignore_empty_pants_version_pants_sha(scie_pants_scie);
+        test_ignore_empty_pants_version(scie_pants_scie);
 
         test_pants_from_pex_version(scie_pants_scie);
         test_pants_from_bad_pex_version(scie_pants_scie);
@@ -341,39 +341,6 @@ fn test_pants_bootstrap_tools(scie_pants_scie: &Path) {
     .unwrap();
 }
 
-fn test_pants_shas(scie_pants_scie: &Path) {
-    for sha in [
-        // initial
-        "8e381dbf90cae57c5da2b223c577b36ca86cace9",
-        // native-client added to wheel
-        "558d843549204bbe49c351d00cdf23402da262c1",
-    ] {
-        integration_test!("Verifying significant PANTS_SHA: {sha}");
-        let existing_project_dir = create_tempdir().unwrap();
-        touch(&existing_project_dir.path().join("pants.toml")).unwrap();
-        execute(
-            Command::new(scie_pants_scie)
-                .current_dir(existing_project_dir.path())
-                .env("PANTS_SHA", sha)
-                .args(["--no-verify-config", "-V"]),
-        )
-        .unwrap();
-    }
-}
-
-fn test_python_repos_repos(scie_pants_scie: &Path) {
-    integration_test!(
-        "Verifying --python-repos-repos is used prior to Pants 2.13 (no warnings should be \
-            issued by Pants)"
-    );
-    execute(
-        Command::new(scie_pants_scie)
-            .env("PANTS_VERSION", "2.12.1")
-            .args(["--no-verify-config", "-V"]),
-    )
-    .unwrap();
-}
-
 fn test_initialize_new_pants_project(scie_pants_scie: &Path) {
     integration_test!("Verifying initializing a new Pants project works");
     let new_project_dir = create_tempdir().unwrap();
@@ -403,8 +370,8 @@ fn test_set_pants_version(scie_pants_scie: &Path) {
     .unwrap();
 }
 
-fn test_ignore_empty_pants_version_pants_sha(scie_pants_scie: &Path) {
-    integration_test!("Verifying ignoring PANTS_SHA and PANTS_VERSION when set to empty string");
+fn test_ignore_empty_pants_version(scie_pants_scie: &Path) {
+    integration_test!("Verifying ignoring PANTS_VERSION when set to empty string");
 
     let tmpdir = create_tempdir().unwrap();
 
@@ -421,7 +388,6 @@ fn test_ignore_empty_pants_version_pants_sha(scie_pants_scie: &Path) {
     let output = execute(
         Command::new(scie_pants_scie)
             .arg("-V")
-            .env("PANTS_SHA", "")
             .env("PANTS_VERSION", "")
             .current_dir(&tmpdir)
             .stdout(Stdio::piped()),
@@ -487,7 +453,7 @@ fn test_pants_from_bad_pex_version(scie_pants_scie: &Path) {
     .unwrap_err();
 
     let error_text = err.to_string();
-    assert!(error_text.contains("Wasn't able to fetch the Pants PEX at"));
+    assert!(error_text.contains("Unknown Pants release: 2.18."));
     assert!(error_text.contains("Pants version format not recognized. Please add `.<patch_version>` to the end of the version. For example: `2.18` -> `2.18.0`"));
 }
 

@@ -16,7 +16,6 @@ from packaging.version import Version
 from scie_pants.log import fatal, info, init_logging, warn
 from scie_pants.pants_version import (
     determine_latest_stable_version,
-    determine_sha_version,
     determine_tag_version,
 )
 from scie_pants.ptex import Ptex
@@ -59,7 +58,6 @@ def prompt_for_pants_config() -> Path | None:
 def main() -> NoReturn:
     parser = ArgumentParser()
     get_ptex = Ptex.add_options(parser)
-    parser.add_argument("--pants-sha", help="The Pants sha to install (trumps --version)")
     parser.add_argument("--pants-version", help="The Pants version to install")
     parser.add_argument("--pants-config", help="The path of the pants.toml file")
     parser.add_argument(
@@ -77,25 +75,15 @@ def main() -> NoReturn:
 
     ptex = get_ptex(options)
 
-    find_links_dir = base_dir / "find_links"
-
     finalizers = []
     newly_created_build_root = None
     pants_config = Path(options.pants_config) if options.pants_config else None
-    if options.pants_sha:
-        resolve_info = determine_sha_version(
-            ptex=ptex, sha=options.pants_sha, find_links_dir=find_links_dir
-        )
-        assert resolve_info.sha_version is not None
-        version = resolve_info.sha_version
-    elif options.pants_version:
+    if options.pants_version:
         resolve_info = determine_tag_version(
             ptex=ptex,
             pants_version=options.pants_version,
-            find_links_dir=find_links_dir,
             github_api_bearer_token=options.github_api_bearer_token,
         )
-        version = resolve_info.stable_version
     else:
         if pants_config:
             if not prompt_for_pants_version(options.pants_config):
@@ -110,24 +98,17 @@ def main() -> NoReturn:
         configure_version, resolve_info = determine_latest_stable_version(
             ptex=ptex,
             pants_config=pants_config,
-            find_links_dir=find_links_dir,
             github_api_bearer_token=options.github_api_bearer_token,
         )
         finalizers.append(configure_version)
-        version = resolve_info.stable_version
 
     for finalizer in finalizers:
         finalizer()
 
     with open(env_file, "a") as fp:
-        if resolve_info.find_links:
-            print(f"FIND_LINKS={resolve_info.find_links}", file=fp)
-        # This can be removed once we stop supporting PANTS_SHA:
-        # NB. this is added unconditionally because it gets set as an argument
-        print(f"PANTS_SHA_FIND_LINKS={resolve_info.pants_find_links_option(version)}", file=fp)
         if newly_created_build_root:
             print(f"PANTS_BUILDROOT_OVERRIDE={newly_created_build_root}", file=fp)
-        print(f"PANTS_VERSION={version}", file=fp)
+        print(f"PANTS_VERSION={resolve_info.version}", file=fp)
         print(f"PYTHON={resolve_info.python}", file=fp)
         print(f"PANTS_PEX={resolve_info.pex_name}", file=fp)
 

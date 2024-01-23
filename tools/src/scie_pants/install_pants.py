@@ -23,7 +23,7 @@ from scie_pants.ptex import Ptex
 log = logging.getLogger(__name__)
 
 
-def venv_pip_install(venv_dir: Path, *args: str, find_links: str | None) -> None:
+def venv_pip_install(venv_dir: Path, *args: str) -> None:
     subprocess.run(
         args=[
             str(venv_dir / "bin" / "python"),
@@ -37,7 +37,6 @@ def venv_pip_install(venv_dir: Path, *args: str, find_links: str | None) -> None
             str(venv_dir / "pants-install.log"),
             "install",
             "--quiet",
-            *(("--find-links", find_links) if find_links else ()),
             *args,
         ],
         check=True,
@@ -51,7 +50,6 @@ def install_pants_from_pex(
     pex_name: str,
     ptex: Ptex,
     extra_requirements: Iterable[str],
-    find_links: str | None,
     bootstrap_urls_path: str | None,
 ) -> None:
     """Installs Pants into the venv using the platform-specific pre-built PEX."""
@@ -75,14 +73,8 @@ def install_pants_from_pex(
         try:
             ptex.fetch_to_fp(pex_url, pants_pex.file)
         except subprocess.CalledProcessError as e:
-            #  if there's only one dot in version, specifically suggest adding the `.patch`)
-            suggestion = (
-                "Pants version format not recognized. Please add `.<patch_version>` to the end of the version. For example: `2.18` -> `2.18.0`.\n\n"
-                if version.base_version.count(".") < 2
-                else ""
-            )
             fatal(
-                f"Wasn't able to fetch the Pants PEX at {pex_url}.\n\n{suggestion}"
+                f"Wasn't able to fetch the Pants PEX at {pex_url}.\n\n"
                 "Check to see if the URL is reachable (i.e. GitHub isn't down) and if"
                 f" {pex_name} asset exists within the release."
                 " If the asset doesn't exist it may be that this platform isn't yet supported."
@@ -90,28 +82,39 @@ def install_pants_from_pex(
                 " or file an issue on GitHub: https://github.com/pantsbuild/pants/issues/new/choose.\n\n"
                 f"Exception:\n\n{e}"
             )
-        subprocess.run(
-            args=[
-                sys.executable,
-                pants_pex.name,
-                "venv",
-                "--prompt",
-                prompt,
-                "--compile",
-                "--pip",
-                "--collisions-ok",
-                "--no-emit-warnings",  # Silence `PEXWarning: You asked for --pip ...`
-                "--disable-cache",
-                str(venv_dir),
-            ],
-            env={"PEX_TOOLS": "1"},
-            check=True,
-        )
+        try:
+            pants_venv_result = subprocess.run(
+                args=[
+                    sys.executable,
+                    pants_pex.name,
+                    "venv",
+                    "--prompt",
+                    prompt,
+                    "--compile",
+                    "--pip",
+                    "--collisions-ok",
+                    "--no-emit-warnings",  # Silence `PEXWarning: You asked for --pip ...`
+                    "--disable-cache",
+                    str(venv_dir),
+                ],
+                env={"PEX_TOOLS": "1"},
+                check=True,
+                capture_output=True,
+            )
+            with open(str(venv_dir / "pants-install.log"), "a") as fp:
+                if pants_venv_result.stdout:
+                    print(pants_venv_result.stdout, file=fp)
+                if pants_venv_result.stderr:
+                    print(pants_venv_result.stderr, file=fp)
+        except subprocess.CalledProcessError as e:
+            fatal(
+                f"Failed to create Pants virtual environment.\n{e}\n\n"
+                f"STDOUT:\n{e.stdout}\n\n"
+                f"STDERR:\n{e.stderr}\n\n"
+            )
 
     if extra_requirements:
-        venv_pip_install(
-            venv_dir, "--progress-bar", "off", *extra_requirements, find_links=find_links
-        )
+        venv_pip_install(venv_dir, "--progress-bar", "off", *extra_requirements)
 
 
 def chmod_plus_x(path: str) -> None:
@@ -125,11 +128,6 @@ def main() -> NoReturn:
         "--pants-version", type=Version, required=True, help="The Pants version to install."
     )
     parser.add_argument("--pants-pex", type=str, help="The pants pex release asset name.")
-    parser.add_argument(
-        "--find-links",
-        type=str,
-        help="The find links repo pointing to Pants pre-built wheels for the given Pants version.",
-    )
     parser.add_argument(
         "--pants-bootstrap-urls",
         type=str,
@@ -177,11 +175,10 @@ def main() -> NoReturn:
         pex_name=options.pants_pex,
         ptex=ptex,
         extra_requirements=extra_requirements,
-        find_links=options.find_links,
         bootstrap_urls_path=options.pants_bootstrap_urls,
     )
 
-    info(f"New virtual environment successfully created at {venv_dir}.")
+    info(f"New virtual environment successfully created at {venv_dir}")
 
     pants_server_exe = str(venv_dir / "bin" / "pants")
     # Added in https://github.com/pantsbuild/pants/commit/558d843549204bbe49c351d00cdf23402da262c1

@@ -39,9 +39,9 @@ The other useful feature of a scie is the ability to run pre-requisite binding c
 steps needed to support user-facing commands. These commands will only ever run once and they can
 record result information in the form of `<key>=<value>` pairs for future invocations to learn the
 one-time binding results. The `"pants"` command in the `scie-pants` binary depends on an `install`
-binding to learn the Path of the Pants venv and that in turn depends on a `configuration` binding 
-to learn the Pants version to install and the find-links repo needed to support that install. In
-turn, both of these bindings depend on Python distributions fetched by the `ptex` fetch mechanism.
+binding to learn the Path of the Pants venv and that in turn depends on a `configuration` binding to
+learn the Pants version to install. In turn, both of these bindings depend on Python distributions
+fetched by the `ptex` fetch mechanism.
 
 All such dependencies are expressed with `{scie.*}` placeholders in the values of command `"exe"`,
 `"args"` and `"env"` values in the scie lift manifest. To follow the flow of a top-level command,
