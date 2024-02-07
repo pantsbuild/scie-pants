@@ -2,7 +2,7 @@
 
 ## 0.10.7
 
-This release upgrades `pex` to `v2.1.162` and the bootstrap Python to `3.9.18`.
+This release upgrades `pex` to `v2.1.163` and the bootstrap Python to `3.9.18`.
 
 ## 0.10.6
 

@@ -117,10 +117,10 @@ Releases for `pants`: https://github.com/pantsbuild/pants/releases
 
 The `pex` tool is used in a couple of places:
 
+* [package/pbt.toml](package/pbt.toml): Update the `pex` details for the entry in `[[lift.files]]`.
+
 * [tools/lock.json](tools/lock.json): Regenerate this lockfile by running:
   `cargo run -p package -- --update-lock`
-
-* [package/pbt.toml](package/pbt.toml): Update the `pex` details for the entry in `[[lift.files]]`.
 
 Releases for `pex`: https://github.com/pantsbuild/pex/releases
 

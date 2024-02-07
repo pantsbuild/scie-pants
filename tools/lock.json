@@ -206,7 +206,7 @@
   "only_builds": [],
   "only_wheels": [],
   "path_mappings": {},
-  "pex_version": "2.1.162",
+  "pex_version": "2.1.163",
   "pip_version": "22.3",
   "prefer_older_binary": false,
   "requirements": [
