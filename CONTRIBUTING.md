@@ -115,11 +115,7 @@ Releases for `pants`: https://github.com/pantsbuild/pants/releases
 
 ### Upgrading `pex`
 
-The `pex` tool is used in a number of places.
-
-* [tools/lift.json](tools/lift.json): Update the release URL for `pex` under the `scie.ptex` key in
-  the JSON file as well as the size and hash value for the `pex` file entry under
-  `scie.lift.files[]`.
+The `pex` tool is used in a couple of places:
 
 * [tools/lock.json](tools/lock.json): Regenerate this lockfile by running:
   `cargo run -p package -- --update-lock`
