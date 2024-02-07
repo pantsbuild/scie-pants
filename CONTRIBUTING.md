@@ -79,3 +79,85 @@ There are just a few guiding principles to keep in mind as alluded to above:
 + The `scie-pants` binary should be extremely stable: It's intended that there is only ever a single
   main line of development from which releases are cut and the built-in self-update capability is
   used to upgrade with.
+
+## Dependencies
+
+The `scie-pants` project have a few dependencies, and in order to ease maintenance of keeping them
+up-to-date, this section details which these are and how to upgrade them.
+
+* The `lift` tool; it is used to build the `scie-pants` binary using a "lift manifest" file.
+
+* The `pants` tool; it is used to manage the Python part of the project.
+
+* The `pex` tool; it is used to package Python packages into executable archives.
+
+* The `ptex` library; it is used to lazyily download required resources in a scie, during runtime.
+
+* Python Build Standalone (PBS) information are included in the scie binary and used when installing
+  a Python environment.
+
+* The rust dependencies in `Cargo.toml` are managed as usual for any rust project.
+
+* The `scie_jump` library; it is the core of the scie, with features both to build and launch scie
+  binaries, used by `lift`.
+
+### Upgrading `lift`
+
+The `lift` version is defined by the [`SCIENCE_TAG` in package/src/main.rs](package/src/main.rs).
+
+Releases for `lift`: https://github.com/a-scie/lift/releases
+
+### Upgrading `pants`
+
+The `pants` version is defined in [`pants.toml`](pants.toml).
+
+Releases for `pants`: https://github.com/pantsbuild/pants/releases
+
+### Upgrading `pex`
+
+The `pex` tool is used in a number of places.
+
+* [tools/lift.json](tools/lift.json): Update the release URL for `pex` under the `scie.ptex` key in
+  the JSON file as well as the size and hash value for the `pex` file entry under
+  `scie.lift.files[]`.
+
+* [tools/lock.json](tools/lock.json): Regenerate this lockfile by running:
+  `cargo run -p package -- --update-lock`
+
+* [package/pbt.toml](package/pbt.toml): Update the `pex` details for the entry in `[[lift.files]]`.
+
+Releases for `pex`: https://github.com/pantsbuild/pex/releases
+
+Hint: To get the size and hash values, this one-liner is useful:
+
+    curl -L $URL | tee >(wc -c) >(shasum -a 256) >/dev/null
+
+### Upgrading `ptex`
+
+The `ptex` version is defined in [package/pbt.toml](package/pbt.toml) under the `[lift.ptex]` key.
+
+There is also a reference to `ptex` version for bootstrap purposes in [`BOOTSTRAP_PTEX_TAG`](package/src/utils/build.rs).
+
+Releases for `ptex`: https://github.com/a-scie/ptex/releases
+
+### Upgrading `PBS`
+
+The versions of Python Build Standalone to support running `pants` with is defined in
+[package/scie-pants.toml](package/scie-pants.toml) under the `[[lift.interpreters]]` group. Make
+sure to also update the `members` for the `[[lift.interpreter_groups]]` entry `id=cpython` if
+adding/removing interpreters.
+
+Releases for `PBS`: https://github.com/indygreg/python-build-standalone/releases
+
+### Upgrading rust dependencies
+
+This is done by `dependabot` using Pull Requests.
+
+### Upgrading `scie-jump`
+
+The `scie-jump` is referenced from lift manifests under the `[lift.scie_jump]` key:
+
+* [package/pbt.toml](package/pbt.toml)
+* [package/scie-pants.toml](package/scie-pants.toml)
+
+Releases of `scie-jump`: https://github.com/a-scie/jump/releases
