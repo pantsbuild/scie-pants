@@ -22,7 +22,7 @@ codegen-units = 1
 [workspace.dependencies]
 anyhow = "1.0"
 log = "0.4"
-tempfile = "3.8"
+tempfile = "3.10"
 
 [dependencies]
 anyhow = { workspace = true}
