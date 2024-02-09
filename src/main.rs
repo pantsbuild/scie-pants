@@ -76,7 +76,7 @@ impl Process {
 }
 
 fn env_version(env_var_name: &str) -> Result<Option<String>> {
-    let raw_version = env::var_os(env_var_name).unwrap_or(OsString::new());
+    let raw_version = env::var_os(env_var_name).unwrap_or_default();
     if raw_version.len() == 0 {
         // setting PANTS_VERSION= or PANTS_SHA= behaves the same as not setting them
         Ok(None)
