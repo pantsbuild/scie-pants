@@ -28,12 +28,28 @@ release = "20240107"
 lazy = true
 version = "3.9.18"
 
+[[lift.interpreters]]
+id = "cpython310"
+provider = "PythonBuildStandalone"
+release = "20240107"
+lazy = true
+version = "3.10.13"
+
+[[lift.interpreters]]
+id = "cpython311"
+provider = "PythonBuildStandalone"
+release = "20240107"
+lazy = true
+version = "3.11.7"
+
 [[lift.interpreter_groups]]
 id = "cpython"
 selector = "{scie.bindings.configure:PYTHON}"
 members = [
     "cpython38",
     "cpython39",
+    "cpython310",
+    "cpython311",
 ]
 
 [[lift.files]]
@@ -56,9 +72,6 @@ name = "pants"
 # appropriate by the default "Boot" one above)
 # description = "Runs a hermetic Pants installation."
 exe = "{scie.bindings.install:PANTS_CLIENT_EXE}"
-args = [
-    "{scie.bindings.configure:PANTS_SHA_FIND_LINKS}",
-]
 
 [lift.commands.env.default]
 PANTS_BUILDROOT_OVERRIDE = "{scie.bindings.configure:PANTS_BUILDROOT_OVERRIDE}"
@@ -90,7 +103,6 @@ __import__("debugpy.server.cli").server.cli.main()
     "127.0.0.1:5678",
     "--wait-for-client",
     "{scie.bindings.install:VIRTUAL_ENV}/bin/pants",
-    "{scie.bindings.configure:PANTS_SHA_FIND_LINKS}",
 ]
 
 [lift.commands.env.default]
@@ -183,8 +195,6 @@ args = [
     "{ptex}",
     "--pants-version",
     "{scie.env.PANTS_VERSION}",
-    "--pants-sha",
-    "{scie.env.PANTS_SHA}",
     "--pants-config",
     "{scie.env.PANTS_TOML}",
     "--github-api-bearer-token",
@@ -215,6 +225,8 @@ args = [
     "install-pants",
     "--pants-version",
     "{scie.bindings.configure:PANTS_VERSION}",
+    "--pants-pex",
+    "{scie.bindings.configure:PANTS_PEX}",
     "--find-links",
     "{scie.bindings.configure:FIND_LINKS}",
     "--debug",

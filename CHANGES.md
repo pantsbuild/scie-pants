@@ -1,5 +1,14 @@
 # Release Notes
 
+## 0.11.0
+
+Drop support for `PANTS_SHA`, which was deprecated in `0.10.0`.
+
+Also:
+
+- Select Python version for running Pants based on the python tag on the pants pex file name.
+- Always installs Pants from pants pex downloaded from Github releases.
+
 ## 0.10.6
 
 The bundled Python interpreter has been upgraded to release [`20240107`](
