@@ -82,7 +82,7 @@ There are just a few guiding principles to keep in mind as alluded to above:
 
 ## Dependencies
 
-The `scie-pants` project have a few dependencies, and in order to ease maintenance of keeping them
+The `scie-pants` project has a few dependencies, and in order to ease maintenance of keeping them
 up-to-date, this section details which these are and how to upgrade them.
 
 * The `lift` tool; it is used to build the `scie-pants` binary using a "lift manifest" file.
