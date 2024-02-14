@@ -649,6 +649,17 @@ index b70ae75..271706a 100644
                 .current_dir(clone_root_tmp.path()),
         )
         .unwrap();
+        // The `rust-toolchain` file must be in the cargo project root in order to apply reliably
+        // (failed for the Mac runner in CI only). This used to work simply because the version of
+        // rust used by scie-pants was compatible with the rust engine being compiled. Going to rust
+        // 1.76.0, this is no longer true for pants 2.14.1. [This is mostly a hunch by @kaos looking
+        // at the evidence, as he was unable to reproduce this behaviour locally]
+        execute(
+            Command::new("cp")
+                .args(["rust-toolchain", "src/rust/engine/rust-toolchain"])
+                .current_dir(clone_root_tmp.path()),
+        )
+        .unwrap();
         let venv_root_tmp = create_tempdir().unwrap();
         execute(
             Command::new("./pants")
