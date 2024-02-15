@@ -660,6 +660,12 @@ index b70ae75..271706a 100644
                 .current_dir(clone_root_tmp.path()),
         )
         .unwrap();
+        execute(
+            Command::new("rustup")
+                .args(["show"])
+                .current_dir(clone_root_tmp.path()),
+        )
+        .unwrap();
         let venv_root_tmp = create_tempdir().unwrap();
         execute(
             Command::new("./pants")
