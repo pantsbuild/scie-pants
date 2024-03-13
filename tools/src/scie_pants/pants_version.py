@@ -31,24 +31,7 @@ PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.18.0.dev5")
 @dataclass(frozen=True)
 class ResolveInfo:
     stable_version: Version
-    sha_version: Version | None
     find_links: str | None
-
-    def pants_find_links_option(self, pants_version_selected: Version) -> str:
-        # We only want to add the find-links repo for PANTS_SHA invocations so that plugins can
-        # resolve Pants the only place it can be found in that case - our ~private
-        # binaries.pantsbuild.org S3 find-links bucket.
-        operator = "-" if pants_version_selected == self.stable_version else "+"
-        option_name = (
-            "repos"
-            if self.stable_version in SpecifierSet("<2.14.0", prereleases=True)
-            else "find-links"
-        )
-        value = f"'{self.find_links}'" if self.find_links else ""
-
-        # we usually pass a no-op, e.g. --python-repos-find-links=-[], because this is only used for
-        # PANTS_SHA support that is now deprecated and will be removed
-        return f"--python-repos-{option_name}={operator}[{value}]"
 
 
 def determine_find_links(
@@ -91,7 +74,6 @@ def determine_find_links(
 
     return ResolveInfo(
         stable_version=Version(pants_version),
-        sha_version=sha_version,
         find_links=f"file://{find_links_file}",
     )
 
@@ -101,7 +83,7 @@ def determine_tag_version(
 ) -> ResolveInfo:
     stable_version = Version(pants_version)
     if stable_version >= PANTS_PEX_GITHUB_RELEASE_VERSION:
-        return ResolveInfo(stable_version, sha_version=None, find_links=None)
+        return ResolveInfo(stable_version, find_links=None)
 
     tag = f"release_{pants_version}"
 
@@ -146,20 +128,6 @@ def determine_tag_version(
         commit_sha,
         find_links_dir,
         include_nonrelease_pants_distributions_in_findlinks=False,
-    )
-
-
-def determine_sha_version(ptex: Ptex, sha: str, find_links_dir: Path) -> ResolveInfo:
-    version_file_url = (
-        f"https://raw.githubusercontent.com/pantsbuild/pants/{sha}/src/python/pants/VERSION"
-    )
-    pants_version = ptex.fetch_text(version_file_url).strip()
-    return determine_find_links(
-        ptex,
-        pants_version,
-        sha,
-        find_links_dir,
-        include_nonrelease_pants_distributions_in_findlinks=True,
     )
 
 

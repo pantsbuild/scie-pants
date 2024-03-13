@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.11.0
+
+Drop support for `PANTS_SHA` which was deprecated in `0.10.0`.
+
 ## 0.10.8
 
 Redirect pants install messages to a `pants-install.log` file in pants venv directory to not pollute
@@ -50,9 +54,8 @@ It also supports fetching Pants PEXes from behind a firewall.
 ## 0.10.0
 
 This release deprecates support for running against an arbitrary Pants commit using
-`PANTS_SHA=abc123... pants ...`. Pants no longer
-publishes the artifacts required for this for new commits, and so this is becoming less and less
-useful. To replace use of `PANTS_SHA`, do one of:
+`PANTS_SHA=abc123... pants ...`. Pants no longer publishes the artifacts required for this for new
+commits, and so this is becoming less and less useful. To replace use of `PANTS_SHA`, do one of:
 
 - Use a released version of Pants.
 - Run pants from sources (for example: `PANTS_SOURCE=/path/to/pants-checkout pants ...`).

@@ -56,9 +56,6 @@ name = "pants"
 # appropriate by the default "Boot" one above)
 # description = "Runs a hermetic Pants installation."
 exe = "{scie.bindings.install:PANTS_CLIENT_EXE}"
-args = [
-    "{scie.bindings.configure:PANTS_SHA_FIND_LINKS}",
-]
 
 [lift.commands.env.default]
 PANTS_BUILDROOT_OVERRIDE = "{scie.bindings.configure:PANTS_BUILDROOT_OVERRIDE}"
@@ -90,7 +87,6 @@ __import__("debugpy.server.cli").server.cli.main()
     "127.0.0.1:5678",
     "--wait-for-client",
     "{scie.bindings.install:VIRTUAL_ENV}/bin/pants",
-    "{scie.bindings.configure:PANTS_SHA_FIND_LINKS}",
 ]
 
 [lift.commands.env.default]
@@ -183,8 +179,6 @@ args = [
     "{ptex}",
     "--pants-version",
     "{scie.env.PANTS_VERSION}",
-    "--pants-sha",
-    "{scie.env.PANTS_SHA}",
     "--pants-config",
     "{scie.env.PANTS_TOML}",
     "--github-api-bearer-token",
