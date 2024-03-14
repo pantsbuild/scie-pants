@@ -125,6 +125,15 @@ That will update to the latest available stable release if there is a newer one 
 there is not. You can also supply a `scie-pants` version as the sole argument to downgrade or switch
 to a specific version.
 
+### Check pants installation logs
+
+When the Python virtual environment (venv) for Pants is created, any logged output during that
+process is saved in a `pants-install.log` file in the venv root. The path to the venv root is logged
+during bootstrapping on a line with this pattern:
+
+    New virtual environment successfully created at /.../nce/<hash value>/bindings/venvs/<pants version>
+
+
 ### Report an issue
 
 You can report an issue directly at https://github.com/pantsbuild/scie-pants/issues. Please include
