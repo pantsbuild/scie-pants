@@ -29,8 +29,17 @@ macro_rules! integration_test {
     };
 }
 
-fn issue_link(issue: usize) -> String {
-    format!("https://github.com/pantsbuild/scie-pants/issues/{issue}")
+macro_rules! issue_link {
+    ($issue: expr) => {
+        issue_link($issue, "pantsbuild/scie-pants")
+    };
+    ($issue: expr, $repo: expr) => {
+        issue_link($issue, $repo)
+    };
+}
+
+fn issue_link(issue: usize, repo: &str) -> String {
+    format!("https://github.com/{repo}/issues/{issue}")
 }
 
 fn decode_output(output: Vec<u8>) -> Result<String> {
@@ -99,6 +108,7 @@ pub(crate) fn run_integration_tests(
         test_tools(scie_pants_scie, check);
         test_pants_bin_name_handling(scie_pants_scie);
         test_pants_bootstrap_handling(scie_pants_scie);
+        test_pants_bootstrap_stdout_silent(scie_pants_scie);
         test_tools_pex_reproducibility(workspace_root, tools_pex_path, tools_pex_mismatch_warn);
         test_pants_bootstrap_tools(scie_pants_scie);
 
@@ -238,7 +248,7 @@ fn test_pants_bin_name_handling(scie_pants_scie: &Path) {
         false,
         r#"
             [GLOBAL]
-            pants_version = "2.15.0rc5"
+            pants_version = "2.18.0"
             [anonymous-telemetry]
             enabled = false
             "#,
@@ -287,16 +297,16 @@ fn test_pants_bootstrap_handling(scie_pants_scie: &Path) {
     // bootstrapped so that we don't get stderr output from that process. We also use
     // `--no-pantsd` to avoid spurious pantsd startup stderr log lines just in case pantsd found
     // a need to restart.
-    let output = execute(
+    let result = execute(
         Command::new(scie_pants_scie)
             .args(["--no-pantsd", "-V"])
             .stderr(Stdio::piped()),
     )
     .unwrap();
     assert!(
-        output.stderr.is_empty(),
+        result.stderr.is_empty(),
         "Expected no warnings to be printed when handling .pants.bootstrap, found:\n{warnings}",
-        warnings = String::from_utf8_lossy(&output.stderr)
+        warnings = String::from_utf8_lossy(&result.stderr)
     );
 }
 
@@ -408,7 +418,7 @@ fn test_ignore_empty_pants_version_pants_sha(scie_pants_scie: &Path) {
 
     let tmpdir = create_tempdir().unwrap();
 
-    let pants_release = "2.15.0";
+    let pants_release = "2.18.0";
     let pants_toml_content = format!(
         r#"
         [GLOBAL]
@@ -437,7 +447,7 @@ fn test_pants_from_pex_version(scie_pants_scie: &Path) {
 
     let tmpdir = create_tempdir().unwrap();
 
-    let pants_release = "2.18.0.dev5";
+    let pants_release = "2.18.0";
     let pants_toml_content = format!(
         r#"
         [GLOBAL]
@@ -816,7 +826,7 @@ fn test_self_downgrade(scie_pants_scie: &Path) {
 fn test_caching_issue_129(scie_pants_scie: &Path) {
     integration_test!(
         "Verifying the build root does not influence caching ({issue})",
-        issue = issue_link(129)
+        issue = issue_link!(129)
     );
     let tmpdir = create_tempdir().unwrap();
 
@@ -824,7 +834,7 @@ fn test_caching_issue_129(scie_pants_scie: &Path) {
 
     let pants_toml = r#"
     [GLOBAL]
-    pants_version = "2.15.0"
+    pants_version = "2.18.0"
     [anonymous-telemetry]
     enabled = false
     "#;
@@ -894,7 +904,7 @@ fn test_caching_issue_129(scie_pants_scie: &Path) {
 fn test_custom_pants_toml_issue_153(scie_pants_scie: &Path) {
     integration_test!(
         "Verifying the PANTS_TOML env var is respected ({issue})",
-        issue = issue_link(153)
+        issue = issue_link!(153)
     );
 
     let tmpdir = create_tempdir().unwrap();
@@ -978,7 +988,7 @@ fn test_pants_native_client_perms_issue_182(scie_pants_scie: &Path) {
     integration_test!(
         "Verifying scie-pants sets executable perms on the Pants native client binary when \
         present ({issue})",
-        issue = issue_link(182)
+        issue = issue_link!(182)
     );
 
     let tmpdir = create_tempdir().unwrap();
@@ -1009,7 +1019,7 @@ fn test_pants_native_client_perms_issue_182(scie_pants_scie: &Path) {
 fn test_non_utf8_env_vars_issue_198(scie_pants_scie: &Path) {
     integration_test!(
         "Verifying scie-pants is robust to environments with non-utf8 env vars present ({issue})",
-        issue = issue_link(198)
+        issue = issue_link!(198)
     );
 
     let tmpdir = create_tempdir().unwrap();
@@ -1112,7 +1122,7 @@ fn test_bad_boot_error_text(scie_pants_scie: &Path) {
 fn test_pants_bootstrap_urls(scie_pants_scie: &Path) {
     integration_test!(
       "Verifying PANTS_BOOTSTRAP_URLS is used for both CPython interpreter and Pants PEX ({issue})",
-      issue = issue_link(243)
+      issue = issue_link!(243)
     );
 
     // This test runs in 4 parts:
@@ -1223,4 +1233,28 @@ fn test_pants_bootstrap_urls(scie_pants_scie: &Path) {
     let output = execute(command.stdout(Stdio::piped())).unwrap();
     let stdout = decode_output(output.stdout).unwrap();
     assert!(stdout.contains(pants_release));
+}
+
+fn test_pants_bootstrap_stdout_silent(scie_pants_scie: &Path) {
+    integration_test!(
+        "Verifying scie-pants bootstraps Pants without any output on stdout ({issue})",
+        issue = issue_link!(20315, "pantsbuild/pants")
+    );
+    // Bootstrap a new unseen version of Pants to verify there is no extra output on stdout besides
+    // the requested output from the pants command.
+    let (output, _stderr) = assert_stderr_output(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .env("PANTS_VERSION", "2.19.1")
+            .stdout(Stdio::piped()),
+        // Expect bootstrap messages to ensure we actually bootstrapped pants during this execution.
+        vec![
+            "Bootstrapping Pants 2.19.1",
+            "Installing pantsbuild.pants==2.19.1 into a virtual environment at ",
+            "New virtual environment successfully created at ",
+        ],
+        ExpectedResult::Success,
+    );
+    let stdout = decode_output(output.stdout).unwrap();
+    assert!(stdout.eq("2.19.1\n"), "STDOUT was not '2.19.1':\n{stdout}\n");
 }
