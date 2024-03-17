@@ -297,16 +297,16 @@ fn test_pants_bootstrap_handling(scie_pants_scie: &Path) {
     // bootstrapped so that we don't get stderr output from that process. We also use
     // `--no-pantsd` to avoid spurious pantsd startup stderr log lines just in case pantsd found
     // a need to restart.
-    let result = execute(
+    let output = execute(
         Command::new(scie_pants_scie)
             .args(["--no-pantsd", "-V"])
             .stderr(Stdio::piped()),
     )
     .unwrap();
     assert!(
-        result.stderr.is_empty(),
+        output.stderr.is_empty(),
         "Expected no warnings to be printed when handling .pants.bootstrap, found:\n{warnings}",
-        warnings = String::from_utf8_lossy(&result.stderr)
+        warnings = String::from_utf8_lossy(&output.stderr)
     );
 }
 
@@ -1256,5 +1256,8 @@ fn test_pants_bootstrap_stdout_silent(scie_pants_scie: &Path) {
         ExpectedResult::Success,
     );
     let stdout = decode_output(output.stdout).unwrap();
-    assert!(stdout.eq("2.19.1\n"), "STDOUT was not '2.19.1':\n{stdout}\n");
+    assert!(
+        stdout.eq("2.19.1\n"),
+        "STDOUT was not '2.19.1':\n{stdout}\n"
+    );
 }
