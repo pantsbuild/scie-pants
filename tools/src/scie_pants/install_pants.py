@@ -120,23 +120,37 @@ def install_pants_from_pex(
                 " or file an issue on GitHub: https://github.com/pantsbuild/pants/issues/new/choose.\n\n"
                 f"Exception:\n\n{e}"
             )
-        subprocess.run(
-            args=[
-                sys.executable,
-                pants_pex.name,
-                "venv",
-                "--prompt",
-                prompt,
-                "--compile",
-                "--pip",
-                "--collisions-ok",
-                "--no-emit-warnings",  # Silence `PEXWarning: You asked for --pip ...`
-                "--disable-cache",
-                str(venv_dir),
-            ],
-            env={"PEX_TOOLS": "1"},
-            check=True,
-        )
+        try:
+            pants_venv_result = subprocess.run(
+                args=[
+                    sys.executable,
+                    pants_pex.name,
+                    "venv",
+                    "--prompt",
+                    prompt,
+                    "--compile",
+                    "--pip",
+                    "--collisions-ok",
+                    "--no-emit-warnings",  # Silence `PEXWarning: You asked for --pip ...`
+                    "--disable-cache",
+                    str(venv_dir),
+                ],
+                env={"PEX_TOOLS": "1"},
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+        except subprocess.CalledProcessError as e:
+            fatal(
+                f"Failed to create Pants virtual environment.\nError: {e}, output:"
+                f"\n-----\n{e.stdout}\n-----\n"
+            )
+        else:
+            with open(str(venv_dir / "pants-install.log"), "a") as fp:
+                print(f"Installed {pex_name}", file=fp)
+                if pants_venv_result.stdout:
+                    print(pants_venv_result.stdout.decode(), file=fp)
+                print("\n-----", file=fp)
 
     if extra_requirements:
         venv_pip_install(

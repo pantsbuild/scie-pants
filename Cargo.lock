@@ -573,7 +573,7 @@ dependencies = [
 
 [[package]]
 name = "scie-pants"
-version = "0.10.7"
+version = "0.10.8"
 dependencies = [
  "anyhow",
  "dirs",

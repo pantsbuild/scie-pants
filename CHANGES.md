@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.10.8
+
+Redirect pants install messages to a `pants-install.log` file in pants venv directory to not pollute
+stdout/stderr.
+
 ## 0.10.7
 
 This release upgrades `pex` to `v2.1.163` and the bootstrap Python to `3.9.18`.
