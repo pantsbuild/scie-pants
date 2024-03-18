@@ -42,7 +42,7 @@ jobs:
         run: cargo clippy --locked --all
       - name: Unit Tests
         run: cargo test --all
-      - name: Setup Python 3.9
+      - name: Setup Python 3.9 (Ubuntu only)
         if: ${{ matrix.os == 'ubuntu-22.04' }}
         uses: actions/setup-python@v4
         with:
@@ -54,9 +54,12 @@ jobs:
         with:
           path: ${{ env.SCIE_PANTS_DEV_CACHE }}
           key: ${{ matrix.os }}-scie-pants-v6
-      - name: Build, Package & Integration Tests
+      - name: Build, Package & Integration Tests (MacOS)
         if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64'}}
         run: |
+          # Clean up the science cache for Pants 2.19.1 setup to ensure it's bootstrapped each run.
+          rm -rf ~/Library/Caches/nce/*/bindings/venv/2.19.1
+
           # TODO(John Sirois): Kill --tools-pex-mismatch-warn:
           #   https://github.com/pantsbuild/scie-pants/issues/2
           #
@@ -69,7 +72,7 @@ jobs:
           #
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             cargo run -p package -- test --check --tools-pex-mismatch-warn
-      - name: Build, Package & Integration Tests
+      - name: Build, Package & Integration Tests (Ubuntu)
         if: ${{ matrix.os == 'ubuntu-22.04' }}
         run: |
           cargo run -p package -- --dest-dir dist/ tools

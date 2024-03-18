@@ -112,31 +112,13 @@ pub(crate) fn run_integration_tests(
         test_tools_pex_reproducibility(workspace_root, tools_pex_path, tools_pex_mismatch_warn);
         test_pants_bootstrap_tools(scie_pants_scie);
 
-        // TODO(John Sirois): The --no-pantsd here works around a fairly prevalent Pants crash on
-        // Linux x86_64 along the lines of the following, but sometimes varying:
-        // >> Verifying PANTS_SHA is respected
-        // Bootstrapping Pants 2.14.0a0+git8e381dbf using cpython 3.9.15
-        // Installing pantsbuild.pants==2.14.0a0+git8e381dbf into a virtual environment at /home/runner/.cache/nce/67f27582b3729c677922eb30c5c6e210aa54badc854450e735ef41cf25ac747f/bindings/venvs/2.14.0a0+git8e381dbf
-        // New virtual environment successfully created at /home/runner/.cache/nce/67f27582b3729c677922eb30c5c6e210aa54badc854450e735ef41cf25ac747f/bindings/venvs/2.14.0a0+git8e381dbf.
-        // 18:11:53.75 [INFO] Initializing scheduler...
-        // 18:11:53.97 [INFO] Scheduler initialized.
-        // 2.14.0a0+git8e381dbf
-        // Fatal Python error: PyGILState_Release: thread state 0x7efe18001140 must be current when releasing
-        // Python runtime state: finalizing (tstate=0x1f4b810)
-        //
-        // Thread 0x00007efe30b75540 (most recent call first):
-        // <no Python frame>
-        // Error: Command "/home/runner/work/scie-pants/scie-pants/dist/scie-pants-linux-x86_64" "--no-verify-config" "-V" failed with exit code: None
-        if matches!(*CURRENT_PLATFORM, Platform::LinuxX86_64) {
-            log!(Color::Yellow, "Turning off pantsd for remaining tests.");
-            env::set_var("PANTS_PANTSD", "False");
-        }
+        log!(Color::Yellow, "Turning off pantsd for remaining tests.");
+        env::set_var("PANTS_PANTSD", "False");
 
-        test_pants_shas(scie_pants_scie);
         test_python_repos_repos(scie_pants_scie);
         test_initialize_new_pants_project(scie_pants_scie);
         test_set_pants_version(scie_pants_scie);
-        test_ignore_empty_pants_version_pants_sha(scie_pants_scie);
+        test_ignore_empty_pants_version(scie_pants_scie);
 
         test_pants_from_pex_version(scie_pants_scie);
         test_pants_from_bad_pex_version(scie_pants_scie);
@@ -351,26 +333,6 @@ fn test_pants_bootstrap_tools(scie_pants_scie: &Path) {
     .unwrap();
 }
 
-fn test_pants_shas(scie_pants_scie: &Path) {
-    for sha in [
-        // initial
-        "8e381dbf90cae57c5da2b223c577b36ca86cace9",
-        // native-client added to wheel
-        "558d843549204bbe49c351d00cdf23402da262c1",
-    ] {
-        integration_test!("Verifying significant PANTS_SHA: {sha}");
-        let existing_project_dir = create_tempdir().unwrap();
-        touch(&existing_project_dir.path().join("pants.toml")).unwrap();
-        execute(
-            Command::new(scie_pants_scie)
-                .current_dir(existing_project_dir.path())
-                .env("PANTS_SHA", sha)
-                .args(["--no-verify-config", "-V"]),
-        )
-        .unwrap();
-    }
-}
-
 fn test_python_repos_repos(scie_pants_scie: &Path) {
     integration_test!(
         "Verifying --python-repos-repos is used prior to Pants 2.13 (no warnings should be \
@@ -413,8 +375,8 @@ fn test_set_pants_version(scie_pants_scie: &Path) {
     .unwrap();
 }
 
-fn test_ignore_empty_pants_version_pants_sha(scie_pants_scie: &Path) {
-    integration_test!("Verifying ignoring PANTS_SHA and PANTS_VERSION when set to empty string");
+fn test_ignore_empty_pants_version(scie_pants_scie: &Path) {
+    integration_test!("Verifying ignoring PANTS_VERSION when set to empty string");
 
     let tmpdir = create_tempdir().unwrap();
 
@@ -431,7 +393,6 @@ fn test_ignore_empty_pants_version_pants_sha(scie_pants_scie: &Path) {
     let output = execute(
         Command::new(scie_pants_scie)
             .arg("-V")
-            .env("PANTS_SHA", "")
             .env("PANTS_VERSION", "")
             .current_dir(&tmpdir)
             .stdout(Stdio::piped()),
