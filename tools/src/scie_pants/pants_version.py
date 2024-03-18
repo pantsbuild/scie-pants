@@ -39,7 +39,6 @@ def determine_find_links(
     pants_version: str,
     sha: str,
     find_links_dir: Path,
-    include_nonrelease_pants_distributions_in_findlinks: bool,
 ) -> ResolveInfo:
     abbreviated_sha = sha[:8]
     sha_version = Version(f"{pants_version}+git{abbreviated_sha}")
@@ -62,14 +61,6 @@ def determine_find_links(
                 f"</a>{os.linesep}".encode()
             )
         fp.flush()
-        if include_nonrelease_pants_distributions_in_findlinks:
-            pantsbuild_pants_find_links = (
-                "https://binaries.pantsbuild.org/wheels/pantsbuild.pants/"
-                f"{sha}/{urllib.parse.quote(str(sha_version))}/index.html"
-            )
-            ptex.fetch_to_fp(pantsbuild_pants_find_links, fp)
-        fp.flush()
-
         ptex.fetch_to_fp("https://wheels.pantsbuild.org/simple/", fp)
 
     return ResolveInfo(
@@ -127,7 +118,6 @@ def determine_tag_version(
         pants_version,
         commit_sha,
         find_links_dir,
-        include_nonrelease_pants_distributions_in_findlinks=False,
     )
 
 
