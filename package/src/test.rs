@@ -29,8 +29,17 @@ macro_rules! integration_test {
     };
 }
 
-fn issue_link(issue: usize) -> String {
-    format!("https://github.com/pantsbuild/scie-pants/issues/{issue}")
+macro_rules! issue_link {
+    ($issue: expr) => {
+        issue_link($issue, "pantsbuild/scie-pants")
+    };
+    ($issue: expr, $repo: expr) => {
+        issue_link($issue, $repo)
+    };
+}
+
+fn issue_link(issue: usize, repo: &str) -> String {
+    format!("https://github.com/{repo}/issues/{issue}")
 }
 
 fn decode_output(output: Vec<u8>) -> Result<String> {
@@ -99,34 +108,17 @@ pub(crate) fn run_integration_tests(
         test_tools(scie_pants_scie, check);
         test_pants_bin_name_handling(scie_pants_scie);
         test_pants_bootstrap_handling(scie_pants_scie);
+        test_pants_bootstrap_stdout_silent(scie_pants_scie);
         test_tools_pex_reproducibility(workspace_root, tools_pex_path, tools_pex_mismatch_warn);
         test_pants_bootstrap_tools(scie_pants_scie);
 
-        // TODO(John Sirois): The --no-pantsd here works around a fairly prevalent Pants crash on
-        // Linux x86_64 along the lines of the following, but sometimes varying:
-        // >> Verifying PANTS_SHA is respected
-        // Bootstrapping Pants 2.14.0a0+git8e381dbf using cpython 3.9.15
-        // Installing pantsbuild.pants==2.14.0a0+git8e381dbf into a virtual environment at /home/runner/.cache/nce/67f27582b3729c677922eb30c5c6e210aa54badc854450e735ef41cf25ac747f/bindings/venvs/2.14.0a0+git8e381dbf
-        // New virtual environment successfully created at /home/runner/.cache/nce/67f27582b3729c677922eb30c5c6e210aa54badc854450e735ef41cf25ac747f/bindings/venvs/2.14.0a0+git8e381dbf.
-        // 18:11:53.75 [INFO] Initializing scheduler...
-        // 18:11:53.97 [INFO] Scheduler initialized.
-        // 2.14.0a0+git8e381dbf
-        // Fatal Python error: PyGILState_Release: thread state 0x7efe18001140 must be current when releasing
-        // Python runtime state: finalizing (tstate=0x1f4b810)
-        //
-        // Thread 0x00007efe30b75540 (most recent call first):
-        // <no Python frame>
-        // Error: Command "/home/runner/work/scie-pants/scie-pants/dist/scie-pants-linux-x86_64" "--no-verify-config" "-V" failed with exit code: None
-        if matches!(*CURRENT_PLATFORM, Platform::LinuxX86_64) {
-            log!(Color::Yellow, "Turning off pantsd for remaining tests.");
-            env::set_var("PANTS_PANTSD", "False");
-        }
+        log!(Color::Yellow, "Turning off pantsd for remaining tests.");
+        env::set_var("PANTS_PANTSD", "False");
 
-        test_pants_shas(scie_pants_scie);
         test_python_repos_repos(scie_pants_scie);
         test_initialize_new_pants_project(scie_pants_scie);
         test_set_pants_version(scie_pants_scie);
-        test_ignore_empty_pants_version_pants_sha(scie_pants_scie);
+        test_ignore_empty_pants_version(scie_pants_scie);
 
         test_pants_from_pex_version(scie_pants_scie);
         test_pants_from_bad_pex_version(scie_pants_scie);
@@ -238,7 +230,7 @@ fn test_pants_bin_name_handling(scie_pants_scie: &Path) {
         false,
         r#"
             [GLOBAL]
-            pants_version = "2.15.0rc5"
+            pants_version = "2.18.0"
             [anonymous-telemetry]
             enabled = false
             "#,
@@ -341,26 +333,6 @@ fn test_pants_bootstrap_tools(scie_pants_scie: &Path) {
     .unwrap();
 }
 
-fn test_pants_shas(scie_pants_scie: &Path) {
-    for sha in [
-        // initial
-        "8e381dbf90cae57c5da2b223c577b36ca86cace9",
-        // native-client added to wheel
-        "558d843549204bbe49c351d00cdf23402da262c1",
-    ] {
-        integration_test!("Verifying significant PANTS_SHA: {sha}");
-        let existing_project_dir = create_tempdir().unwrap();
-        touch(&existing_project_dir.path().join("pants.toml")).unwrap();
-        execute(
-            Command::new(scie_pants_scie)
-                .current_dir(existing_project_dir.path())
-                .env("PANTS_SHA", sha)
-                .args(["--no-verify-config", "-V"]),
-        )
-        .unwrap();
-    }
-}
-
 fn test_python_repos_repos(scie_pants_scie: &Path) {
     integration_test!(
         "Verifying --python-repos-repos is used prior to Pants 2.13 (no warnings should be \
@@ -403,12 +375,12 @@ fn test_set_pants_version(scie_pants_scie: &Path) {
     .unwrap();
 }
 
-fn test_ignore_empty_pants_version_pants_sha(scie_pants_scie: &Path) {
-    integration_test!("Verifying ignoring PANTS_SHA and PANTS_VERSION when set to empty string");
+fn test_ignore_empty_pants_version(scie_pants_scie: &Path) {
+    integration_test!("Verifying ignoring PANTS_VERSION when set to empty string");
 
     let tmpdir = create_tempdir().unwrap();
 
-    let pants_release = "2.15.0";
+    let pants_release = "2.18.0";
     let pants_toml_content = format!(
         r#"
         [GLOBAL]
@@ -421,7 +393,6 @@ fn test_ignore_empty_pants_version_pants_sha(scie_pants_scie: &Path) {
     let output = execute(
         Command::new(scie_pants_scie)
             .arg("-V")
-            .env("PANTS_SHA", "")
             .env("PANTS_VERSION", "")
             .current_dir(&tmpdir)
             .stdout(Stdio::piped()),
@@ -437,7 +408,7 @@ fn test_pants_from_pex_version(scie_pants_scie: &Path) {
 
     let tmpdir = create_tempdir().unwrap();
 
-    let pants_release = "2.18.0.dev5";
+    let pants_release = "2.18.0";
     let pants_toml_content = format!(
         r#"
         [GLOBAL]
@@ -833,7 +804,7 @@ fn test_self_downgrade(scie_pants_scie: &Path) {
 fn test_caching_issue_129(scie_pants_scie: &Path) {
     integration_test!(
         "Verifying the build root does not influence caching ({issue})",
-        issue = issue_link(129)
+        issue = issue_link!(129)
     );
     let tmpdir = create_tempdir().unwrap();
 
@@ -841,7 +812,7 @@ fn test_caching_issue_129(scie_pants_scie: &Path) {
 
     let pants_toml = r#"
     [GLOBAL]
-    pants_version = "2.15.0"
+    pants_version = "2.18.0"
     [anonymous-telemetry]
     enabled = false
     "#;
@@ -911,7 +882,7 @@ fn test_caching_issue_129(scie_pants_scie: &Path) {
 fn test_custom_pants_toml_issue_153(scie_pants_scie: &Path) {
     integration_test!(
         "Verifying the PANTS_TOML env var is respected ({issue})",
-        issue = issue_link(153)
+        issue = issue_link!(153)
     );
 
     let tmpdir = create_tempdir().unwrap();
@@ -995,7 +966,7 @@ fn test_pants_native_client_perms_issue_182(scie_pants_scie: &Path) {
     integration_test!(
         "Verifying scie-pants sets executable perms on the Pants native client binary when \
         present ({issue})",
-        issue = issue_link(182)
+        issue = issue_link!(182)
     );
 
     let tmpdir = create_tempdir().unwrap();
@@ -1026,7 +997,7 @@ fn test_pants_native_client_perms_issue_182(scie_pants_scie: &Path) {
 fn test_non_utf8_env_vars_issue_198(scie_pants_scie: &Path) {
     integration_test!(
         "Verifying scie-pants is robust to environments with non-utf8 env vars present ({issue})",
-        issue = issue_link(198)
+        issue = issue_link!(198)
     );
 
     let tmpdir = create_tempdir().unwrap();
@@ -1129,7 +1100,7 @@ fn test_bad_boot_error_text(scie_pants_scie: &Path) {
 fn test_pants_bootstrap_urls(scie_pants_scie: &Path) {
     integration_test!(
       "Verifying PANTS_BOOTSTRAP_URLS is used for both CPython interpreter and Pants PEX ({issue})",
-      issue = issue_link(243)
+      issue = issue_link!(243)
     );
 
     // This test runs in 4 parts:
@@ -1240,4 +1211,31 @@ fn test_pants_bootstrap_urls(scie_pants_scie: &Path) {
     let output = execute(command.stdout(Stdio::piped())).unwrap();
     let stdout = decode_output(output.stdout).unwrap();
     assert!(stdout.contains(pants_release));
+}
+
+fn test_pants_bootstrap_stdout_silent(scie_pants_scie: &Path) {
+    integration_test!(
+        "Verifying scie-pants bootstraps Pants without any output on stdout ({issue})",
+        issue = issue_link!(20315, "pantsbuild/pants")
+    );
+    // Bootstrap a new unseen version of Pants to verify there is no extra output on stdout besides
+    // the requested output from the pants command.
+    let (output, _stderr) = assert_stderr_output(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .env("PANTS_VERSION", "2.19.1")
+            .stdout(Stdio::piped()),
+        // Expect bootstrap messages to ensure we actually bootstrapped pants during this execution.
+        vec![
+            "Bootstrapping Pants 2.19.1",
+            "Installing pantsbuild.pants==2.19.1 into a virtual environment at ",
+            "New virtual environment successfully created at ",
+        ],
+        ExpectedResult::Success,
+    );
+    let stdout = decode_output(output.stdout).unwrap();
+    assert!(
+        stdout.eq("2.19.1\n"),
+        "STDOUT was not '2.19.1':\n{stdout}\n"
+    );
 }
