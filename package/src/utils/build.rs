@@ -160,7 +160,7 @@ impl BuildContext {
                 // N.B.: This just suppresses a warning about adding this bin dir to your PATH.
                 .env(
                     "PATH",
-                    vec![self.cargo_output_bin_dir.to_str().unwrap(), env!("PATH")].join(PATHSEP),
+                    [self.cargo_output_bin_dir.to_str().unwrap(), env!("PATH")].join(PATHSEP),
                 ),
         )?;
         Ok(self
@@ -217,7 +217,7 @@ fn fetch_a_scie_project(
                     // N.B.: This just suppresses a warning about adding this bin dir to your PATH.
                     .env(
                         "PATH",
-                        vec![
+                        [
                             build_context.cargo_output_bin_dir.to_str().unwrap(),
                             env!("PATH"),
                         ]
