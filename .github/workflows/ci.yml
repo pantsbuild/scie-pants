@@ -57,9 +57,6 @@ jobs:
       - name: Build, Package & Integration Tests (MacOS)
         if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64'}}
         run: |
-          # Clean up the science cache for Pants 2.19.1 setup to ensure it's bootstrapped each run.
-          rm -rf ~/Library/Caches/nce/*/bindings/venv/2.19.1
-
           # TODO(John Sirois): Kill --tools-pex-mismatch-warn:
           #   https://github.com/pantsbuild/scie-pants/issues/2
           #
