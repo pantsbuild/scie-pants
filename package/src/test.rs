@@ -516,7 +516,7 @@ diff --git a/build-support/pants_venv b/build-support/pants_venv
 index 81e3bd7..4236f4b 100755
 --- a/build-support/pants_venv
 +++ b/build-support/pants_venv
-@@ -14,11 +14,13 @@ REQUIREMENTS=(
+@@ -14,11 +14,14 @@ REQUIREMENTS=(
  # NB: We house these outside the working copy to avoid needing to gitignore them, but also to
  # dodge https://github.com/hashicorp/vagrant/issues/12057.
  platform=$(uname -mps | sed 's/ /./g')
@@ -524,6 +524,7 @@ index 81e3bd7..4236f4b 100755
 +venv_dir_prefix="${PANTS_VENV_DIR_PREFIX:-${HOME}/.cache/pants/pants_dev_deps/${platform}}"
 +
 +echo >&2 "The ${SCIE_PANTS_TEST_MODE:-Pants 2.14.1 clone} is working."
++tree >&2 "${venv_dir_prefix}"
 
  function venv_dir() {
    py_venv_version=$(${PY} -c 'import sys; print("".join(map(str, sys.version_info[0:2])))')
@@ -602,7 +603,7 @@ index b70ae75..271706a 100644
             .env("SCIE_PANTS_TEST_MODE", "PANTS_SOURCE mode")
             .env("PANTS_VENV_DIR_PREFIX", pants_2_14_1_venv_dir),
         vec![
-            "The PANTS_SOURCE mode is working.",
+            "The PANTS_SOURCE mode is workingx.",
             "Pants from sources argv: --no-verify-config -V.",
         ],
         ExpectedResult::Success,
