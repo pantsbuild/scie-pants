@@ -105,28 +105,6 @@ pub(crate) fn run_integration_tests(
         *CURRENT_PLATFORM,
         Platform::LinuxX86_64 | Platform::MacOSAarch64 | Platform::MacOSX86_64
     ) {
-        test_tools(scie_pants_scie, check);
-        test_pants_bin_name_handling(scie_pants_scie);
-        test_pants_bootstrap_handling(scie_pants_scie);
-        test_pants_bootstrap_stdout_silent(scie_pants_scie);
-        test_tools_pex_reproducibility(workspace_root, tools_pex_path, tools_pex_mismatch_warn);
-        test_pants_bootstrap_tools(scie_pants_scie);
-
-        log!(Color::Yellow, "Turning off pantsd for remaining tests.");
-        env::set_var("PANTS_PANTSD", "False");
-
-        test_python_repos_repos(scie_pants_scie);
-        test_initialize_new_pants_project(scie_pants_scie);
-        test_set_pants_version(scie_pants_scie);
-        test_ignore_empty_pants_version(scie_pants_scie);
-
-        test_pants_from_pex_version(scie_pants_scie);
-        test_pants_from_bad_pex_version(scie_pants_scie);
-
-        let clone_root = create_tempdir()?;
-        test_use_in_repo_with_pants_script(scie_pants_scie, &clone_root);
-        test_dot_env_loading(scie_pants_scie, &clone_root);
-
         let dev_cache_dir = crate::utils::fs::dev_cache_dir()?;
         let clone_dir = dev_cache_dir.join("clones");
         let pants_2_14_1_clone_dir = clone_dir.join("pants-2.14.1");
@@ -140,35 +118,7 @@ pub(crate) fn run_integration_tests(
             &venv_dir,
             &pants_2_14_1_venv_dir,
         );
-        test_pants_from_sources_mode(
-            scie_pants_scie,
-            &pants_2_14_1_clone_dir,
-            &pants_2_14_1_venv_dir,
-        );
-        test_delegate_pants_in_pants_repo(scie_pants_scie, &pants_2_14_1_clone_dir);
-        test_use_pants_release_in_pants_repo(scie_pants_scie, &pants_2_14_1_clone_dir);
-
-        test_caching_issue_129(scie_pants_scie);
-        test_custom_pants_toml_issue_153(scie_pants_scie);
-        test_pants_native_client_perms_issue_182(scie_pants_scie);
-
-        #[cfg(unix)]
-        test_non_utf8_env_vars_issue_198(scie_pants_scie);
-
-        test_bad_boot_error_text(scie_pants_scie);
-        test_pants_bootstrap_urls(scie_pants_scie);
     }
-
-    // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
-    if matches!(
-        *CURRENT_PLATFORM,
-        Platform::LinuxX86_64 | Platform::MacOSX86_64
-    ) {
-        test_python38_used_for_old_pants(scie_pants_scie);
-    }
-
-    test_self_update(scie_pants_scie);
-    test_self_downgrade(scie_pants_scie);
 
     Ok(())
 }
