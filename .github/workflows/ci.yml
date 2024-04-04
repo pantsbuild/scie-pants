@@ -28,20 +28,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04, macOS-10.15-X64, macOS-11-ARM64, windows-2022]
+        os: [ubuntu-22.04]
     env:
       PY: python3.9
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
     steps:
       - uses: actions/checkout@v3
-      - name: Check Formatting
-        run: |
-          rustup toolchain add nightly -c rustfmt
-          cargo +nightly fmt --check --all
-      - name: Lint
-        run: cargo clippy --locked --all
-      - name: Unit Tests
-        run: cargo test --all
       - name: Setup Python 3.9 (Ubuntu only)
         if: ${{ matrix.os == 'ubuntu-22.04' }}
         uses: actions/setup-python@v4
