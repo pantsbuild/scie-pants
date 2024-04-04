@@ -477,6 +477,7 @@ fn test_pants_source_mode(
     pants_2_14_1_venv_dir: &Path,
 ) {
     integration_test!("Verify PANTS_SOURCE mode.");
+    println!("clone dir exists? {}. venv dir exists? {}.", pants_2_14_1_clone_dir.exists(), pants_2_14_1_venv_dir.exists());
     if !pants_2_14_1_clone_dir.exists() || !pants_2_14_1_venv_dir.exists() {
         let clone_root_tmp = create_tempdir().unwrap();
         let clone_root_path = clone_root_tmp
@@ -486,6 +487,7 @@ fn test_pants_source_mode(
                 format!("Failed to convert clone root path to UTF-8 string: {clone_root_tmp:?}")
             })
             .unwrap();
+        println!("Cloning");
         execute(Command::new("git").args(["init", clone_root_path])).unwrap();
         // N.B.: The release_2.14.1 tag has sha cfcb23a97434405a22537e584a0f4f26b4f2993b and we
         // must pass a full sha to use the shallow fetch trick.
@@ -565,6 +567,7 @@ index b70ae75..271706a 100644
 "#,
         )
         .unwrap();
+        println!("Applying patch");
         execute(
             Command::new("git")
                 .args(["apply", "patch"])
@@ -572,6 +575,7 @@ index b70ae75..271706a 100644
         )
         .unwrap();
         let venv_root_tmp = create_tempdir().unwrap();
+        println!("Seeding venv");
         execute(
             Command::new("./pants")
                 .arg("-V")
@@ -580,6 +584,7 @@ index b70ae75..271706a 100644
         )
         .unwrap();
 
+        println!("Finalising directory");
         remove_dir(
             clone_root_tmp
                 .path()
@@ -596,6 +601,9 @@ index b70ae75..271706a 100644
         rename(&venv_root_tmp.into_path(), pants_2_14_1_venv_dir).unwrap();
     }
 
+    println!("Manual tree invocation");
+    execute(Command::new("tree").arg(pants_2_14_1_venv_dir)).unwrap();
+    println!("Now running test");
     assert_stderr_output(
         Command::new(scie_pants_scie)
             .arg("-V")
