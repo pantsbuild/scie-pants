@@ -19,8 +19,6 @@ use crate::utils::fs::{copy, ensure_directory, path_as_str, rename};
 use crate::utils::os::PATHSEP;
 use crate::{build_step, BINARY, SCIENCE_TAG};
 
-const BOOTSTRAP_PTEX_TAG: &str = "v0.7.0";
-
 const CARGO: &str = env!("CARGO");
 const CARGO_MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
 
@@ -55,13 +53,13 @@ pub(crate) fn check_sha256(path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn fetch_and_check_trusted_sha256(ptex: &Path, url: &str, dest_dir: &Path) -> Result<()> {
-    execute(Command::new(ptex).args(["-O", url]).current_dir(dest_dir))?;
+fn fetch_and_check_trusted_sha256(url: &str, dest_dir: &Path) -> Result<()> {
+    execute(Command::new("curl").args(["-LO", url]).current_dir(dest_dir))?;
 
     let sha256_url = format!("{url}.sha256");
     execute(
-        Command::new(ptex)
-            .args(["-O", &sha256_url])
+        Command::new("curl")
+            .args(["-LO", &sha256_url])
             .current_dir(dest_dir),
     )?;
 
@@ -177,8 +175,6 @@ fn fetch_a_scie_project(
     binary_name: &str,
     dest_dir: &Path,
 ) -> Result<()> {
-    static BOOTSTRAP_PTEX: OnceCell<PathBuf> = OnceCell::new();
-
     let file_name = binary_full_name(binary_name);
     let cache_dir = crate::utils::fs::dev_cache_dir()?
         .join("downloads")
@@ -198,40 +194,10 @@ fn fetch_a_scie_project(
     let mut lock = fd_lock::RwLock::new(lock_fd);
     let _write_lock = lock.write();
     if !target_dir.exists() {
-        let bootstrap_ptex = BOOTSTRAP_PTEX.get_or_try_init::<_, anyhow::Error>(|| {
-            build_step!("Bootstrapping a `ptex` binary");
-            execute(
-                Command::new(CARGO)
-                    .args([
-                        "install",
-                        "--git",
-                        "https://github.com/a-scie/ptex",
-                        "--tag",
-                        BOOTSTRAP_PTEX_TAG,
-                        "--root",
-                        path_as_str(&build_context.cargo_output_root)?,
-                        "--target",
-                        &build_context.target,
-                        "ptex",
-                    ])
-                    // N.B.: This just suppresses a warning about adding this bin dir to your PATH.
-                    .env(
-                        "PATH",
-                        vec![
-                            build_context.cargo_output_bin_dir.to_str().unwrap(),
-                            env!("PATH"),
-                        ]
-                        .join(PATHSEP),
-                    ),
-            )?;
-            Ok(build_context.cargo_output_bin_dir.join("ptex"))
-        })?;
-
         build_step!(format!("Fetching the `{project_name}` {tag} binary"));
         let work_dir = cache_dir.join(format!("{tag}.work"));
         ensure_directory(&work_dir, true)?;
         fetch_and_check_trusted_sha256(
-            bootstrap_ptex,
             format!(
                 "https://github.com/a-scie/{project_name}/releases/download/{tag}/{file_name}",
             )
