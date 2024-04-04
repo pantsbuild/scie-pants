@@ -53,13 +53,13 @@ jobs:
         id: build_it_cache_key
         run: |
           # The caches include venvs which have absolute links to Python binaries, so our system
-          # should be resilient to this
+          # should be resilient to this (see `test_pants_source_mode` in `test.rs`).
           echo "cache_key=${{ matrix.os }}-scie-pants-v7-$(which python)" | tee -a "$GITHUB_OUTPUT"
       - name: Cache Build and IT Artifacts
         uses: actions/cache@v3
         with:
           path: ${{ env.SCIE_PANTS_DEV_CACHE }}
-          key: ${{ steps.build_it_cache_key.cache_key }}
+          key: ${{ steps.build_it_cache_key.outputs.cache_key }}
       - name: Build, Package & Integration Tests (MacOS)
         if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64'}}
         run: |

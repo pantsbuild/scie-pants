@@ -527,6 +527,11 @@ fn test_pants_source_mode(
     pants_2_14_1_venv_dir: &Path,
 ) {
     integration_test!("Verify PANTS_SOURCE mode.");
+    // NB. we assume that these directories are setup perfectly if they exist. A possible failure
+    // mode is the symlinks to python interpreters in the venv; if the system changes to make them
+    // invalid, we start getting errors like `${pants_2_14_1_venv_dir}/.../bin/python: No such file
+    // or directory`. This can occur in practice with cross-runner caching and the runner updating,
+    // but our cache key is designed to avoid this (see `build_it_cache_key` step in ci.yml).
     if !pants_2_14_1_clone_dir.exists() || !pants_2_14_1_venv_dir.exists() {
         let clone_root_tmp = create_tempdir().unwrap();
         let clone_root_path = clone_root_tmp
