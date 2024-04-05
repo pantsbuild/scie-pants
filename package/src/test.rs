@@ -527,6 +527,11 @@ fn test_pants_source_mode(
     pants_2_14_1_venv_dir: &Path,
 ) {
     integration_test!("Verify PANTS_SOURCE mode.");
+    // NB. we assume that these directories are setup perfectly if they exist. A possible failure
+    // mode is the symlinks to python interpreters in the venv; if the system changes to make them
+    // invalid, we start getting errors like `${pants_2_14_1_venv_dir}/.../bin/python: No such file
+    // or directory`. This can occur in practice with cross-runner caching and the runner updating,
+    // but our cache key is designed to avoid this (see `build_it_cache_key` step in ci.yml).
     if !pants_2_14_1_clone_dir.exists() || !pants_2_14_1_venv_dir.exists() {
         let clone_root_tmp = create_tempdir().unwrap();
         let clone_root_path = clone_root_tmp
@@ -1201,14 +1206,17 @@ fn test_pants_bootstrap_stdout_silent(scie_pants_scie: &Path) {
         "Verifying scie-pants bootstraps Pants without any output on stdout ({issue})",
         issue = issue_link!(20315, "pantsbuild/pants")
     );
+    let tmpdir = create_tempdir().unwrap();
     // Bootstrap a new unseen version of Pants to verify there is no extra output on stdout besides
     // the requested output from the pants command.
     let (output, _stderr) = assert_stderr_output(
         Command::new(scie_pants_scie)
             .arg("-V")
             .env("PANTS_VERSION", "2.19.1")
+            // Customise where SCIE stores its caches to force a bootstrap...
+            .env("SCIE_BASE", tmpdir.path())
             .stdout(Stdio::piped()),
-        // Expect bootstrap messages to ensure we actually bootstrapped pants during this execution.
+        // ...but still assert bootstrap messages to ensure we actually bootstrapped pants during this execution.
         vec![
             "Bootstrapping Pants 2.19.1",
             "Installing pantsbuild.pants==2.19.1 into a virtual environment at ",
