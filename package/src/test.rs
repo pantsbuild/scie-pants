@@ -713,6 +713,13 @@ fn test_use_pants_release_in_pants_repo(
         Command::new(scie_pants_scie)
             .arg("help")
             .env("PANTS_VERSION", pants_release)
+            .env(
+                "PANTS_BACKEND_PACKAGES",
+                "-[\
+                    'internal_plugins.test_lockfile_fixtures',\
+                    'pants.backend.explorer',\
+                    ]",
+            )
             .current_dir(pants_2_21_0_dev6_clone_dir)
             .stdout(Stdio::piped()),
         vec![],
