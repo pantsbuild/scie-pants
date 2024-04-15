@@ -568,37 +568,39 @@ fn test_pants_source_mode(
             false,
             r#"
 diff --git a/build-support/pants_venv b/build-support/pants_venv
-index 81e3bd7..4236f4b 100755
+index 90fa82f6d3..e4f7e97a95 100755
 --- a/build-support/pants_venv
 +++ b/build-support/pants_venv
-@@ -14,11 +14,13 @@ REQUIREMENTS=(
- # NB: We house these outside the working copy to avoid needing to gitignore them, but also to
- # dodge https://github.com/hashicorp/vagrant/issues/12057.
- platform=$(uname -mps | sed 's/ /./g')
--venv_dir_prefix="${HOME}/.cache/pants/pants_dev_deps/${platform}"
-+venv_dir_prefix="${PANTS_VENV_DIR_PREFIX:-${HOME}/.cache/pants/pants_dev_deps/${platform}}"
-+
-+echo >&2 "The ${SCIE_PANTS_TEST_MODE:-Pants 2.14.1 clone} is working."
+@@ -13,6 +13,8 @@ REQUIREMENTS=(
 
+ platform=$(uname -mps)
+
++echo >&2 "The ${SCIE_PANTS_TEST_MODE:-Pants 2.21.0.dev6 clone} is working."
++
  function venv_dir() {
-   py_venv_version=$(${PY} -c 'import sys; print("".join(map(str, sys.version_info[0:2])))')
--  echo "${venv_dir_prefix}.py${py_venv_version}.venv"
-+  echo "${venv_dir_prefix}/py${py_venv_version}.venv"
+   # Include the entire version string in order to differentiate e.g. PyPy from CPython.
+   # Fingerprinting uname and python output avoids shebang length limits and any odd chars.
+@@ -23,7 +25,7 @@ function venv_dir() {
+
+   # NB: We house these outside the working copy to avoid needing to gitignore them, but also to
+   # dodge https://github.com/hashicorp/vagrant/issues/12057.
+-  echo "${HOME}/.cache/pants/pants_dev_deps/${venv_fingerprint}.venv"
++  echo "${PANTS_VENV_DIR_PREFIX:-${HOME}/.cache/pants/pants_dev_deps}/${venv_fingerprint}.venv"
  }
 
  function activate_venv() {
 diff --git a/pants b/pants
-index b422eff..16f0cf5 100755
+index ba49cc133f..870a35f028 100755
 --- a/pants
 +++ b/pants
-@@ -70,4 +70,5 @@ function exec_pants_bare() {
+@@ -76,4 +76,5 @@ function exec_pants_bare() {
      exec ${PANTS_PREPEND_ARGS:-} "$(venv_dir)/bin/python" ${DEBUG_ARGS} "${PANTS_PY_EXE}" "$@"
  }
 
 +echo >&2 "Pants from sources argv: $@."
  exec_pants_bare "$@"
 diff --git a/pants.toml b/pants.toml
-index ab5cba1..8432bb2 100644
+index 6b91bb1bbd..81145adf74 100644
 --- a/pants.toml
 +++ b/pants.toml
 @@ -1,3 +1,6 @@
@@ -609,13 +611,12 @@ index ab5cba1..8432bb2 100644
  print_stacktrace = true
 
 diff --git a/src/python/pants/VERSION b/src/python/pants/VERSION
-index b70ae75..271706a 100644
+index 796b3cddd2..aef0e649bb 100644
 --- a/src/python/pants/VERSION
 +++ b/src/python/pants/VERSION
 @@ -1 +1 @@
--2.14.1
-+2.14.1+Custom-Local
-\ No newline at end of file
+-2.21.0.dev6
++2.21.0.dev6+Custom-Local
 "#,
         )
         .unwrap();
