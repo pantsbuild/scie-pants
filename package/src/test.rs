@@ -707,19 +707,12 @@ fn test_use_pants_release_in_pants_repo(
     scie_pants_scie: &Path,
     pants_2_21_0_dev6_clone_dir: &PathBuf,
 ) {
-    let pants_release = "2.16.0rc2";
+    let pants_release = "2.21.0.dev4";
     integration_test!("Verify usage of Pants {pants_release} on the pants repo.");
     let (output, stderr) = assert_stderr_output(
         Command::new(scie_pants_scie)
             .arg("help")
             .env("PANTS_VERSION", pants_release)
-            .env(
-                "PANTS_BACKEND_PACKAGES",
-                "-[\
-                    'internal_plugins.test_lockfile_fixtures',\
-                    'pants.backend.explorer',\
-                    ]",
-            )
             .current_dir(pants_2_21_0_dev6_clone_dir)
             .stdout(Stdio::piped()),
         vec![],
