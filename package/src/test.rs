@@ -544,7 +544,7 @@ fn test_pants_source_mode(
         execute(Command::new("git").args(["init", clone_root_path])).unwrap();
         // N.B.: The release_2.21.0.dev6 tag has sha 202d9214866d9e67ec7242f1b202cbf5e1164fa5 and we
         // must pass a full sha to use the shallow fetch trick.
-        const PANTS_2_21_0_dev6_SHA: &str = "cfcb23a97434405a22537e584a0f4f26b4f2993b";
+        const PANTS_2_21_0_DEV6_SHA: &str = "202d9214866d9e67ec7242f1b202cbf5e1164fa5";
         execute(
             Command::new("git")
                 .args([
@@ -552,14 +552,14 @@ fn test_pants_source_mode(
                     "--depth",
                     "1",
                     "https://github.com/pantsbuild/pants",
-                    PANTS_2_21_0_dev6_SHA,
+                    PANTS_2_21_0_DEV6_SHA,
                 ])
                 .current_dir(clone_root_tmp.path()),
         )
         .unwrap();
         execute(
             Command::new("git")
-                .args(["reset", "--hard", PANTS_2_21_0_dev6_SHA])
+                .args(["reset", "--hard", PANTS_2_21_0_DEV6_SHA])
                 .current_dir(clone_root_tmp.path()),
         )
         .unwrap();
