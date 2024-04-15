@@ -599,17 +599,6 @@ index ba49cc133f..870a35f028 100755
 
 +echo >&2 "Pants from sources argv: $@."
  exec_pants_bare "$@"
-diff --git a/pants.toml b/pants.toml
-index 6b91bb1bbd..81145adf74 100644
---- a/pants.toml
-+++ b/pants.toml
-@@ -1,3 +1,6 @@
-+[DEFAULT]
-+delegate_bootstrap = true
-+
- [GLOBAL]
- print_stacktrace = true
-
 diff --git a/src/python/pants/VERSION b/src/python/pants/VERSION
 index 796b3cddd2..aef0e649bb 100644
 --- a/src/python/pants/VERSION
