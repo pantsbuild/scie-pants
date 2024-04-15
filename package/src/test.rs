@@ -717,7 +717,7 @@ fn test_use_pants_release_in_pants_repo(
                 "PANTS_BACKEND_PACKAGES",
                 "-[\
                     'internal_plugins.test_lockfile_fixtures',\
-                    'pants.backend.explorer',\
+                    'pants_explorer.server',\
                     ]",
             )
             .current_dir(pants_2_21_0_dev6_clone_dir)
