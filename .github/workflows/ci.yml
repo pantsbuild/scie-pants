@@ -49,17 +49,29 @@ jobs:
           # N.B.: We need Python 3.9 for running Pants goals against our tools.pex Python tools
           # codebase as well as running Pants from sources in ITs.
           python-version: "3.9"
+      - name: Compute cache key
+        id: build_it_cache_key
+        run: |
+          # The caches include venvs which have absolute links to Python binaries, so our system
+          # should be resilient to this (see `test_pants_source_mode` in `test.rs`).
+          echo "cache_key=${{ matrix.os }}-scie-pants-v7-$(which python)" | tee -a "$GITHUB_OUTPUT"
       - name: Cache Build and IT Artifacts
         uses: actions/cache@v3
         with:
           path: ${{ env.SCIE_PANTS_DEV_CACHE }}
-          key: ${{ matrix.os }}-scie-pants-v6
+          key: ${{ steps.build_it_cache_key.outputs.cache_key }}
+
+      # required for the PANTS_SOURCE tests, which build a version of Pants that requires an external protoc
+      - name: Install Protoc
+        uses: arduino/setup-protoc@9b1ee5b22b0a3f1feb8c2ff99b32c89b3c3191e9
+        if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64' || matrix.os == 'ubuntu-22.04' }}
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          version: 23.x
+
       - name: Build, Package & Integration Tests (MacOS)
         if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64'}}
         run: |
-          # Clean up the science cache for Pants 2.19.1 setup to ensure it's bootstrapped each run.
-          rm -rf ~/Library/Caches/nce/*/bindings/venv/2.19.1
-
           # TODO(John Sirois): Kill --tools-pex-mismatch-warn:
           #   https://github.com/pantsbuild/scie-pants/issues/2
           #
