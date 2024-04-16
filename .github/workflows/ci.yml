@@ -60,6 +60,15 @@ jobs:
         with:
           path: ${{ env.SCIE_PANTS_DEV_CACHE }}
           key: ${{ steps.build_it_cache_key.outputs.cache_key }}
+
+      # required for the PANTS_SOURCE tests, which build a version of Pants that requires an external protoc
+      - name: Install Protoc
+        uses: arduino/setup-protoc@9b1ee5b22b0a3f1feb8c2ff99b32c89b3c3191e9
+        if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64' || matrix.os == 'ubuntu-22.04' }}
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          version: 23.x
+
       - name: Build, Package & Integration Tests (MacOS)
         if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64'}}
         run: |
