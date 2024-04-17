@@ -439,7 +439,7 @@ fn test_pants_from_bad_pex_version(scie_pants_scie: &Path) {
 
     let tmpdir = create_tempdir().unwrap();
 
-    let pants_release = "2.18";
+    let pants_release = "2.19";
     let pants_toml_content = format!(
         r#"
         [GLOBAL]
@@ -458,8 +458,11 @@ fn test_pants_from_bad_pex_version(scie_pants_scie: &Path) {
     .unwrap_err();
 
     let error_text = err.to_string();
-    assert!(error_text.contains("Unknown Pants release: 2.18."));
-    assert!(error_text.contains("Pants version format not recognized. Please add `.<patch_version>` to the end of the version. For example: `2.18` -> `2.18.0`"));
+    assert!(error_text
+        .contains("Pants version must be a full version, including patch level, got: `2.19`."));
+    assert!(error_text.contains(
+        "Please add `.<patch_version>` to the end of the version. For example: `2.18` -> `2.18.0`."
+    ));
 }
 
 fn test_use_in_repo_with_pants_script(scie_pants_scie: &Path, clone_root: &TempDir) {
@@ -1180,7 +1183,10 @@ fn test_pants_bootstrap_urls(scie_pants_scie: &Path) {
 
     assert_stderr_output(
         &mut command,
-        vec![&format!("Failed to fetch {doesnt_exist_pex_url}")],
+        vec![
+            &format!("Bad URL in PANTS_BOOTSTRAP_URLS for pants.{pants_release}-cp39-"),
+            &format!(".pex: {doesnt_exist_pex_url}"),
+        ],
         ExpectedResult::Failure,
     );
 
