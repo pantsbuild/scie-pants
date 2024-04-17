@@ -29,12 +29,8 @@ PANTS_2 = Version("2.0.0")
 
 @dataclass(frozen=True)
 class ResolveInfo:
-    version: Version
-    pex_name: str | None
-    python: str
-
-    # We need `find_links` to install Pants 1.x.
-    find_links: str | None = None
+    stable_version: Version
+    find_links: str | None
 
 
 def determine_find_links(
@@ -65,9 +61,7 @@ def determine_find_links(
         ptex.fetch_to_fp("https://wheels.pantsbuild.org/simple/", fp)
 
     return ResolveInfo(
-        version=Version(pants_version),
-        pex_name=None,
-        python="cpython38",
+        stable_version=Version(pants_version),
         find_links=f"file://{find_links_file}",
     )
 
@@ -75,14 +69,9 @@ def determine_find_links(
 def determine_tag_version(
     ptex: Ptex, pants_version: str, find_links_dir: Path, github_api_bearer_token: str | None = None
 ) -> ResolveInfo:
-    version = Version(pants_version)
-    if version >= PANTS_2:
-        pex_name, python = determine_pex_name_and_python_id(ptex, version, github_api_bearer_token)
-        return ResolveInfo(
-            version=version,
-            pex_name=pex_name,
-            python=python,
-        )
+    stable_version = Version(pants_version)
+    if stable_version >= PANTS_PEX_GITHUB_RELEASE_VERSION:
+        return ResolveInfo(stable_version, find_links=None)
 
     tag = f"release_{pants_version}"
 

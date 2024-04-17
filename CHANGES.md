@@ -2,12 +2,16 @@
 
 ## 0.11.0
 
-Drop support for `PANTS_SHA`, which was deprecated in `0.10.0`.
+Drop support for `PANTS_SHA` which was deprecated in `0.10.0`.
 
-Also:
+## 0.10.8
 
-- Select Python version for running Pants based on the python tag on the pants pex file name.
-- Always installs Pants from pants pex downloaded from Github releases.
+Redirect pants install messages to a `pants-install.log` file in pants venv directory to not pollute
+stdout/stderr.
+
+## 0.10.7
+
+This release upgrades `pex` to `v2.1.163` and the bootstrap Python to `3.9.18`.
 
 ## 0.10.6
 
@@ -50,9 +54,8 @@ It also supports fetching Pants PEXes from behind a firewall.
 ## 0.10.0
 
 This release deprecates support for running against an arbitrary Pants commit using
-`PANTS_SHA=abc123... pants ...`. Pants no longer
-publishes the artifacts required for this for new commits, and so this is becoming less and less
-useful. To replace use of `PANTS_SHA`, do one of:
+`PANTS_SHA=abc123... pants ...`. Pants no longer publishes the artifacts required for this for new
+commits, and so this is becoming less and less useful. To replace use of `PANTS_SHA`, do one of:
 
 - Use a released version of Pants.
 - Run pants from sources (for example: `PANTS_SOURCE=/path/to/pants-checkout pants ...`).

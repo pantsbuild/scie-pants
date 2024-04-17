@@ -20,8 +20,8 @@ version = "3.8.18"
 [[lift.files]]
 name = "pex"
 type = "blob"
-digest = { size = 3671772, fingerprint = "83c3090938b4d276703864c34ba50bcb3616db0663c54b56dd0521a668d9555f" }
-source = { url = "https://github.com/pantsbuild/pex/releases/download/v2.1.159/pex", lazy = true }
+digest = { size = 4124506, fingerprint = "581f7c2d61b4c24c66ba241f2a37d8f3b552f24ed22543279860f3463ac3db35" }
+source = { url = "https://github.com/pantsbuild/pex/releases/download/v2.3.0/pex", lazy = true }
 
 [[lift.commands]]
 name = "pex"
