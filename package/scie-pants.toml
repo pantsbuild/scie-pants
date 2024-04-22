@@ -31,16 +31,16 @@ version = "3.9.18"
 [[lift.interpreters]]
 id = "cpython310"
 provider = "PythonBuildStandalone"
-release = "20240107"
+release = "20240415"
 lazy = true
-version = "3.10.13"
+version = "3.10.14"
 
 [[lift.interpreters]]
 id = "cpython311"
 provider = "PythonBuildStandalone"
-release = "20240107"
+release = "20240415"
 lazy = true
-version = "3.11.7"
+version = "3.11.9"
 
 [[lift.interpreter_groups]]
 id = "cpython"
