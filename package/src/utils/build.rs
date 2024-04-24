@@ -56,7 +56,18 @@ pub(crate) fn check_sha256(path: &Path) -> Result<()> {
 }
 
 fn fetch_and_check_trusted_sha256(ptex: &Path, url: &str, dest_dir: &Path) -> Result<()> {
-    execute(Command::new(ptex).args(["-O", url]).current_dir(dest_dir))?;
+    let parsed_url = Url::parse(url).with_context(|| format!("Failed to parse {url}"))?;
+    let url_path = PathBuf::from(parsed_url.path());
+    let file_name = url_path
+        .file_name()
+        .with_context(|| format!("Failed to determine file name from {url}"))?;
+    let dest_file = dest_dir.join(file_name);
+
+    execute(
+        Command::new(ptex)
+            .args(["-O", url.as_ref()])
+            .current_dir(dest_dir),
+    )?;
 
     let sha256_url = format!("{url}.sha256");
     execute(
@@ -65,13 +76,8 @@ fn fetch_and_check_trusted_sha256(ptex: &Path, url: &str, dest_dir: &Path) -> Re
             .current_dir(dest_dir),
     )?;
 
-    let parsed_url = Url::parse(url).with_context(|| format!("Failed to parse {url}"))?;
-    let url_path = PathBuf::from(parsed_url.path());
-    let file_name = url_path
-        .file_name()
-        .with_context(|| format!("Failed to determine file name from {url}"))?;
     info!("Checking downloaded {url} has sha256 reported in {sha256_url}");
-    check_sha256(&dest_dir.join(file_name))
+    check_sha256(&dest_file)
 }
 
 pub(crate) struct BuildContext {
