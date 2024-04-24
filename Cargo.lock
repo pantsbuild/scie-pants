@@ -488,7 +488,6 @@ dependencies = [
  "tempfile",
  "termcolor",
  "ureq",
- "url",
  "walkdir",
 ]
 

@@ -12,7 +12,6 @@ use anyhow::{Context, Result};
 use log::info;
 use sha2::{Digest, Sha256};
 use termcolor::WriteColor;
-use url::Url;
 
 use crate::utils::exe::{binary_full_name, execute, prepare_exe};
 use crate::utils::fs::{copy, ensure_directory, path_as_str, rename};
@@ -59,24 +58,19 @@ fn fetch_file(url: &str, dest_file: &Path) -> Result<()> {
     Ok(())
 }
 
-fn fetch_and_check_trusted_sha256(url: &str, dest_dir: &Path) -> Result<()> {
-    let parsed_url = Url::parse(url).with_context(|| format!("Failed to parse {url}"))?;
-    let url_path = PathBuf::from(parsed_url.path());
-    let file_name = url_path
-        .file_name()
-        .with_context(|| format!("Failed to determine file name from {url}"))?;
-    let dest_file = dest_dir.join(file_name);
+fn fetch_and_check_trusted_sha256(url: &str, dest_file: &Path) -> Result<()> {
+    fetch_file(url, dest_file)?;
 
-    fetch_file(url, &dest_file)?;
-
-    let sha256_url = format!("{url}.sha256");
-    let mut sha256_dest_file = dest_file.clone();
+    let mut sha256_dest_file = dest_file.to_owned();
+    // Add the additional .sha256 extension, to whatever the base file
+    // had, _without_ replacing the existing extension:
     sha256_dest_file.as_mut_os_string().push(".sha256");
+    let sha256_url = format!("{url}.sha256");
 
     fetch_file(&sha256_url, &sha256_dest_file)?;
 
     info!("Checking downloaded {url} has sha256 reported in {sha256_url}");
-    check_sha256(&dest_file)
+    check_sha256(dest_file)
 }
 
 pub(crate) struct BuildContext {
@@ -208,7 +202,7 @@ fn fetch_a_scie_project(
                 "https://github.com/a-scie/{project_name}/releases/download/{tag}/{file_name}",
             )
                 .as_str(),
-            &work_dir,
+            &work_dir.join(&file_name),
         )?;
         rename(&work_dir, &target_dir)?;
     } else {
