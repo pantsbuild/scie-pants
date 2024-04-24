@@ -55,11 +55,11 @@ jobs:
           # The caches include venvs which have absolute links to Python binaries, so our system
           # should be resilient to this (see `test_pants_source_mode` in `test.rs`).
           echo "cache_key=${{ matrix.os }}-scie-pants-v7-$(which python)" | tee -a "$GITHUB_OUTPUT"
-      - name: Cache Build and IT Artifacts
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.SCIE_PANTS_DEV_CACHE }}
-          key: ${{ steps.build_it_cache_key.outputs.cache_key }}
+      # - name: Cache Build and IT Artifacts
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ${{ env.SCIE_PANTS_DEV_CACHE }}
+      #     key: ${{ steps.build_it_cache_key.outputs.cache_key }}
 
       # required for the PANTS_SOURCE tests, which build a version of Pants that requires an external protoc
       - name: Install Protoc
