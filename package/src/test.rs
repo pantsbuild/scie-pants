@@ -535,7 +535,7 @@ fn test_dot_env_error(scie_pants_scie: &Path) {
         Command::new(scie_pants_scie)
             .arg("-V")
             .current_dir(tempdir.path()),
-        vec!["requested .env files be loaded but there was an error doing so: Error parsing line: 'totally invalid line'"],
+        vec!["requested .env files be loaded but there was an error doing so: Parsing Error: Error { input: \"invalid line"],
         ExpectedResult::Failure
     );
 }
