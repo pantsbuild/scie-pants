@@ -3,23 +3,20 @@
 
 use std::cell::Cell;
 use std::env;
+use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::{Context, Result};
 use log::info;
-use once_cell::sync::OnceCell;
 use sha2::{Digest, Sha256};
 use termcolor::WriteColor;
-use url::Url;
 
 use crate::utils::exe::{binary_full_name, execute, prepare_exe};
 use crate::utils::fs::{copy, ensure_directory, path_as_str, rename};
 use crate::utils::os::PATHSEP;
 use crate::{build_step, BINARY, SCIENCE_TAG};
-
-const BOOTSTRAP_PTEX_TAG: &str = "v0.7.0";
 
 const CARGO: &str = env!("CARGO");
 const CARGO_MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
@@ -55,23 +52,25 @@ pub(crate) fn check_sha256(path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn fetch_and_check_trusted_sha256(ptex: &Path, url: &str, dest_dir: &Path) -> Result<()> {
-    execute(Command::new(ptex).args(["-O", url]).current_dir(dest_dir))?;
+fn fetch_file(url: &str, dest_file: &Path) -> Result<()> {
+    let mut file = File::create(dest_file)?;
+    std::io::copy(&mut ureq::get(url).call()?.into_reader(), &mut file)?;
+    Ok(())
+}
 
+fn fetch_and_check_trusted_sha256(url: &str, dest_file: &Path) -> Result<()> {
+    fetch_file(url, dest_file)?;
+
+    let mut sha256_dest_file = dest_file.to_owned();
+    // Add the additional .sha256 extension, to whatever the base file
+    // had, _without_ replacing the existing extension:
+    sha256_dest_file.as_mut_os_string().push(".sha256");
     let sha256_url = format!("{url}.sha256");
-    execute(
-        Command::new(ptex)
-            .args(["-O", &sha256_url])
-            .current_dir(dest_dir),
-    )?;
 
-    let parsed_url = Url::parse(url).with_context(|| format!("Failed to parse {url}"))?;
-    let url_path = PathBuf::from(parsed_url.path());
-    let file_name = url_path
-        .file_name()
-        .with_context(|| format!("Failed to determine file name from {url}"))?;
+    fetch_file(&sha256_url, &sha256_dest_file)?;
+
     info!("Checking downloaded {url} has sha256 reported in {sha256_url}");
-    check_sha256(&dest_dir.join(file_name))
+    check_sha256(dest_file)
 }
 
 pub(crate) struct BuildContext {
@@ -135,7 +134,7 @@ impl BuildContext {
                     .current_dir(science_from),
             )?;
         } else {
-            fetch_a_scie_project(self, "lift", SCIENCE_TAG, "science", dest_dir)?;
+            fetch_a_scie_project("lift", SCIENCE_TAG, "science", dest_dir)?;
         }
         let science_exe_path = dest_dir.join(binary_full_name("science"));
         prepare_exe(&science_exe_path)?;
@@ -171,14 +170,11 @@ impl BuildContext {
 }
 
 fn fetch_a_scie_project(
-    build_context: &BuildContext,
     project_name: &str,
     tag: &str,
     binary_name: &str,
     dest_dir: &Path,
 ) -> Result<()> {
-    static BOOTSTRAP_PTEX: OnceCell<PathBuf> = OnceCell::new();
-
     let file_name = binary_full_name(binary_name);
     let cache_dir = crate::utils::fs::dev_cache_dir()?
         .join("downloads")
@@ -198,45 +194,15 @@ fn fetch_a_scie_project(
     let mut lock = fd_lock::RwLock::new(lock_fd);
     let _write_lock = lock.write();
     if !target_dir.exists() {
-        let bootstrap_ptex = BOOTSTRAP_PTEX.get_or_try_init::<_, anyhow::Error>(|| {
-            build_step!("Bootstrapping a `ptex` binary");
-            execute(
-                Command::new(CARGO)
-                    .args([
-                        "install",
-                        "--git",
-                        "https://github.com/a-scie/ptex",
-                        "--tag",
-                        BOOTSTRAP_PTEX_TAG,
-                        "--root",
-                        path_as_str(&build_context.cargo_output_root)?,
-                        "--target",
-                        &build_context.target,
-                        "ptex",
-                    ])
-                    // N.B.: This just suppresses a warning about adding this bin dir to your PATH.
-                    .env(
-                        "PATH",
-                        [
-                            build_context.cargo_output_bin_dir.to_str().unwrap(),
-                            env!("PATH"),
-                        ]
-                        .join(PATHSEP),
-                    ),
-            )?;
-            Ok(build_context.cargo_output_bin_dir.join("ptex"))
-        })?;
-
         build_step!(format!("Fetching the `{project_name}` {tag} binary"));
         let work_dir = cache_dir.join(format!("{tag}.work"));
         ensure_directory(&work_dir, true)?;
         fetch_and_check_trusted_sha256(
-            bootstrap_ptex,
             format!(
                 "https://github.com/a-scie/{project_name}/releases/download/{tag}/{file_name}",
             )
                 .as_str(),
-            &work_dir,
+            &work_dir.join(&file_name),
         )?;
         rename(&work_dir, &target_dir)?;
     } else {
