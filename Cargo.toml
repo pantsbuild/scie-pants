@@ -37,4 +37,4 @@ toml = "0.8"
 uuid = { version = "1.7", features = ["v4"] }
 
 [target.'cfg(unix)'.dependencies]
-shell-quote = "0.3.1"
+shell-quote = "0.5.0"
