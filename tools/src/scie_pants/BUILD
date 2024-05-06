@@ -10,18 +10,14 @@ resource(
     source="BUILD",
 )
 
-resources(
-    name="resources",
-    sources=[
-        # Add new version entries to the top of the list.
-        "pants_python_versions.json",
-        "pants_release_tags.json",
-    ],
+resource(
+    name="pants_release_tags",
+    source="pants_release_tags.json",
 )
 
 python_sources(
     dependencies=[
         ":BUILD",
-        ":resources",
+        ":pants_release_tags",
     ]
 )

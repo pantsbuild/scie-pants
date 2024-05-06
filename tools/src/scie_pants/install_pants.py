@@ -78,29 +78,9 @@ def install_pants_from_pex(
     pex_url: str,
     ptex: Ptex,
     extra_requirements: Iterable[str],
-    bootstrap_urls_path: str | None,
 ) -> None:
     """Installs Pants into the venv using the platform-specific pre-built PEX."""
-    pex_name = pex_url.rsplit("/", 1)[-1]
-    if bootstrap_urls_path:
-        bootstrap_urls = json.loads(Path(bootstrap_urls_path).read_text())
-        urls_info = bootstrap_urls.get("ptex")
-        if urls_info is None:
-            raise ValueError(
-                f"Missing 'ptex' key in PANTS_BOOTSTRAP_URLS file: {bootstrap_urls_path}"
-            )
-        pex_url = urls_info.get(pex_name)
-        if pex_url is None:
-            raise ValueError(
-                f"Couldn't find '{pex_name}' in PANTS_BOOTSTRAP_URLS file: '{bootstrap_urls_path}' "
-                "under the 'ptex' key."
-            )
-        if not isinstance(pex_url, str):
-            raise TypeError(
-                f"The value for the key '{pex_name}' in PANTS_BOOTSTRAP_URLS file: '{bootstrap_urls_path}' "
-                f"under the 'ptex' key was expected to be a string. Got a {type(pex_url).__name__}"
-            )
-
+    pex_name = os.path.basename(pex_url)
     with tempfile.NamedTemporaryFile(suffix=".pex") as pants_pex:
         try:
             ptex.fetch_to_fp(pex_url, pants_pex.file)
@@ -162,11 +142,6 @@ def main() -> NoReturn:
         type=str,
         help="The find links repo pointing to Pants pre-built wheels for the given Pants 1.x version.",
     )
-    parser.add_argument(
-        "--pants-bootstrap-urls",
-        type=str,
-        help="The path to the JSON file containing alternate URLs for downloaded artifacts.",
-    )
     parser.add_argument("--debug", type=bool, help="Install with debug capabilities.")
     parser.add_argument("--debugpy-requirement", help="The debugpy requirement to install")
     parser.add_argument("base_dir", nargs=1, help="The base directory to create Pants venvs in.")
@@ -210,7 +185,6 @@ def main() -> NoReturn:
             pex_url=options.pants_pex_url,
             ptex=ptex,
             extra_requirements=extra_requirements,
-            bootstrap_urls_path=options.pants_bootstrap_urls,
         )
     else:
         install_pants_from_req(

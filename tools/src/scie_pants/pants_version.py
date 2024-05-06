@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import importlib.resources
 import json
-import logging
 import os
 import re
 import urllib.parse
@@ -20,12 +19,17 @@ import tomlkit
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
-from scie_pants.log import fatal, info, warn
+from scie_pants.log import debug, fatal, info, warn
 from scie_pants.ptex import Ptex
 
-log = logging.getLogger(__name__)
-
+TIMEOUT = int(os.getenv("PANTS_BOOTSTRAP_URL_REQUEST_TIMEOUT_SECONDS", "10"))
 PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.0.0.dev0")
+PANTS_PYTHON_VERSIONS = [
+    # Sorted on pants version in descending order. Add a new entry when the python version for a
+    # particular pants version changes.
+    {"pants": "2.5.0.dev0", "python": "cp39"},
+    {"pants": "2.0.0.dev0", "python": "cp38"},
+]
 
 
 @dataclass(frozen=True)
@@ -100,14 +104,14 @@ def determine_tag_version(
 
     if not commit_sha:
         mapping_file_url = f"https://binaries.pantsbuild.org/tags/pantsbuild.pants/{tag}"
-        log.debug(
+        debug(
             f"Failed to look up the commit for Pants {tag} in the local database, trying a lookup "
             f"at {mapping_file_url} next."
         )
         try:
             commit_sha = ptex.fetch_text(mapping_file_url).strip()
         except CalledProcessError as e:
-            log.debug(
+            debug(
                 f"Failed to look up the commit for Pants {tag} at binaries.pantsbuild.org, trying "
                 f"GitHub API requests next: {e}"
             )
@@ -203,28 +207,28 @@ def determine_pex_url_and_python_id(
 ) -> tuple[str, str]:
     uname = os.uname()
     platform = f"{uname.sysname.lower()}_{uname.machine.lower()}"
-    res = get_pex_url_and_python_id(ptex, version, platform, bootstrap_urls_path)
-    if not res:
-        bootstrap_urls_info = (
-            (
-                f"It may also be a missing Pants PEX entry in the PANTS_BOOTSTRAP_URLS file {bootstrap_urls_path} for "
-                f"a name like `pants.{version}-cpNN-{platform}.pex`.\n\n"
-            )
-            if bootstrap_urls_path
-            else ""
-        )
-        fatal(
-            f"Unknown Pants release: {version}.\n\n"
-            "If this is unexpected (you are using a known good Pants version), try upgrading scie-pants first.\n"
-            f"It may also be that the platform {platform} isn't supported for this version of Pants.\n"
-            + bootstrap_urls_info
-            + "To get help, please visit: https://www.pantsbuild.org/community/getting-help"
-        )
-    pex_url, python = res
+    pex_url, python = get_pex_url_and_python_id(ptex, version, platform, bootstrap_urls_path)
     if python not in PYTHON_IDS:
         # Should not happen... but if we mess up, this is a nicer error message rather than blowing up.
         fatal(f"This version of scie-pants does not support {python!r}.")
     return pex_url, PYTHON_IDS[python]
+
+
+def get_bootstrap_urls(bootstrap_urls_path: str | None) -> dict[str, str] | None:
+    if not bootstrap_urls_path:
+        return None
+
+    bootstrap_urls = json.loads(Path(bootstrap_urls_path).read_text())
+    ptex_urls = bootstrap_urls.get("ptex")
+    if ptex_urls is None:
+        raise ValueError(f"Missing 'ptex' key in PANTS_BOOTSTRAP_URLS file: {bootstrap_urls_path}")
+    for key, url in ptex_urls.items():
+        if not isinstance(url, str):
+            raise TypeError(
+                f"The value for the key '{key}' in PANTS_BOOTSTRAP_URLS file: '{bootstrap_urls_path}' "
+                f"under the 'ptex' key was expected to be a string. Got a {type(url).__name__}"
+            )
+    return ptex_urls
 
 
 def get_pex_url_and_python_id(
@@ -232,35 +236,33 @@ def get_pex_url_and_python_id(
     version: Version,
     platform: str,
     bootstrap_urls_path: str | None,
-) -> tuple[str, str] | None:
-    if bootstrap_urls_path:
-        bootstrap_urls = json.loads(Path(bootstrap_urls_path).read_text())
-        ptex_urls = bootstrap_urls.get("ptex")
-        if ptex_urls is None:
-            raise ValueError(
-                f"Missing 'ptex' key in PANTS_BOOTSTRAP_URLS file: {bootstrap_urls_path}"
-            )
-    else:
-        ptex_urls = None
-
+) -> tuple[str, str]:
+    ptex_urls = get_bootstrap_urls(bootstrap_urls_path)
     py = get_python_id_for_pants_version(version)
+    error: str | None = None
     if py:
-        pex_url = get_download_url(version, platform, py, ptex_urls)
+        pex_url, error = get_download_url(version, platform, py, ptex_urls)
         if pex_url:
             return pex_url, py
 
     # Else, try all known Pythons...
     for maybe_py in PYTHON_IDS.keys():
-        pex_url = get_download_url(version, platform, maybe_py, ptex_urls)
+        pex_url, err = get_download_url(version, platform, maybe_py, ptex_urls)
         if pex_url:
             return pex_url, maybe_py
+        elif not error:
+            error = err
 
-    return None
+    fatal(
+        f"Failed to determine release URL for Pants: {version}: {error or 'unknown reason'}\n\n"
+        "If this is unexpected (you are using a known good Pants version), try upgrading scie-pants first.\n"
+        f"It may also be that the platform {platform} isn't supported for this version of Pants, or some other intermittent network/service issue.\n"
+        "To get help, please visit: https://www.pantsbuild.org/community/getting-help\n\n"
+    )
 
 
 def get_python_id_for_pants_version(version: Version) -> str | None:
-    versions = json.loads(importlib.resources.read_text("scie_pants", "pants_python_versions.json"))
-    for version_break in versions:
+    for version_break in PANTS_PYTHON_VERSIONS:
         # We pick the first version that is less than or equal to the one we're looking for. The
         # list of pants versions must therefore be sorted in descending order.
         if Version(version_break["pants"]) <= version:
@@ -270,32 +272,34 @@ def get_python_id_for_pants_version(version: Version) -> str | None:
 
 
 def get_download_url(
-    version: Version, platform: str, python: str, ptex_urls: dict | None
-) -> str | None:
+    version: Version, platform: str, python: str, ptex_urls: dict[str, str] | None
+) -> tuple[str, None] | tuple[None, str]:
     pex_name = f"pants.{version}-{python}-{platform}.pex"
     if ptex_urls:
         pex_url = ptex_urls.get(pex_name)
         if not pex_url:
-            return None
+            return None, f"{pex_name}: has no URL in PANTS_BOOTSTRAP_URLS file."
     else:
         pex_url = (
             f"https://github.com/pantsbuild/pants/releases/download/release_{version}/{pex_name}"
         )
     req = urllib.request.Request(pex_url, method="HEAD")
     try:
-        with urllib.request.urlopen(req) as rsp:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as rsp:
             if rsp.status == 200:
-                return pex_url
-            if (
+                return pex_url, None
+            elif (
                 ptex_urls
                 and rsp.status is None
                 and pex_url.startswith("file://")
                 and rsp.headers.get("Content-Length")
             ):
-                return pex_url
-    except Exception:
-        pass
-
-    if ptex_urls:
-        fatal(f"Bad URL in PANTS_BOOTSTRAP_URLS for {pex_name}: {pex_url}\n\n")
-    return None
+                return pex_url, None
+            else:
+                return None, f"{pex_name}: URL check failed: {pex_url}: {rsp.status}"
+    except Exception as e:
+        debug(f"{pex_name}: URL check failed for {pex_url}: {e}")
+        if ptex_urls:
+            return None, f"{pex_name}: URL check failed, from PANTS_BOOTSTRAP_URLS: {pex_url}: {e}"
+        else:
+            return None, f"{pex_name}: URL check failed: {pex_url}: {e}"

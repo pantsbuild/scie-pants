@@ -235,8 +235,6 @@ args = [
     "{scie.env.PANTS_DEBUG}",
     "--debugpy-requirement",
     "{scie.env.PANTS_DEBUGPY_VERSION}",
-    "--pants-bootstrap-urls",
-    "{scie.env.PANTS_BOOTSTRAP_URLS}",
     "--ptex-path",
     "{ptex}",
     "{scie.bindings}",

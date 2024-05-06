@@ -1205,8 +1205,8 @@ fn test_pants_bootstrap_urls(scie_pants_scie: &Path) {
     assert_stderr_output(
         &mut command,
         vec![
-            &format!("Bad URL in PANTS_BOOTSTRAP_URLS for pants.{pants_release}-cp39-"),
-            &format!(".pex: {doesnt_exist_pex_url}"),
+            &format!("Failed to determine release URL for Pants: {pants_release}: pants.{pants_release}-cp3"),
+            &format!(".pex: URL check failed, from PANTS_BOOTSTRAP_URLS: {doesnt_exist_pex_url}: <urlopen error [Errno 2] No such file or directory: "),
         ],
         ExpectedResult::Failure,
     );
