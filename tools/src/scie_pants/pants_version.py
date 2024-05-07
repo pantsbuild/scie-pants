@@ -30,6 +30,14 @@ PANTS_PYTHON_VERSIONS = [
     {"pants": "2.5.0.dev0", "python": "cp39"},
     {"pants": "2.0.0.dev0", "python": "cp38"},
 ]
+PYTHON_IDS = {
+    # N.B.: These values must match the lift TOML interpreter ids.
+    # Important: all pythons used in pants_python_versions.json must be represented in this list.
+    "cp311": "cpython311",
+    "cp310": "cpython310",
+    "cp39": "cpython39",
+    "cp38": "cpython38",
+}
 
 
 @dataclass(frozen=True)
@@ -188,16 +196,6 @@ def determine_latest_stable_version(
     return configure_version, determine_tag_version(
         ptex, pants_version, find_links_dir, github_api_bearer_token, bootstrap_urls_path
     )
-
-
-PYTHON_IDS = {
-    # N.B.: These values must match the lift TOML interpreter ids.
-    # Important: all pythons used in pants_python_versions.json must be represented in this list.
-    "cp38": "cpython38",
-    "cp39": "cpython39",
-    "cp310": "cpython310",
-    "cp311": "cpython311",
-}
 
 
 def determine_pex_url_and_python_id(
