@@ -6,7 +6,15 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: The tag to manually run a deploy for.
+        description: The tag to manually run a deploy for. (example tag `v1.2.3`)
+        required: true
+      prerelease:
+        description: |
+          Is this for a prerelease?
+          (for internal testing, not announced nor published to our brew tap)
+          (example tag `v1.2.3-beta.0`)
+        type: boolean
+        default: false
         required: true
 env:
   CARGO_TERM_COLOR: always
@@ -25,20 +33,24 @@ jobs:
     outputs:
       release-tag: ${{ steps.determine-tag.outputs.release-tag }}
       release-version: ${{ steps.determine-tag.outputs.release-version }}
+      prerelease: ${{ steps.determine-tag.outputs.prerelease }}
     steps:
       - name: Determine Tag
         id: determine-tag
         run: |
           if [[ -n "${{ github.event.inputs.tag }}" ]]; then
             RELEASE_TAG=${{ github.event.inputs.tag }}
+            PRERELEASE=${{ github.event.inputs.prerelease }}
           else
             RELEASE_TAG=${GITHUB_REF#refs/tags/}
+            PRERELEASE=false
           fi
-          if [[ "${RELEASE_TAG}" =~ ^v[0-9]+.[0-9]+.[0-9]+$ ]]; then
+          if [[ "${RELEASE_TAG}" =~ ^v[0-9]+.[0-9]+.[0-9]+$ ]] || [[ "${PRERELEASE}" == true ]]; then
             echo "release-tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
             echo "release-version=${RELEASE_TAG#v}" >> $GITHUB_OUTPUT
+            exho "prerelease=${PRERELEASE}" >> $GITHUB_OUTPUT
           else
-            echo "::error::Release tag '${RELEASE_TAG}' must match 'v\d+.\d+.\d+'."
+            echo "::error::Release tag '${RELEASE_TAG}' must match 'v\d+.\d+.\d+' when not doing a pre-release."
             exit 1
           fi
   github-release:
@@ -87,7 +99,7 @@ jobs:
           name: scie-pants ${{ needs.determine-tag.outputs.release-version }}
           body_path: ${{ steps.prepare-changelog.outputs.changelog-file }}
           draft: false
-          prerelease: false
+          prerelease: $${{ needs.determine-tag.outputs.prerelease }}
           files: dist/scie-pants-*
           fail_on_unmatched_files: true
           discussion_category_name: Announcements
@@ -113,6 +125,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Post Release Announcement to Pants Slack `#announce`
+        if: ${{ needs.determine-tag.outputs.prerelease != 'true' }}
         id: slack
         uses: slackapi/slack-github-action@v1.23.0
         with:
@@ -148,6 +161,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Bump `scie-pants` version in Casks/pants.rb to ${{ needs.determine-tag.outputs.release-tag }}
+        if: ${{ needs.determine-tag.outputs.prerelease != 'true' }}
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.TAP_TOKEN }}
