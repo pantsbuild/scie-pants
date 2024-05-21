@@ -48,7 +48,7 @@ jobs:
           if [[ "${RELEASE_TAG}" =~ ^v[0-9]+.[0-9]+.[0-9]+$ ]] || [[ "${PRERELEASE}" == true ]]; then
             echo "release-tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
             echo "release-version=${RELEASE_TAG#v}" >> $GITHUB_OUTPUT
-            exho "prerelease=${PRERELEASE}" >> $GITHUB_OUTPUT
+            echo "prerelease=${PRERELEASE}" >> $GITHUB_OUTPUT
           else
             echo "::error::Release tag '${RELEASE_TAG}' must match 'v\d+.\d+.\d+' when not doing a pre-release."
             exit 1
