@@ -99,7 +99,7 @@ jobs:
           name: scie-pants ${{ needs.determine-tag.outputs.release-version }}
           body_path: ${{ steps.prepare-changelog.outputs.changelog-file }}
           draft: false
-          prerelease: $${{ needs.determine-tag.outputs.prerelease }}
+          prerelease: ${{ needs.determine-tag.outputs.prerelease }}
           files: dist/scie-pants-*
           fail_on_unmatched_files: true
           discussion_category_name: Announcements
