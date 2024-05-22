@@ -63,6 +63,11 @@ def main() -> NoReturn:
     parser.add_argument(
         "--github-api-bearer-token", help="The GITHUB_TOKEN to use if running in CI context."
     )
+    parser.add_argument(
+        "--pants-bootstrap-urls",
+        type=str,
+        help="The path to the JSON file containing alternate URLs for downloaded artifacts.",
+    )
     parser.add_argument("base_dir", nargs=1, help="The base directory to create Pants venvs in.")
     options = parser.parse_args()
 
@@ -86,8 +91,8 @@ def main() -> NoReturn:
             pants_version=options.pants_version,
             find_links_dir=find_links_dir,
             github_api_bearer_token=options.github_api_bearer_token,
+            bootstrap_urls_path=options.pants_bootstrap_urls,
         )
-        version = resolve_info.stable_version
     else:
         if pants_config:
             if not prompt_for_pants_version(options.pants_config):
@@ -104,23 +109,22 @@ def main() -> NoReturn:
             pants_config=pants_config,
             find_links_dir=find_links_dir,
             github_api_bearer_token=options.github_api_bearer_token,
+            bootstrap_urls_path=options.pants_bootstrap_urls,
         )
         finalizers.append(configure_version)
-        version = resolve_info.stable_version
-
-    # N.B.: These values must match the lift TOML interpreter ids.
-    python = "cpython38" if version < Version("2.5") else "cpython39"
 
     for finalizer in finalizers:
         finalizer()
 
     with open(env_file, "a") as fp:
+        print(f"PANTS_VERSION={resolve_info.version}", file=fp)
+        print(f"PYTHON={resolve_info.python}", file=fp)
+        if resolve_info.pex_url:
+            print(f"PANTS_PEX_URL={resolve_info.pex_url}", file=fp)
         if resolve_info.find_links:
             print(f"FIND_LINKS={resolve_info.find_links}", file=fp)
         if newly_created_build_root:
             print(f"PANTS_BUILDROOT_OVERRIDE={newly_created_build_root}", file=fp)
-        print(f"PANTS_VERSION={version}", file=fp)
-        print(f"PYTHON={python}", file=fp)
 
     sys.exit(0)
 

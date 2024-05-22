@@ -28,12 +28,28 @@ release = "20240107"
 lazy = true
 version = "3.9.18"
 
+[[lift.interpreters]]
+id = "cpython310"
+provider = "PythonBuildStandalone"
+release = "20240415"
+lazy = true
+version = "3.10.14"
+
+[[lift.interpreters]]
+id = "cpython311"
+provider = "PythonBuildStandalone"
+release = "20240415"
+lazy = true
+version = "3.11.9"
+
 [[lift.interpreter_groups]]
 id = "cpython"
 selector = "{scie.bindings.configure:PYTHON}"
 members = [
     "cpython38",
     "cpython39",
+    "cpython310",
+    "cpython311",
 ]
 
 [[lift.files]]
@@ -183,6 +199,8 @@ args = [
     "{scie.env.PANTS_TOML}",
     "--github-api-bearer-token",
     "{scie.env.PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN}",
+    "--pants-bootstrap-urls",
+    "{scie.env.PANTS_BOOTSTRAP_URLS}",
     "{scie.bindings}",
 ]
 env.remove_re = [
@@ -209,14 +227,14 @@ args = [
     "install-pants",
     "--pants-version",
     "{scie.bindings.configure:PANTS_VERSION}",
+    "--pants-pex-url",
+    "{scie.bindings.configure:PANTS_PEX_URL}",
     "--find-links",
     "{scie.bindings.configure:FIND_LINKS}",
     "--debug",
     "{scie.env.PANTS_DEBUG}",
     "--debugpy-requirement",
     "{scie.env.PANTS_DEBUGPY_VERSION}",
-    "--pants-bootstrap-urls",
-    "{scie.env.PANTS_BOOTSTRAP_URLS}",
     "--ptex-path",
     "{ptex}",
     "{scie.bindings}",

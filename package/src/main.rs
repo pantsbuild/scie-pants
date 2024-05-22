@@ -29,6 +29,7 @@ use crate::utils::fs::{base_name, canonicalize, copy, ensure_directory};
 
 const BINARY: &str = "scie-pants";
 
+// The version of a-scie/lift to use by default.
 const SCIENCE_TAG: &str = "v0.3.1";
 
 #[derive(Clone)]
@@ -127,7 +128,7 @@ struct Args {
         long,
         help = format!(
             "Instead of using the released {SCIENCE_TAG} science, package science from the science \
-            project repo at this directory."
+            project repo (github.com/a-scie/lift) at this directory."
         )
     )]
     science: Option<PathBuf>,

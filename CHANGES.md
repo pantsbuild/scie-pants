@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.12.0
+
+Add support for running Pants with newer versions of Python.
+
 ## 0.11.0
 
 Drop support for `PANTS_SHA` which was deprecated in `0.10.0`.

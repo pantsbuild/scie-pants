@@ -28,7 +28,7 @@ quickly.
 One is the ability to fetch binaries check-summed in advance just in time and exactly once.
 It does this with a `"ptex"` configuration described [here](
 https://github.com/a-scie/ptex/blob/main/README.md#how-ptex-works) and employed in both the [`pbt`](
-../package/pbt.lift.json) binary and the [`scie-jump`](../package/scie-pants.lift.json) itself. This
+../package/pbt.toml) binary and the [`scie-pants`](../package/scie-pants.toml) itself. This
 allows the `scie-pants` to ship as a small binary that lazily fetches a Python distribution to run
 the tools with / install Pants with. This also gives Python tools code access to a `ptex` binary
 to use when fetching content from the internet. Although the Python code can always reach out to
@@ -39,9 +39,9 @@ The other useful feature of a scie is the ability to run pre-requisite binding c
 steps needed to support user-facing commands. These commands will only ever run once and they can
 record result information in the form of `<key>=<value>` pairs for future invocations to learn the
 one-time binding results. The `"pants"` command in the `scie-pants` binary depends on an `install`
-binding to learn the Path of the Pants venv and that in turn depends on a `configuration` binding 
-to learn the Pants version to install and the find-links repo needed to support that install. In
-turn, both of these bindings depend on Python distributions fetched by the `ptex` fetch mechanism.
+binding to learn the Path of the Pants venv and that in turn depends on a `configuration` binding to
+learn the Pants version to install. In turn, both of these bindings depend on Python distributions
+fetched by the `ptex` fetch mechanism.
 
 All such dependencies are expressed with `{scie.*}` placeholders in the values of command `"exe"`,
 `"args"` and `"env"` values in the scie lift manifest. To follow the flow of a top-level command,
