@@ -18,7 +18,7 @@ jobs:
   org-check:
     name: Check GitHub Organization
     if: github.repository_owner == 'pantsbuild'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Noop
         run: "true"
@@ -28,12 +28,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04, macOS-10.15-X64, macOS-11-ARM64, windows-2022]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     env:
-      PY: python3.9
+      PY: python3.13
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Check Formatting
         run: |
           rustup toolchain add nightly -c rustfmt
@@ -42,13 +42,14 @@ jobs:
         run: cargo clippy --locked --all
       - name: Unit Tests
         run: cargo test --all
-      - name: Setup Python 3.9 (Ubuntu only)
-        if: ${{ matrix.os == 'ubuntu-22.04' }}
+      - name: Setup Python 3.13 (Ubuntu only)
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: actions/setup-python@v4
         with:
           # N.B.: We need Python 3.9 for running Pants goals against our tools.pex Python tools
           # codebase as well as running Pants from sources in ITs.
-          python-version: "3.9"
+          python-version: "3.13"
+          cache: "pip"
       - name: Compute cache key
         id: build_it_cache_key
         run: |
@@ -64,13 +65,13 @@ jobs:
       # required for the PANTS_SOURCE tests, which build a version of Pants that requires an external protoc
       - name: Install Protoc
         uses: arduino/setup-protoc@9b1ee5b22b0a3f1feb8c2ff99b32c89b3c3191e9
-        if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64' || matrix.os == 'ubuntu-22.04' }}
+        if: ${{ matrix.os == 'macos-latest' || matrix.os == 'ubuntu-latest'}}
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           version: 23.x
 
       - name: Build, Package & Integration Tests (MacOS)
-        if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64'}}
+        if: ${{ matrix.os == 'macos-latest'}}
         run: |
           # TODO(John Sirois): Kill --tools-pex-mismatch-warn:
           #   https://github.com/pantsbuild/scie-pants/issues/2
@@ -85,13 +86,13 @@ jobs:
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             cargo run -p package -- test --check --tools-pex-mismatch-warn
       - name: Build, Package & Integration Tests (Ubuntu)
-        if: ${{ matrix.os == 'ubuntu-22.04' }}
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           cargo run -p package -- --dest-dir dist/ tools
           docker run --rm \
             -v $PWD:/code \
             -w /code \
-            rust:1.76.0-alpine3.19 \
+            rust:1.82.0-alpine3.20 \
               sh -c '
                 apk add cmake make musl-dev perl && \
                 cargo run -p package -- --dest-dir dist/ scie-pants
