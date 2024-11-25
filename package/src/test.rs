@@ -46,6 +46,43 @@ fn decode_output(output: Vec<u8>) -> Result<String> {
     String::from_utf8(output).context("Failed to decode Pants output.")
 }
 
+/// Returns true if the current platform is a macOS major version that's older than the requested minimums.
+///
+/// (NB. Running on a non-macOS platform will always return false.)
+fn is_macos_thats_too_old(minimum_x86_64: i64, minimum_arm64: i64) -> bool {
+    let min_major = match *CURRENT_PLATFORM {
+        Platform::MacOSX86_64 => minimum_x86_64,
+        Platform::MacOSAarch64 => minimum_arm64,
+        _ => return false,
+    };
+
+    let version_output = execute(
+        Command::new("sw_vers")
+            .arg("-productVersion")
+            .stdout(Stdio::piped()),
+    )
+    .unwrap();
+    let version_str = decode_output(version_output.stdout).unwrap();
+
+    // for this constrained use case, we can just parse the first element, e.g. 10.14 & 10.15 => 10,
+    // 11.0.1 => 11, etc.
+    //
+    // If the distinction between the 10.x "major" versions ends up mattering, feel free to refactor
+    // this to work with the full version string.
+    let major: i64 = version_str
+        .trim()
+        .split('.')
+        .next()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| {
+            panic!(
+                "Failed to parse macOS version from `sw_vers -productVersion` output: {}",
+                version_str
+            )
+        });
+    major < min_major
+}
+
 enum ExpectedResult {
     Success,
     Failure,
@@ -337,6 +374,14 @@ fn test_pants_bootstrap_tools(scie_pants_scie: &Path) {
 
 fn test_pants_2_25_using_python_3_11(scie_pants_scie: &Path) {
     integration_test!("Verifying we can run Pants 2.25+, which uses Python 3.11");
+    if is_macos_thats_too_old(13, 14) {
+        log!(
+            Color::Yellow,
+            "Pants 2.25 cannot run on this version of macOS => skipping"
+        );
+        return;
+    }
+
     let pants_version = "2.25.0.dev0";
     let output = execute(
         Command::new(scie_pants_scie)
