@@ -241,7 +241,7 @@
     "tomlkit"
   ],
   "requires_python": [
-    "<3.10,>=3.8"
+    "<3.12,>=3.8"
   ],
   "resolver_version": "pip-2020-resolver",
   "style": "universal",
