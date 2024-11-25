@@ -115,6 +115,7 @@ pub(crate) fn run_integration_tests(
         log!(Color::Yellow, "Turning off pantsd for remaining tests.");
         env::set_var("PANTS_PANTSD", "False");
 
+        test_pants_2_25_using_python_3_11(scie_pants_scie);
         test_python_repos_repos(scie_pants_scie);
         test_initialize_new_pants_project(scie_pants_scie);
         test_set_pants_version(scie_pants_scie);
@@ -332,6 +333,23 @@ fn test_pants_bootstrap_tools(scie_pants_scie: &Path) {
             .args(["bootstrap-cache-key"]),
     )
     .unwrap();
+}
+
+fn test_pants_2_25_using_python_3_11(scie_pants_scie: &Path) {
+    integration_test!("Verifying we can run Pants 2.25+, which uses Python 3.11");
+    let pants_version = "2.25.0.dev0";
+    let output = execute(
+        Command::new(scie_pants_scie)
+            .env("PANTS_VERSION", pants_version)
+            .arg("-V")
+            .stdout(Stdio::piped()),
+    )
+    .unwrap();
+    let stdout = decode_output(output.stdout).unwrap();
+    assert!(
+        stdout.contains(pants_version),
+        "STDOUT did not contain '{pants_version}':\n{stdout}"
+    );
 }
 
 fn test_python_repos_repos(scie_pants_scie: &Path) {
