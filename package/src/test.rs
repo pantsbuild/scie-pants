@@ -374,6 +374,8 @@ fn test_pants_bootstrap_tools(scie_pants_scie: &Path) {
 
 fn test_pants_2_25_using_python_3_11(scie_pants_scie: &Path) {
     integration_test!("Verifying we can run Pants 2.25+, which uses Python 3.11");
+    // Pants 2.25 is built on macOS 13 (x86-64) and 14 (arm64), and only truly supports those
+    // versions. See https://github.com/pantsbuild/pants/pull/21655
     if is_macos_thats_too_old(13, 14) {
         log!(
             Color::Yellow,
