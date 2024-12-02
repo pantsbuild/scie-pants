@@ -23,7 +23,7 @@ from scie_pants.log import debug, fatal, info, warn
 from scie_pants.ptex import Ptex
 
 TIMEOUT = int(os.getenv("PANTS_BOOTSTRAP_URL_REQUEST_TIMEOUT_SECONDS", "10"))
-PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.0.0.dev0")
+PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.18.0.dev0")
 PANTS_PYTHON_VERSIONS = [
     # Sorted on pants version in descending order. Add a new entry when the python version for a
     # particular pants version changes.
@@ -74,7 +74,21 @@ def determine_find_links(
                 f"</a>{os.linesep}".encode()
             )
         fp.flush()
-        ptex.fetch_to_fp("https://wheels.pantsbuild.org/simple/", fp)
+        fp.write(
+b"""
+<!DOCTYPE html>
+<html>
+<body>
+<h1>Links for Pantsbuild Wheels</h1>
+<ul>
+<li><a href="/simple/pantsbuild-pants/">pantsbuild-pants</li>
+<li><a href="/simple/pantsbuild-pants-contrib-mypy/">pantsbuild-pants-contrib-mypy</li>
+<li><a href="/simple/pantsbuild-pants-testutil/">pantsbuild-pants-testutil</li>
+</ul>
+</body>
+</html>
+"""        )
+        # ptex.fetch_to_fp("https://wheels.pantsbuild.org/simple/", fp)
 
     return ResolveInfo(
         version=Version(pants_version),
