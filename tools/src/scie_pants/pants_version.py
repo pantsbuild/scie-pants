@@ -81,9 +81,9 @@ def determine_find_links(
 <body>
 <h1>Links for Pantsbuild Wheels</h1>
 <ul>
-<li><a href="/simple/pantsbuild-pants/">pantsbuild-pants</li>
-<li><a href="/simple/pantsbuild-pants-contrib-mypy/">pantsbuild-pants-contrib-mypy</li>
-<li><a href="/simple/pantsbuild-pants-testutil/">pantsbuild-pants-testutil</li>
+<li><a href="/simple/pantsbuild-pants/">pantsbuild-pants</a></li>
+<li><a href="/simple/pantsbuild-pants-contrib-mypy/">pantsbuild-pants-contrib-mypy</a></li>
+<li><a href="/simple/pantsbuild-pants-testutil/">pantsbuild-pants-testutil</a></li>
 </ul>
 </body>
 </html>
