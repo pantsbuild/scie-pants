@@ -75,7 +75,7 @@ def determine_find_links(
             )
         fp.flush()
         fp.write(
-b"""
+            b"""
 <!DOCTYPE html>
 <html>
 <body>
@@ -87,7 +87,8 @@ b"""
 </ul>
 </body>
 </html>
-"""        )
+"""
+        )
         # ptex.fetch_to_fp("https://wheels.pantsbuild.org/simple/", fp)
 
     return ResolveInfo(
