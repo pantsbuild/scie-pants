@@ -27,6 +27,7 @@ jobs:
     needs: org-check
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-22.04, macOS-10.15-X64, macOS-11-ARM64, windows-2022]
     env:
