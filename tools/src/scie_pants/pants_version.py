@@ -23,7 +23,7 @@ from scie_pants.log import debug, fatal, info, warn
 from scie_pants.ptex import Ptex
 
 TIMEOUT = int(os.getenv("PANTS_BOOTSTRAP_URL_REQUEST_TIMEOUT_SECONDS", "10"))
-PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.16.0.dev0")
+PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.18.0.dev0")
 PANTS_PYTHON_VERSIONS = [
     # Sorted on pants version in descending order. Add a new entry when the python version for a
     # particular pants version changes.
