@@ -1,0 +1,2 @@
+# reuse the same runner configuration as the main Pants repo
+_extends: pants
