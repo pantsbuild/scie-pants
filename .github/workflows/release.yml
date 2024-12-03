@@ -78,10 +78,10 @@ jobs:
         with:
           ref: ${{ needs.determine-tag.outputs.release-tag }}
       - name: Package scie-pants ${{ needs.determine-tag.outputs.release-tag }} binary
-        if: ${{ matrix.os != 'ubuntu-22.04' }}
+        if: ${{ matrix.os != 'ubuntu-22.04' && matrix.name != 'linux-arm64' }}
         run: cargo run -p package -- --dest-dir dist/ scie
       - name: Package scie-pants ${{ needs.determine-tag.outputs.release-tag }} binary
-        if: ${{ matrix.os == 'ubuntu-22.04' }}
+        if: ${{ matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
         run: |
           cargo run -p package -- --dest-dir dist/ tools
           docker run --rm \
