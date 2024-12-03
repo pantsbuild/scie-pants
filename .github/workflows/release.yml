@@ -54,12 +54,23 @@ jobs:
             exit 1
           fi
   github-release:
-    name: (${{ matrix.os }}) Create Github Release
+    name: (${{ matrix.name }}) CI
     needs: determine-tag
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04, macOS-10.15-X64, macOS-11-ARM64, [runs-on, runner=4cpu-linux-arm64, image=ubuntu22-full-arm64-python3.7-3.13, "run-id=${{ github.run_id }}"]]
+        include:
+          - os: ubuntu-22.04
+            name: ubuntu-22.04
+
+          - os: [runs-on, runner=4cpu-linux-arm64, image=ubuntu22-full-arm64-python3.7-3.13, "run-id=${{ github.run_id }}"]
+            name: linux-arm64
+
+          - os: macOS-10.15-X64
+            name: macOS-10.15-X64
+
+          - os: macOS-11-ARM64
+            name: macOS-11-ARM64
     environment: Release
     steps:
       - name: Checkout scie-pants ${{ needs.determine-tag.outputs.release-tag }}
