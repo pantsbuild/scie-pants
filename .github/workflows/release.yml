@@ -54,7 +54,7 @@ jobs:
             exit 1
           fi
   github-release:
-    name: (${{ matrix.name }}) CI
+    name: (${{ matrix.name }}) Create Github Release
     needs: determine-tag
     runs-on: ${{ matrix.os }}
     strategy:
