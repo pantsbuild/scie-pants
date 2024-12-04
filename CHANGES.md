@@ -1,8 +1,16 @@
 # Release Notes
 
+## 0.12.2
+
+Support for Pants 2.25.0.dev0 and newer, which run on Python 3.11 instead of 3.9. (This is the first complete release that incorporates this change, that was originally attempted in 0.12.1.)
+
+This release transitions us from using Circle CI to Runs-On-managed runners for Linux AArch64 builds. This change should be invisible to users.
+
 ## 0.12.1
 
 Support for Pants 2.25.0.dev0 and newer, which run on Python 3.11 instead of 3.9.
+
+(NB. this release failed to build on Linux AArch64. See 0.12.2.)
 
 ## 0.12.0
 
