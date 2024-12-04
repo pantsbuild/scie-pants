@@ -54,12 +54,23 @@ jobs:
             exit 1
           fi
   github-release:
-    name: (${{ matrix.os }}) Create Github Release
+    name: (${{ matrix.name }}) Create Github Release
     needs: determine-tag
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-22.04, macOS-10.15-X64, macOS-11-ARM64 ]
+        include:
+          - os: ubuntu-22.04
+            name: ubuntu-22.04
+
+          - os: [runs-on, runner=4cpu-linux-arm64, image=ubuntu22-full-arm64-python3.7-3.13, "run-id=${{ github.run_id }}"]
+            name: linux-arm64
+
+          - os: macOS-10.15-X64
+            name: macOS-10.15-X64
+
+          - os: macOS-11-ARM64
+            name: macOS-11-ARM64
     environment: Release
     steps:
       - name: Checkout scie-pants ${{ needs.determine-tag.outputs.release-tag }}
@@ -67,10 +78,10 @@ jobs:
         with:
           ref: ${{ needs.determine-tag.outputs.release-tag }}
       - name: Package scie-pants ${{ needs.determine-tag.outputs.release-tag }} binary
-        if: ${{ matrix.os != 'ubuntu-22.04' }}
+        if: ${{ matrix.os != 'ubuntu-22.04' && matrix.name != 'linux-arm64' }}
         run: cargo run -p package -- --dest-dir dist/ scie
       - name: Package scie-pants ${{ needs.determine-tag.outputs.release-tag }} binary
-        if: ${{ matrix.os == 'ubuntu-22.04' }}
+        if: ${{ matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
         run: |
           cargo run -p package -- --dest-dir dist/ tools
           docker run --rm \
@@ -103,25 +114,11 @@ jobs:
           files: dist/scie-pants-*
           fail_on_unmatched_files: true
           discussion_category_name: Announcements
-  aarch64-release-trigger:
-    name: Trigger Circle CI Linux aarch64 Github Release
-    needs:
-      - determine-tag
-      - github-release
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Trigger aarch64 release
-        uses: CircleCI-Public/trigger-circleci-pipeline-action@v1.0.5
-        with:
-          GHA_Meta: "${{ needs.determine-tag.outputs.release-tag }}"
-        env:
-          CCI_TOKEN: ${{ secrets.CCI_TOKEN }}
   announce-release:
     name: Announce Release
     needs:
       - determine-tag
       - github-release
-      - aarch64-release-trigger
     runs-on: ubuntu-22.04
     steps:
       - name: Post Release Announcement to Pants Slack `#announce`
@@ -140,13 +137,6 @@ jobs:
                   "text": {
                     "type": "mrkdwn",
                     "text": "The `pants` launcher binary (scie-pants) ${{ needs.determine-tag.outputs.release-tag }} is released:\n* https://github.com/pantsbuild/scie-pants/releases/tag/${{ needs.determine-tag.outputs.release-tag }}\n* https://www.pantsbuild.org/docs/installation"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "_N.B.: The Linux aarch64 release will lag by ~15 minutes._"
                   }
                 }
               ]
