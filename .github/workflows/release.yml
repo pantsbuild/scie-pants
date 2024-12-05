@@ -102,7 +102,7 @@ jobs:
           version: ${{ needs.determine-tag.outputs.release-version }}
           setup-python: ${{ matrix.os == 'ubuntu-22.04' }}
       - name: Create ${{ needs.determine-tag.outputs.release-tag }} Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
