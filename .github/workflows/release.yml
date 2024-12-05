@@ -74,7 +74,7 @@ jobs:
     environment: Release
     steps:
       - name: Checkout scie-pants ${{ needs.determine-tag.outputs.release-tag }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.determine-tag.outputs.release-tag }}
       - name: Package scie-pants ${{ needs.determine-tag.outputs.release-tag }} binary

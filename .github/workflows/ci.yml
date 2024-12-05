@@ -48,7 +48,7 @@ jobs:
       PY: python3.9
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Check Formatting
         run: |
           rustup toolchain add nightly -c rustfmt
