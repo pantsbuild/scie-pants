@@ -48,7 +48,7 @@ jobs:
       PY: python3.9
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Check Formatting
         run: |
           rustup toolchain add nightly -c rustfmt
@@ -71,14 +71,14 @@ jobs:
           # should be resilient to this (see `test_pants_source_mode` in `test.rs`).
           echo "cache_key=${{ matrix.os }}-scie-pants-v7-$(which python)" | tee -a "$GITHUB_OUTPUT"
       - name: Cache Build and IT Artifacts
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.SCIE_PANTS_DEV_CACHE }}
           key: ${{ steps.build_it_cache_key.outputs.cache_key }}
 
       # required for the PANTS_SOURCE tests, which build a version of Pants that requires an external protoc
       - name: Install Protoc
-        uses: arduino/setup-protoc@9b1ee5b22b0a3f1feb8c2ff99b32c89b3c3191e9
+        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
         if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64' || matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
