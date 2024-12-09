@@ -43,7 +43,7 @@ jobs:
 
   run-10-15-x86-64:
     runs-on: macOS-10.15-X64
-    needs: build-13
+    needs: build-13-x86-64
     steps:
       - uses: actions/download-artifact@v4
         with:
