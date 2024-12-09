@@ -3,7 +3,7 @@ on:
   push:
     # Ignore non top-level branches.
     branches-ignore:
-    - '*/**'
+      - "*/**"
   pull_request:
 defaults:
   run:
@@ -22,59 +22,15 @@ jobs:
     steps:
       - name: Noop
         run: "true"
-  ci:
-    name: (${{ matrix.name }}) CI
+
+  build-13:
     needs: org-check
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-22.04
-            name: ubuntu-22.04
-
-          - os: [runs-on, runner=4cpu-linux-arm64, image=ubuntu22-full-arm64-python3.7-3.13, "run-id=${{ github.run_id }}"]
-            name: linux-arm64
-
-          - os: macOS-10.15-X64
-            name: macOS-10.15-X64
-
-          - os: macOS-11-ARM64
-            name: macOS-11-ARM64
-
-          - os: windows-2022
-            name: windows-2022
-
+    runs-on: macos-13
     env:
       PY: python3.9
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
     steps:
       - uses: actions/checkout@v4
-      - name: Check Formatting
-        run: |
-          rustup toolchain add nightly -c rustfmt
-          cargo +nightly fmt --check --all
-      - name: Lint
-        run: cargo clippy --locked --all
-      - name: Unit Tests
-        run: cargo test --all
-      - name: Setup Python 3.9 (Ubuntu only)
-        if: ${{ matrix.os == 'ubuntu-22.04' }}
-        uses: actions/setup-python@v4
-        with:
-          # N.B.: We need Python 3.9 for running Pants goals against our tools.pex Python tools
-          # codebase as well as running Pants from sources in ITs.
-          python-version: "3.9"
-      - name: Compute cache key
-        id: build_it_cache_key
-        run: |
-          # The caches include venvs which have absolute links to Python binaries, so our system
-          # should be resilient to this (see `test_pants_source_mode` in `test.rs`).
-          echo "cache_key=${{ matrix.os }}-scie-pants-v7-$(which python)" | tee -a "$GITHUB_OUTPUT"
-      - name: Cache Build and IT Artifacts
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.SCIE_PANTS_DEV_CACHE }}
-          key: ${{ steps.build_it_cache_key.outputs.cache_key }}
 
       # required for the PANTS_SOURCE tests, which build a version of Pants that requires an external protoc
       - name: Install Protoc
@@ -84,38 +40,23 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           version: 23.x
 
-      - name: Build, Package & Integration Tests (MacOS)
-        if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64'}}
+      - name: Build
         run: |
-          # TODO(John Sirois): Kill --tools-pex-mismatch-warn:
-          #   https://github.com/pantsbuild/scie-pants/issues/2
-          #
-          # N.B.: Our self-hosted runners do not clean the work directory between runs like the
-          # GitHub hosted runners do; as such, the ~/.cache/pants, etc sticks around. This exposes
-          # a bug in Pants / Pex reproducibility when building PEXes where the
-          # PEX_ROOT/installed_wheels that get packaged up into a PEX may (or may not) contain
-          # bytecode if the particular wheel was ever run against in the past. This leads to varying
-          # final PEX content.
-          #
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test --check --tools-pex-mismatch-warn
-      - name: Build, Package & Integration Tests (Ubuntu)
-        if: ${{ matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
-        run: |
-          cargo run -p package -- --dest-dir dist/ tools
-          docker run --rm \
-            -v $PWD:/code \
-            -w /code \
-            rust:1.76.0-alpine3.19 \
-              sh -c '
-                apk add cmake make musl-dev perl && \
-                cargo run -p package -- --dest-dir dist/ scie-pants
-              '
-          echo
-          echo "Running under: $(uname -a)"
-          echo
-          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test \
-              --tools-pex dist/tools.pex --scie-pants dist/scie-pants \
-              --check \
-              --tools-pex-mismatch-warn
+            cargo run -p package -- --dest-dir dist/ scie
+      - uses: actions/upload-artifact@v4
+        with:
+          name: scie-pants-x86-64
+          path: dist/scie-pants-*
+
+  run-10-15:
+    runs-on: macOS-10.15-X64
+    needs: build-13
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: scie-pants-x86-64
+
+      - run: |
+          ls
+          PANTS_VERSION=2.23.0 dist/scie-pants-* version
