@@ -23,7 +23,7 @@ jobs:
       - name: Noop
         run: "true"
 
-  build-13:
+  build-13-x86-64:
     needs: org-check
     runs-on: macos-13
     env:
@@ -31,14 +31,6 @@ jobs:
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
     steps:
       - uses: actions/checkout@v4
-
-      # required for the PANTS_SOURCE tests, which build a version of Pants that requires an external protoc
-      - name: Install Protoc
-        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
-        if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64' || matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          version: 23.x
 
       - name: Build
         run: |
@@ -49,7 +41,7 @@ jobs:
           name: scie-pants-x86-64
           path: dist/scie-pants-*
 
-  run-10-15:
+  run-10-15-x86-64:
     runs-on: macOS-10.15-X64
     needs: build-13
     steps:
@@ -57,6 +49,36 @@ jobs:
         with:
           name: scie-pants-x86-64
 
+      - run: "uname -a"
       - run: |
-          ls
+          PANTS_VERSION=2.23.0 dist/scie-pants-* version
+
+  build-14-arm64:
+    needs: org-check
+    runs-on: macos-14
+    env:
+      PY: python3.9
+      SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+            cargo run -p package -- --dest-dir dist/ scie
+      - uses: actions/upload-artifact@v4
+        with:
+          name: scie-pants-arm64
+          path: dist/scie-pants-*
+
+  run-11-arm64:
+    runs-on: macOS-11-ARM64
+    needs: build-14-arm64
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: scie-pants-arm64
+
+      - run: "uname -a"
+      - run: |
           PANTS_VERSION=2.23.0 dist/scie-pants-* version
