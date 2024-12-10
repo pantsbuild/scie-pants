@@ -34,18 +34,23 @@ jobs:
         include:
           - os: ubuntu-22.04
             name: ubuntu-22.04
+            requires-setup-python: true
 
           - os: [runs-on, runner=4cpu-linux-arm64, image=ubuntu22-full-arm64-python3.7-3.13, "run-id=${{ github.run_id }}"]
             name: linux-arm64
+            requires-setup-python: false
 
           - os: macos-13
             name: "macos-13 x86-64"
+            requires-setup-python: true
 
           - os: macos-14
             name: "macos-14 arm64"
+            requires-setup-python: true
 
           - os: windows-2022
             name: windows-2022
+            requires-setup-python: false
 
     env:
       PY: python3.9
@@ -60,8 +65,8 @@ jobs:
         run: cargo clippy --locked --all
       - name: Unit Tests
         run: cargo test --all
-      - name: Setup Python 3.9 (Ubuntu only)
-        if: ${{ matrix.os == 'ubuntu-22.04' }}
+      - name: Setup Python 3.9
+        if: ${{ matrix.requires-setup-python }}
         uses: actions/setup-python@v4
         with:
           # N.B.: We need Python 3.9 for running Pants goals against our tools.pex Python tools
