@@ -97,7 +97,10 @@ jobs:
 
       # Build up a draft release with the artifacts from each of these jobs:
       - name: Create ${{ needs.determine-tag.outputs.release-tag }} Release
-        uses: softprops/action-gh-release@v2
+        # Need to pull in https://github.com/softprops/action-gh-release/pull/316 to work-around
+        # double-release-creation that happens when attempting to update a draft release to
+        # not-draft.
+        uses: huonw/action-gh-release@55ec297e11bf84ff0f5893a84ea987d93489920c # v2.2.0 + https://github.com/softprops/action-gh-release/pull/316
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -131,7 +134,8 @@ jobs:
           setup-python: true
 
       - name: Publish ${{ needs.determine-tag.outputs.release-tag }} Release
-        uses: softprops/action-gh-release@v2
+        # See above for discussion:
+        uses: huonw/action-gh-release@55ec297e11bf84ff0f5893a84ea987d93489920c # v2.2.0 + https://github.com/softprops/action-gh-release/pull/316
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
