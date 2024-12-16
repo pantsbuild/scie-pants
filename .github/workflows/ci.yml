@@ -45,7 +45,7 @@ jobs:
             name: windows-2022
 
     env:
-      PY: python3.9
+      PY: python3.13
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
     steps:
       - uses: actions/checkout@v4
@@ -57,13 +57,11 @@ jobs:
         run: cargo clippy --locked --all
       - name: Unit Tests
         run: cargo test --all
-      - name: Setup Python 3.9 (Ubuntu only)
+      - name: Setup Python 3.13 (Ubuntu only)
         if: ${{ matrix.os == 'ubuntu-22.04' }}
         uses: actions/setup-python@v4
         with:
-          # N.B.: We need Python 3.9 for running Pants goals against our tools.pex Python tools
-          # codebase as well as running Pants from sources in ITs.
-          python-version: "3.9"
+          python-version: "3.13"
       - name: Compute cache key
         id: build_it_cache_key
         run: |
