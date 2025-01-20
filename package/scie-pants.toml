@@ -42,6 +42,20 @@ release = "20240415"
 lazy = true
 version = "3.11.9"
 
+[[lift.interpreters]]
+id = "cpython312"
+provider = "PythonBuildStandalone"
+release = "20250106"
+lazy = true
+version = "3.12.8"
+
+[[lift.interpreters]]
+id = "cpython313"
+provider = "PythonBuildStandalone"
+release = "20250106"
+lazy = true
+version = "3.13.1"
+
 [[lift.interpreter_groups]]
 id = "cpython"
 selector = "{scie.bindings.configure:PYTHON}"
@@ -50,6 +64,8 @@ members = [
     "cpython39",
     "cpython310",
     "cpython311",
+    "cpython312",
+    "cpython313",
 ]
 
 [[lift.files]]
