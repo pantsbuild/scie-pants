@@ -78,6 +78,8 @@ def main() -> NoReturn:
     if not env_file:
         fatal("Expected SCIE_BINDING_ENV to be set in the environment")
 
+    info(f"has bearer token? {options.github_api_bearer_token is not None}")
+
     ptex = get_ptex(options)
 
     find_links_dir = base_dir / "find_links"
