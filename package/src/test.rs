@@ -326,8 +326,9 @@ fn test_pants_bootstrap_handling(scie_pants_scie: &Path) {
     .unwrap();
     assert!(
         output.stderr.is_empty(),
-        "Expected no warnings to be printed when handling .pants.bootstrap, found:\n{warnings}",
-        warnings = String::from_utf8_lossy(&output.stderr)
+        "Expected no warnings to be printed when handling .pants.bootstrap, found:\n{warnings}\n\n{raw:?}",
+        warnings = String::from_utf8_lossy(&output.stderr),
+        raw = output.stderr,
     );
 }
 
