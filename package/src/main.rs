@@ -144,6 +144,8 @@ struct Args {
         default_value_t = SpecifiedPath::new("dist")
     )]
     dest_dir: SpecifiedPath,
+    #[arg(long, help = "The GITHUB_TOKEN to use if running in CI context.")]
+    github_api_bearer_token: Option<String>,
     #[command(subcommand)]
     command: Commands,
 }
@@ -239,7 +241,11 @@ fn main() -> Result<()> {
         );
     }
 
-    let build_context = BuildContext::new(args.target.as_deref(), args.science.as_deref())?;
+    let build_context = BuildContext::new(
+        args.target.as_deref(),
+        args.science.as_deref(),
+        args.github_api_bearer_token.as_deref(),
+    )?;
     if let Some(scie_pants) = maybe_build(&args, &build_context)? {
         ensure_directory(dest_dir, false)?;
 

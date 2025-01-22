@@ -32,10 +32,13 @@ pub(crate) fn build_tools_pex(
     hardlink(&pbt_manifest, &pbt_manifest_dst)?;
 
     execute(
-        science
-            .command()
-            .args(["lift", "build"])
-            .current_dir(&pbt_package_dir),
+        build_context.apply_github_api_bearer_token_if_available(
+            science
+                .command()
+                .args(["lift", "build"])
+                .current_dir(&pbt_package_dir),
+            "SCIENCE_AUTH_GITHUB_COM_BEARER",
+        ),
     )?;
 
     let tools_path = build_context.workspace_root.join("tools");
