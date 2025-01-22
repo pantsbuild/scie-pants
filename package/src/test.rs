@@ -322,10 +322,10 @@ fn test_pants_bootstrap_handling(scie_pants_scie: &Path) {
         Command::new(scie_pants_scie)
             .args([
                 "--no-pantsd",
-                "-V",
                 // Work around https://github.com/pantsbuild/pants/issues/21863, which results in
                 // irrelevant nailgun-related log lines
                 "--no-process-execution-local-enable-nailgun",
+                "-V",
             ])
             .stderr(Stdio::piped()),
     )
