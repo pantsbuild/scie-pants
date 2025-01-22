@@ -106,24 +106,26 @@ jobs:
           # final PEX content.
           #
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test --check --tools-pex-mismatch-warn
+            cargo run -p package -- --github-api-bearer-token=${{ secrets.GITHUB_TOKEN }} test --check --tools-pex-mismatch-warn
       - name: Build, Package & Integration Tests (Ubuntu)
         if: ${{ matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
         run: |
-          cargo run -p package -- --dest-dir dist/ tools
+          cargo run -p package -- --github-api-bearer-token=${{ secrets.GITHUB_TOKEN }} --dest-dir dist/ tools
           docker run --rm \
             -v $PWD:/code \
+            -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
             -w /code \
             rust:1.76.0-alpine3.19 \
               sh -c '
                 apk add cmake make musl-dev perl && \
-                cargo run -p package -- --dest-dir dist/ scie-pants
+                cargo run -p package -- --github-api-bearer-token=$GITHUB_TOKEN --dest-dir dist/ scie-pants
               '
           echo
           echo "Running under: $(uname -a)"
           echo
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             cargo run -p package -- test \
+              --github-api-bearer-token=${{ secrets.GITHUB_TOKEN }} \
               --tools-pex dist/tools.pex --scie-pants dist/scie-pants \
               --check \
               --tools-pex-mismatch-warn
