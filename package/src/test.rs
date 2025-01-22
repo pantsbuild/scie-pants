@@ -1301,14 +1301,28 @@ fn test_pants_bootstrap_stdout_silent(scie_pants_scie: &Path) {
         issue = issue_link!(20315, "pantsbuild/pants")
     );
     let tmpdir = create_tempdir().unwrap();
+
+    let scie_base_dir = tmpdir.path().join("scie-base");
+
+    let pants_release = "2.19.1";
+    let pants_toml_content = format!(
+        r#"
+        [GLOBAL]
+        pants_version = "{pants_release}"
+        "#
+    );
+    let run_dir = tmpdir.path().join("run");
+    let pants_toml = run_dir.join("pants.toml");
+    write_file(&pants_toml, false, pants_toml_content).unwrap();
+
     // Bootstrap a new unseen version of Pants to verify there is no extra output on stdout besides
     // the requested output from the pants command.
     let (output, _stderr) = assert_stderr_output(
         Command::new(scie_pants_scie)
             .arg("-V")
-            .env("PANTS_VERSION", "2.19.1")
+            .current_dir(&run_dir)
             // Customise where SCIE stores its caches to force a bootstrap...
-            .env("SCIE_BASE", tmpdir.path())
+            .env("SCIE_BASE", scie_base_dir)
             .stdout(Stdio::piped()),
         // ...but still assert bootstrap messages to ensure we actually bootstrapped pants during this execution.
         vec![
