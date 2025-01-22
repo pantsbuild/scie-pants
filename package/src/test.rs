@@ -1195,6 +1195,18 @@ fn test_pants_bootstrap_urls(scie_pants_scie: &Path) {
     // A fresh directory to ensure the downloads happen fresh.
     let scie_base = tmpdir.path().join("scie-base");
 
+    // Set up a pants.toml
+    let pants_release = "2.18.0rc1";
+    let pants_toml_content = format!(
+        r#"
+        [GLOBAL]
+        pants_version = "{pants_release}"
+        "#
+    );
+    let project_dir = tmpdir.path().join("project");
+    let pants_toml = project_dir.join("pants.toml");
+    write_file(&pants_toml, false, pants_toml_content).unwrap();
+
     // The file that we'll plop our URL overrides into...
     let urls_json = tmpdir.path().join("urls.json");
     // ... plus helpers to write to it, we start with the `ptex` key/value of this scie-pants's
@@ -1223,7 +1235,6 @@ fn test_pants_bootstrap_urls(scie_pants_scie: &Path) {
     // Reference data for the Pants we'll try to install (NB. we have to force new-enough version of
     // Pants to install via PEXes, older versions go via PyPI which isn't managed by
     // PANTS_BOOTSTRAP_URLS)
-    let pants_release = "2.18.0rc1";
     let platforms = [
         "darwin_arm64",
         "darwin_x86_64",
@@ -1241,7 +1252,7 @@ fn test_pants_bootstrap_urls(scie_pants_scie: &Path) {
         .arg("-V")
         .env("PANTS_BOOTSTRAP_URLS", &urls_json)
         .env("SCIE_BASE", &scie_base)
-        .env("PANTS_VERSION", pants_release);
+        .current_dir(&project_dir);
 
     // Part 1: Validate that we attempt to download the CPython interpreter from (invalid) override
     // URLs
@@ -1311,8 +1322,8 @@ fn test_pants_bootstrap_stdout_silent(scie_pants_scie: &Path) {
         pants_version = "{pants_release}"
         "#
     );
-    let run_dir = tmpdir.path().join("run");
-    let pants_toml = run_dir.join("pants.toml");
+    let project_dir = tmpdir.path().join("project");
+    let pants_toml = project_dir.join("pants.toml");
     write_file(&pants_toml, false, pants_toml_content).unwrap();
 
     // Bootstrap a new unseen version of Pants to verify there is no extra output on stdout besides
@@ -1320,7 +1331,7 @@ fn test_pants_bootstrap_stdout_silent(scie_pants_scie: &Path) {
     let (output, _stderr) = assert_stderr_output(
         Command::new(scie_pants_scie)
             .arg("-V")
-            .current_dir(&run_dir)
+            .current_dir(&project_dir)
             // Customise where SCIE stores its caches to force a bootstrap...
             .env("SCIE_BASE", scie_base_dir)
             .stdout(Stdio::piped()),
