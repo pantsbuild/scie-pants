@@ -86,7 +86,7 @@ jobs:
           version: 23.x
       - name: "Test python3.8"
         run: |
-          python3.8 -c 'from ctypes import pythonapi, c_wchar_p, c_int, byref, POINTER; argv = POINTER(c_wchar_p)(); argc = c_int(); pythonapi.Py_GetArgcArgv(byref(argc), byref(argv)); print([argv[i] for i in range(argc.value)])'
+          /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.8/bin/python -c 'from ctypes import pythonapi, c_wchar_p, c_int, byref, POINTER; argv = POINTER(c_wchar_p)(); argc = c_int(); pythonapi.Py_GetArgcArgv(byref(argc), byref(argv)); print([argv[i] for i in range(argc.value)])'
 
       - name: Build, Package & Integration Tests (MacOS)
         if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64'}}
