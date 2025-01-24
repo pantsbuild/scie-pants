@@ -81,10 +81,15 @@ pub(crate) struct BuildContext {
     target_prepared: Cell<bool>,
     science_repo: Option<PathBuf>,
     cargo_output_bin_dir: PathBuf,
+    github_api_bearer_token: Option<String>,
 }
 
 impl BuildContext {
-    pub(crate) fn new(target: Option<&str>, science_repo: Option<&Path>) -> Result<Self> {
+    pub(crate) fn new(
+        target: Option<&str>,
+        science_repo: Option<&Path>,
+        github_api_bearer_token: Option<&str>,
+    ) -> Result<Self> {
         let target = target.unwrap_or(TARGET).to_string();
         let package_crate_root = PathBuf::from(CARGO_MANIFEST_DIR);
         let workspace_root = package_crate_root
@@ -102,6 +107,7 @@ impl BuildContext {
             target_prepared: Cell::new(false),
             science_repo: science_repo.map(Path::to_path_buf),
             cargo_output_bin_dir: output_bin_dir,
+            github_api_bearer_token: github_api_bearer_token.map(String::from),
         })
     }
 
@@ -166,6 +172,17 @@ impl BuildContext {
             .cargo_output_bin_dir
             .join(BINARY)
             .with_extension(env::consts::EXE_EXTENSION))
+    }
+
+    pub(crate) fn apply_github_api_bearer_token_if_available<'c>(
+        &self,
+        cmd: &'c mut Command,
+        env_var_name: &str,
+    ) -> &'c mut Command {
+        if let Some(token) = self.github_api_bearer_token.as_ref() {
+            cmd.env(env_var_name, token);
+        }
+        cmd
     }
 }
 

@@ -14,6 +14,9 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' || !startsWith(github.ref, 'refs/tags/') }}
 env:
   CARGO_TERM_COLOR: always
+  # We were previously building and publishing on macOS 10.15 (x86-64) and 11 (arm64), so let's
+  # maintain that support
+  MACOSX_DEPLOYMENT_TARGET: 10.15
 jobs:
   org-check:
     name: Check GitHub Organization
@@ -27,22 +30,28 @@ jobs:
     needs: org-check
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-22.04
             name: ubuntu-22.04
+            requires-setup-python: true
 
           - os: [runs-on, runner=4cpu-linux-arm64, image=ubuntu22-full-arm64-python3.7-3.13, "run-id=${{ github.run_id }}"]
             name: linux-arm64
+            requires-setup-python: false
 
-          - os: macOS-10.15-X64
-            name: macOS-10.15-X64
+          - os: macos-13
+            name: "macos-13 x86-64"
+            requires-setup-python: true
 
-          - os: macOS-11-ARM64
-            name: macOS-11-ARM64
+          - os: macos-14
+            name: "macos-14 arm64"
+            requires-setup-python: true
 
           - os: windows-2022
             name: windows-2022
+            requires-setup-python: false
 
     env:
       PY: python3.9
@@ -57,8 +66,8 @@ jobs:
         run: cargo clippy --locked --all
       - name: Unit Tests
         run: cargo test --all
-      - name: Setup Python 3.9 (Ubuntu only)
-        if: ${{ matrix.os == 'ubuntu-22.04' }}
+      - name: Setup Python 3.9
+        if: ${{ matrix.requires-setup-python }}
         uses: actions/setup-python@v4
         with:
           # N.B.: We need Python 3.9 for running Pants goals against our tools.pex Python tools
@@ -79,13 +88,13 @@ jobs:
       # required for the PANTS_SOURCE tests, which build a version of Pants that requires an external protoc
       - name: Install Protoc
         uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
-        if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64' || matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
+        if: ${{ matrix.os != 'windows-2022' }}
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           version: 23.x
 
       - name: Build, Package & Integration Tests (MacOS)
-        if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64'}}
+        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14'}}
         run: |
           # TODO(John Sirois): Kill --tools-pex-mismatch-warn:
           #   https://github.com/pantsbuild/scie-pants/issues/2
@@ -98,24 +107,26 @@ jobs:
           # final PEX content.
           #
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test --check --tools-pex-mismatch-warn
+            cargo run -p package -- --github-api-bearer-token=${{ secrets.GITHUB_TOKEN }} test --check --tools-pex-mismatch-warn
       - name: Build, Package & Integration Tests (Ubuntu)
         if: ${{ matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
         run: |
-          cargo run -p package -- --dest-dir dist/ tools
+          cargo run -p package -- --github-api-bearer-token=${{ secrets.GITHUB_TOKEN }} --dest-dir dist/ tools
           docker run --rm \
             -v $PWD:/code \
+            -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             -w /code \
             rust:1.76.0-alpine3.19 \
               sh -c '
                 apk add cmake make musl-dev perl && \
-                cargo run -p package -- --dest-dir dist/ scie-pants
+                cargo run -p package -- --github-api-bearer-token=$GITHUB_TOKEN --dest-dir dist/ scie-pants
               '
           echo
           echo "Running under: $(uname -a)"
           echo
           PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
             cargo run -p package -- test \
+              --github-api-bearer-token=${{ secrets.GITHUB_TOKEN }} \
               --tools-pex dist/tools.pex --scie-pants dist/scie-pants \
               --check \
               --tools-pex-mismatch-warn
