@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.12.3
+
+Add support for running potential future Pants versions that use Python 3.12 or Python 3.13. No versions of Pants use those versions of Python yet.
+
 ## 0.12.2
 
 Support for Pants 2.25.0.dev0 and newer, which run on Python 3.11 instead of 3.9. (This is the first complete release that incorporates this change, that was originally attempted in 0.12.1.)

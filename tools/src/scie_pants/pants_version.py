@@ -34,6 +34,8 @@ PANTS_PYTHON_VERSIONS = [
 PYTHON_IDS = {
     # N.B.: These values must match the lift TOML interpreter ids.
     # Important: all pythons used in pants_python_versions.json must be represented in this list.
+    "cp313": "cpython313",
+    "cp312": "cpython312",
     "cp311": "cpython311",
     "cp310": "cpython310",
     "cp39": "cpython39",
