@@ -35,11 +35,11 @@ jobs:
           - os: [runs-on, runner=4cpu-linux-arm64, image=ubuntu22-full-arm64-python3.7-3.13, "run-id=${{ github.run_id }}"]
             name: linux-arm64
 
-          - os: macOS-10.15-X64
-            name: macOS-10.15-X64
+          - os: macOS13-x86_64
+            name: macos-x86_64
 
-          - os: macOS-11-ARM64
-            name: macOS-11-ARM64
+          - os: macOS14-ARM64
+            name: macos-arm64
 
           - os: windows-2022
             name: windows-2022
@@ -79,13 +79,13 @@ jobs:
       # required for the PANTS_SOURCE tests, which build a version of Pants that requires an external protoc
       - name: Install Protoc
         uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
-        if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64' || matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
+        if: ${{ matrix.os == 'macos-x86_64' || matrix.os == 'macos-arm64' || matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           version: 23.x
 
       - name: Build, Package & Integration Tests (MacOS)
-        if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64'}}
+        if: ${{ matrix.os == 'macos-x86_64' || matrix.os == 'macos-arm64'}}
         run: |
           # TODO(John Sirois): Kill --tools-pex-mismatch-warn:
           #   https://github.com/pantsbuild/scie-pants/issues/2
