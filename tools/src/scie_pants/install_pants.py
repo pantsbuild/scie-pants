@@ -113,7 +113,7 @@ def install_pants_from_pex(
         except subprocess.CalledProcessError as e:
             fatal(
                 f"Failed to create Pants virtual environment.\nError: {e}, output:"
-                f"\n-----\n{e.stdout}\n-----\n"
+                f"\n-----\n{e.stdout.decode(errors='replace')}\n-----\n"
             )
         else:
             with open(str(venv_dir / "pants-install.log"), "a") as fp:
