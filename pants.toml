@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.21.0"
+pants_version = "2.23.0"
 
 backend_packages = [
     "pants.backend.python",
@@ -7,6 +7,9 @@ backend_packages = [
     "pants.backend.python.lint.isort",
     "pants.backend.python.typecheck.mypy",
 ]
+
+# FIXME #421: remove this once scie-pants's CI doesn't use these versions
+allow_deprecated_macos_before_12 = true
 
 [anonymous-telemetry]
 enabled = true
