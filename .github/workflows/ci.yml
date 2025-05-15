@@ -41,6 +41,12 @@ jobs:
           - os: macOS-11-ARM64
             name: macOS-11-ARM64
 
+          - os: macOS-13-X64
+            name: macOS-13-X64
+
+          - os: macOS-14-ARM64
+            name: macOS-14-ARM64
+
           - os: windows-2022
             name: windows-2022
 
