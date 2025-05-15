@@ -35,12 +35,6 @@ jobs:
           - os: [runs-on, runner=4cpu-linux-arm64, image=ubuntu22-full-arm64-python3.7-3.13, "run-id=${{ github.run_id }}"]
             name: linux-arm64
 
-          - os: macOS-10.15-X64
-            name: macOS-10.15-X64
-
-          - os: macOS-11-ARM64
-            name: macOS-11-ARM64
-
           - os: macOS-13-X64
             name: macOS-13-X64
 
