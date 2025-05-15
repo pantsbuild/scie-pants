@@ -420,6 +420,15 @@ fn test_python_repos_repos(scie_pants_scie: &Path) {
 
 fn test_initialize_new_pants_project(scie_pants_scie: &Path) {
     integration_test!("Verifying initializing a new Pants project works");
+    // This test uses the latest Pants version (as it runs in a repo with no pants.toml).
+    // So we must only run it on appropriate macos versions.
+    if is_macos_thats_too_old(13, 14) {
+        log!(
+            Color::Yellow,
+            "The latest version of Pants cannot run on this version of macOS => skipping"
+        );
+        return;
+    }
     let new_project_dir = create_tempdir().unwrap();
     execute(Command::new("git").arg("init").arg(new_project_dir.path())).unwrap();
     let project_subdir = new_project_dir.path().join("subdir").join("sub-subdir");

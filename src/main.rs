@@ -77,7 +77,7 @@ impl Process {
 
 fn env_version(env_var_name: &str) -> Result<Option<String>> {
     let raw_version = env::var_os(env_var_name).unwrap_or_default();
-    if raw_version.len() == 0 {
+    if raw_version.is_empty(){
         // setting PANTS_VERSION= behaves the same as not setting it
         Ok(None)
     } else {
