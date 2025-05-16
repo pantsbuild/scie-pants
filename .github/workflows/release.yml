@@ -66,11 +66,11 @@ jobs:
           - os: [runs-on, runner=4cpu-linux-arm64, image=ubuntu22-full-arm64-python3.7-3.13, "run-id=${{ github.run_id }}"]
             name: linux-arm64
 
-          - os: macOS-10.15-X64
-            name: macOS-10.15-X64
+          - os: macOS-13-X64
+            name: macOS-13-X64
 
-          - os: macOS-11-ARM64
-            name: macOS-11-ARM64
+          - os: macOS-14-ARM64
+            name: macOS-14-ARM64
     environment: Release
     steps:
       - name: Checkout scie-pants ${{ needs.determine-tag.outputs.release-tag }}
@@ -87,7 +87,7 @@ jobs:
           docker run --rm \
             -v $PWD:/code \
             -w /code \
-            rust:1.76.0-alpine3.19 \
+            rust:1.86.0-alpine3.21 \
               sh -c '
                 apk add cmake make musl-dev perl && \
                 cargo run -p package -- --dest-dir dist/ scie-pants
