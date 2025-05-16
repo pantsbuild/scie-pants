@@ -36,10 +36,10 @@ jobs:
             name: linux-arm64
 
           - os: macOS-13-X64
-            name: macOS-13-X64
+            name: macos-13
 
           - os: macOS-14-ARM64
-            name: macOS-14-ARM64
+            name: macos-14
 
           - os: windows-2022
             name: windows-2022
