@@ -58,7 +58,7 @@ pub(crate) fn build_tools_pex(
                     "--style",
                     "universal",
                     "--pip-version",
-                    "22.3",
+                    "24.3.1",
                     "--resolver-version",
                     "pip-2020-resolver",
                     "--no-build",
