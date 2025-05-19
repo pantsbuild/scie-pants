@@ -21,5 +21,5 @@ serde_json = "1.0.114"
 sha2 = "0.10"
 tempfile = { workspace = true }
 termcolor = "1.4"
-ureq = "2.9"
+ureq = "3.0"
 walkdir = "2.5"
