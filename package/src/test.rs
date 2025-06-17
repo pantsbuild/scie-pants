@@ -756,6 +756,21 @@ index 796b3cddd2..aef0e649bb 100644
         ],
         ExpectedResult::Success,
     );
+
+    let invalid_pants_clone_dir = pants_2_25_0_dev1_clone_dir.join("xyzzy");
+    assert_stderr_output(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .env("PANTS_SOURCE", &invalid_pants_clone_dir)
+            .env("SCIE_PANTS_TEST_MODE", "PANTS_SOURCE mode")
+            .env("PANTS_VENV_DIR_PREFIX", pants_2_25_0_dev1_venv_dir),
+        vec![
+            &format!("Error: Unable to find the `pants` runner script in the requested Pants source directory `{}`. \
+            Running Pants from sources was enabled because the `PANTS_SOURCE` environment variable is set.",
+            invalid_pants_clone_dir.display())
+        ],
+        ExpectedResult::Failure,
+    );
 }
 
 fn test_pants_from_sources_mode(
@@ -776,16 +791,32 @@ fn test_pants_from_sources_mode(
     softlink(scie_pants_scie, &pants_from_sources).unwrap();
 
     assert_stderr_output(
-        Command::new(pants_from_sources)
+        Command::new(&pants_from_sources)
             .arg("-V")
             .env("SCIE_PANTS_TEST_MODE", "pants_from_sources mode")
             .env("PANTS_VENV_DIR_PREFIX", pants_2_25_0_dev1_venv_dir)
-            .current_dir(user_repo_dir),
+            .current_dir(&user_repo_dir),
         vec![
             "The pants_from_sources mode is working.",
             "Pants from sources argv: --no-verify-config -V.",
         ],
         ExpectedResult::Success,
+    );
+
+    let invalid_pants_dir = side_by_side_root.path().join("pants-xyzzy");
+    rename(&pants_dir, &invalid_pants_dir).unwrap();
+    assert_stderr_output(
+        Command::new(&pants_from_sources)
+            .arg("-V")
+            .env("SCIE_PANTS_TEST_MODE", "pants_from_sources mode")
+            .env("PANTS_VENV_DIR_PREFIX", pants_2_25_0_dev1_venv_dir)
+            .current_dir(&user_repo_dir),
+        vec![
+            &format!("Error: Unable to find the `pants` runner script in the requested Pants source directory `{}`. \
+            Running Pants from sources was enabled because the Pants launcher was invoked as `pants_from_sources`",
+            invalid_pants_dir.display())
+        ],
+        ExpectedResult::Failure,
     );
 }
 
