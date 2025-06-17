@@ -250,8 +250,19 @@ fn get_pants_process() -> Result<Process> {
     scie_boot.into_process(scie, build_root, env)
 }
 
-fn get_pants_from_sources_process(pants_repo_location: PathBuf) -> Result<Process> {
-    let exe = pants_repo_location.join("pants").into_os_string();
+fn get_pants_from_sources_process(
+    pants_repo_location: PathBuf,
+    origin_of_pants_repo_location: &str,
+) -> Result<Process> {
+    let exe = pants_repo_location.join("pants");
+    if !exe.exists() {
+        return Err(anyhow!(
+            "Unable to find the `pants` runner script in the requested Pants source directory `{}`. \
+            Running Pants from sources was enabled because {origin_of_pants_repo_location}.",
+            pants_repo_location.display()
+        ));
+    }
+    let exe = exe.into_os_string();
 
     let args = vec!["--no-verify-config".into()];
 
@@ -313,9 +324,15 @@ fn main() -> Result<()> {
     }
 
     let pants_process = if let Ok(value) = env::var("PANTS_SOURCE") {
-        get_pants_from_sources_process(PathBuf::from(value))
+        get_pants_from_sources_process(
+            PathBuf::from(value),
+            "the `PANTS_SOURCE` environment variable is set",
+        )
     } else if let Some("pants_from_sources") = invoked_as_basename().as_deref() {
-        get_pants_from_sources_process(PathBuf::from("..").join("pants"))
+        get_pants_from_sources_process(
+            PathBuf::from("..").join("pants"),
+            "the Pants launcher was invoked as `pants_from_sources`",
+        )
     } else {
         get_pants_process()
     }?;
