@@ -813,7 +813,7 @@ fn test_pants_from_sources_mode(
             .current_dir(&user_repo_dir),
         vec![
             &format!("Error: Unable to find the `pants` runner script in the requested Pants source directory `{}`. \
-            Running Pants from sources was enabled because the Pants launcher was invoked as `pants_from_sources`",
+            Running Pants from sources was enabled because the Pants launcher was invoked as `pants_from_sources`.",
             invalid_pants_dir.display())
         ],
         ExpectedResult::Failure,
