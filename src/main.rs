@@ -257,7 +257,7 @@ fn get_pants_from_sources_process(
     let exe = pants_repo_location.join("pants");
     if !exe.exists() {
         return Err(anyhow!(
-            "Unable to find the `pants` runner script in the Pants source directory `{}`. \
+            "Unable to find the `pants` runner script in the requested Pants source directory `{}`. \
             Running Pants from sources was enabled because {origin_of_pants_repo_location}.",
             pants_repo_location.display()
         ));
@@ -331,7 +331,7 @@ fn main() -> Result<()> {
     } else if let Some("pants_from_sources") = invoked_as_basename().as_deref() {
         get_pants_from_sources_process(
             PathBuf::from("..").join("pants"),
-            "Pants was invoked as `pants_from_sources`",
+            "the Pants launcher was invoked as `pants_from_sources`",
         )
     } else {
         get_pants_process()
