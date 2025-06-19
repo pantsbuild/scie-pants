@@ -6,13 +6,17 @@ load_dotenv = true
 [lift.app_info]
 repo = "https://github.com/pantsbuild/scie-pants"
 
+# Downloader tool
+# https://github.com/a-scie/ptex
 [lift.ptex]
 id = "ptex"
-version = "0.7.0"
+version = "1.6.1"
 argv1 = "{scie.env.PANTS_BOOTSTRAP_URLS={scie.lift}}"
 
+# SCIE launcher
+# https://github.com/a-scie/jump
 [lift.scie_jump]
-version = "0.14.0"
+version = "1.7.0"
 
 [[lift.interpreters]]
 id = "cpython38"

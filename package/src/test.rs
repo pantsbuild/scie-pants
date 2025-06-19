@@ -88,6 +88,7 @@ enum ExpectedResult {
     Failure,
 }
 
+#[track_caller]
 fn assert_stderr_output(
     command: &mut Command,
     expected_messages: Vec<&str>,
