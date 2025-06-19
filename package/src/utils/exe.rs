@@ -11,6 +11,7 @@ use std::process::{Command, Output};
 use anyhow::{bail, Context, Result};
 use lazy_static::lazy_static;
 use log::info;
+use regex::Regex;
 
 use super::os::EOL;
 
@@ -124,7 +125,20 @@ fn _execute_with_input(command: &mut Command, stdin_data: Option<&[u8]>) -> Resu
             message_lines.push("STDERR:".to_string());
             message_lines.push(String::from_utf8_lossy(output.stderr.as_slice()).to_string());
         }
-        bail!(message_lines.join(EOL));
+
+        let mut message_lines = message_lines.join(EOL);
+        let log_re = Regex::new(r"\W?(/[a-zA-Z0-9./]+)\W?").expect("compile log_re");
+
+        for m in log_re.captures_iter(&message_lines.clone()) {
+            let maybe_path = m.get(1).unwrap().as_str();
+            if maybe_path.ends_with(".log") {
+                let log_contents = std::fs::read_to_string(maybe_path).expect("read log file");
+                message_lines.push_str(&format!("LOG {maybe_path}{EOL}"));
+                message_lines.push_str(&log_contents);
+            }
+        }
+
+        bail!(message_lines);
     }
     Ok(output)
 }
