@@ -222,12 +222,19 @@ def get_bootstrap_urls(bootstrap_urls_paths: Iterable[str]) -> dict[str, str] | 
 
     ptex_urls: dict[str, str] = {}
     for bootstrap_urls_path in bootstrap_urls_paths:
-        bootstrap_urls = json.loads(Path(bootstrap_urls_path).read_text())
+        try:
+            bootstrap_urls = json.loads(Path(bootstrap_urls_path).read_text())
+        except json.decoder.JSONDecodeError as e:
+            raise ValueError(
+                f"Failed to parse JSON from PANTS_BOOTSTRAP_URLS file `{bootstrap_urls_path}`: {e}"
+            )
+
         candidate_ptex_urls = bootstrap_urls.get("ptex")
         if candidate_ptex_urls is None:
             raise ValueError(
                 f"Missing 'ptex' key in PANTS_BOOTSTRAP_URLS file: {bootstrap_urls_path}"
             )
+
         for key, url in candidate_ptex_urls.items():
             if not isinstance(url, str):
                 raise TypeError(
