@@ -9,6 +9,7 @@ import os
 import re
 import urllib.parse
 import urllib.request
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -90,7 +91,7 @@ def determine_tag_version(
     pants_version: str,
     find_links_dir: Path,
     github_api_bearer_token: str | None,
-    bootstrap_urls_path: str | None,
+    bootstrap_urls_paths: Iterable[str],
 ) -> ResolveInfo:
     version = Version(pants_version)
     if version.base_version.count(".") < 2:
@@ -101,7 +102,7 @@ def determine_tag_version(
         )
 
     if version >= PANTS_PEX_GITHUB_RELEASE_VERSION:
-        pex_url, python = determine_pex_url_and_python_id(ptex, version, bootstrap_urls_path)
+        pex_url, python = determine_pex_url_and_python_id(ptex, version, bootstrap_urls_paths)
         return ResolveInfo(version=version, python=python, pex_url=pex_url)
 
     tag = f"release_{pants_version}"
@@ -157,7 +158,7 @@ def determine_latest_stable_version(
     pants_config: Path,
     find_links_dir: Path,
     github_api_bearer_token: str | None,
-    bootstrap_urls_path: str | None,
+    bootstrap_urls_paths: Iterable[str],
 ) -> tuple[Callable[[], None], ResolveInfo]:
     info(f"Fetching latest stable Pants version since none is configured")
 
@@ -197,38 +198,44 @@ def determine_latest_stable_version(
         pants_config.write_text(tomlkit.dumps(config))
 
     return configure_version, determine_tag_version(
-        ptex, pants_version, find_links_dir, github_api_bearer_token, bootstrap_urls_path
+        ptex, pants_version, find_links_dir, github_api_bearer_token, bootstrap_urls_paths
     )
 
 
 def determine_pex_url_and_python_id(
     ptex: Ptex,
     version: Version,
-    bootstrap_urls_path: str | None,
+    bootstrap_urls_paths: Iterable[str],
 ) -> tuple[str, str]:
     uname = os.uname()
     platform = f"{uname.sysname.lower()}_{uname.machine.lower()}"
-    pex_url, python = get_pex_url_and_python_id(ptex, version, platform, bootstrap_urls_path)
+    pex_url, python = get_pex_url_and_python_id(ptex, version, platform, bootstrap_urls_paths)
     if python not in PYTHON_IDS:
         # Should not happen... but if we mess up, this is a nicer error message rather than blowing up.
         fatal(f"This version of scie-pants does not support {python!r}.")
     return pex_url, PYTHON_IDS[python]
 
 
-def get_bootstrap_urls(bootstrap_urls_path: str | None) -> dict[str, str] | None:
-    if not bootstrap_urls_path:
+def get_bootstrap_urls(bootstrap_urls_paths: Iterable[str]) -> dict[str, str] | None:
+    if not bootstrap_urls_paths:
         return None
 
-    bootstrap_urls = json.loads(Path(bootstrap_urls_path).read_text())
-    ptex_urls = bootstrap_urls.get("ptex")
-    if ptex_urls is None:
-        raise ValueError(f"Missing 'ptex' key in PANTS_BOOTSTRAP_URLS file: {bootstrap_urls_path}")
-    for key, url in ptex_urls.items():
-        if not isinstance(url, str):
-            raise TypeError(
-                f"The value for the key '{key}' in PANTS_BOOTSTRAP_URLS file: '{bootstrap_urls_path}' "
-                f"under the 'ptex' key was expected to be a string. Got a {type(url).__name__}"
+    ptex_urls: dict[str, str] = {}
+    for bootstrap_urls_path in bootstrap_urls_paths:
+        bootstrap_urls = json.loads(Path(bootstrap_urls_path).read_text())
+        candidate_ptex_urls = bootstrap_urls.get("ptex")
+        if candidate_ptex_urls is None:
+            raise ValueError(
+                f"Missing 'ptex' key in PANTS_BOOTSTRAP_URLS file: {bootstrap_urls_path}"
             )
+        for key, url in candidate_ptex_urls.items():
+            if not isinstance(url, str):
+                raise TypeError(
+                    f"The value for the key '{key}' in PANTS_BOOTSTRAP_URLS file: '{bootstrap_urls_path}' "
+                    f"under the 'ptex' key was expected to be a string. Got a {type(url).__name__}"
+                )
+        ptex_urls.update(candidate_ptex_urls)
+
     return ptex_urls
 
 
@@ -236,9 +243,9 @@ def get_pex_url_and_python_id(
     ptex: Ptex,
     version: Version,
     platform: str,
-    bootstrap_urls_path: str | None,
+    bootstrap_urls_paths: Iterable[str],
 ) -> tuple[str, str]:
-    ptex_urls = get_bootstrap_urls(bootstrap_urls_path)
+    ptex_urls = get_bootstrap_urls(bootstrap_urls_paths)
     py = get_python_id_for_pants_version(version)
     error: str | None = None
     if py:
