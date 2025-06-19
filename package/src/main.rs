@@ -1,6 +1,8 @@
 // Copyright 2022 Pants project contributors.
 // Licensed under the Apache License, Version 2.0 (see LICENSE).
 
+#![deny(warnings)]
+
 mod scie_pants;
 
 #[macro_use]
