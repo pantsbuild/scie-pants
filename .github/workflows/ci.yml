@@ -79,13 +79,13 @@ jobs:
       # required for the PANTS_SOURCE tests, which build a version of Pants that requires an external protoc
       - name: Install Protoc
         uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
-        if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64' || matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
+        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14' || matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           version: 23.x
 
       - name: Build, Package & Integration Tests (MacOS)
-        if: ${{ matrix.os == 'macOS-10.15-X64' || matrix.os == 'macOS-11-ARM64'}}
+        if: ${{ matrix.os == 'macos-13' || matrix.os == 'macos-14'}}
         run: |
           # TODO(John Sirois): Kill --tools-pex-mismatch-warn:
           #   https://github.com/pantsbuild/scie-pants/issues/2
