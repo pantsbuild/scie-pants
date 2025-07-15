@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.12.4
+
+A better error message for an invalid Pants source directory.
+
+Update to latest patch versions of Python interpreters.
+
 ## 0.12.3
 
 Add support for running potential future Pants versions that use Python 3.12 or Python 3.13. No versions of Pants use those versions of Python yet.
