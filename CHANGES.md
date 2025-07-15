@@ -1,10 +1,14 @@
 # Release Notes
 
-## 0.12.4
+## 0.12.5
 
 A better error message for an invalid Pants source directory.
 
 Update to latest patch versions of Python interpreters.
+
+## 0.12.4
+
+An aborted release, due to issues with CI infrastructure. Cannot be used.
 
 ## 0.12.3
 
