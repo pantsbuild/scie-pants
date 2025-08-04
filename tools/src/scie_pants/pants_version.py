@@ -76,7 +76,22 @@ def determine_find_links(
                 f"</a>{os.linesep}".encode()
             )
         fp.flush()
-        ptex.fetch_to_fp("https://wheels.pantsbuild.org/simple/", fp)
+        fp.write(
+            b"""
+<!DOCTYPE html>
+<html>
+<body>
+<h1>Links for Pantsbuild Wheels</h1>
+<ul>
+<li><a href="/simple/pantsbuild-pants/">pantsbuild-pants</a></li>
+<li><a href="/simple/pantsbuild-pants-contrib-mypy/">pantsbuild-pants-contrib-mypy</a></li>
+<li><a href="/simple/pantsbuild-pants-testutil/">pantsbuild-pants-testutil</a></li>
+</ul>
+</body>
+</html>
+"""
+        )
+        # ptex.fetch_to_fp("https://wheels.pantsbuild.org/simple/", fp)
 
     return ResolveInfo(
         version=Version(pants_version),
