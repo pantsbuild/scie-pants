@@ -216,6 +216,8 @@ args = [
     "--github-api-bearer-token",
     "{scie.env.PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN}",
     "--pants-bootstrap-urls",
+    "{scie.lift}",
+    "--pants-bootstrap-urls",
     "{scie.env.PANTS_BOOTSTRAP_URLS}",
     "{scie.bindings}",
 ]
