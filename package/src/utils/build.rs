@@ -54,7 +54,10 @@ pub(crate) fn check_sha256(path: &Path) -> Result<()> {
 
 fn fetch_file(url: &str, dest_file: &Path) -> Result<()> {
     let mut file = File::create(dest_file)?;
-    std::io::copy(&mut ureq::get(url).call()?.into_reader(), &mut file)?;
+    std::io::copy(
+        &mut ureq::get(url).call()?.into_body().as_reader(),
+        &mut file,
+    )?;
     Ok(())
 }
 
