@@ -6,10 +6,10 @@ use std::ffi::{OsStr, OsString};
 use std::fmt::Debug;
 use std::path::PathBuf;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use build_root::BuildRoot;
 use log::{info, trace};
-use logging_timer::{time, timer, Level};
+use logging_timer::{Level, time, timer};
 use uuid::Uuid;
 
 use crate::config::PantsConfig;

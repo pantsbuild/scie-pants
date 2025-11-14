@@ -8,7 +8,7 @@ use std::io::Write;
 use std::path::Path;
 use std::process::{Command, Output};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use lazy_static::lazy_static;
 use log::info;
 

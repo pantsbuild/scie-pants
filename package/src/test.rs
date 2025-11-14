@@ -13,7 +13,7 @@ use tempfile::TempDir;
 use termcolor::{Color, WriteColor};
 
 use crate::utils::build::fingerprint;
-use crate::utils::exe::{execute, execute_with_input, Platform, CURRENT_PLATFORM};
+use crate::utils::exe::{CURRENT_PLATFORM, Platform, execute, execute_with_input};
 use crate::utils::fs::{
     copy, create_tempdir, ensure_directory, remove_dir, rename, softlink, touch, write_file,
 };
@@ -539,8 +539,10 @@ fn test_pants_from_bad_pex_version(scie_pants_scie: &Path) {
     .unwrap_err();
 
     let error_text = err.to_string();
-    assert!(error_text
-        .contains("Pants version must be a full version, including patch level, got: `2.19`."));
+    assert!(
+        error_text
+            .contains("Pants version must be a full version, including patch level, got: `2.19`.")
+    );
     assert!(error_text.contains(
         "Please add `.<patch_version>` to the end of the version. For example: `2.18` -> `2.18.0`."
     ));
@@ -618,8 +620,10 @@ fn test_dot_env_error(scie_pants_scie: &Path) {
         Command::new(scie_pants_scie)
             .arg("-V")
             .current_dir(tempdir.path()),
-        vec!["requested .env files be loaded but there was an error doing so: Parsing Error: Error { input: \"invalid line"],
-        ExpectedResult::Failure
+        vec![
+            "requested .env files be loaded but there was an error doing so: Parsing Error: Error { input: \"invalid line",
+        ],
+        ExpectedResult::Failure,
     );
 }
 
@@ -764,11 +768,11 @@ index 796b3cddd2..aef0e649bb 100644
             .env("PANTS_SOURCE", &invalid_pants_clone_dir)
             .env("SCIE_PANTS_TEST_MODE", "PANTS_SOURCE mode")
             .env("PANTS_VENV_DIR_PREFIX", pants_2_25_0_dev1_venv_dir),
-        vec![
-            &format!("Error: Unable to find the `pants` runner script in the requested Pants source directory `{}`. \
+        vec![&format!(
+            "Error: Unable to find the `pants` runner script in the requested Pants source directory `{}`. \
             Running Pants from sources was enabled because the `PANTS_SOURCE` environment variable is set.",
-            invalid_pants_clone_dir.display())
-        ],
+            invalid_pants_clone_dir.display()
+        )],
         ExpectedResult::Failure,
     );
 }
@@ -813,7 +817,7 @@ fn test_pants_from_sources_mode(
             .current_dir(&user_repo_dir),
         vec![
             "Error: Unable to find the `pants` runner script in the requested Pants source directory `../pants`. \
-            Running Pants from sources was enabled because the Pants launcher was invoked as `pants_from_sources`."
+            Running Pants from sources was enabled because the Pants launcher was invoked as `pants_from_sources`.",
         ],
         ExpectedResult::Failure,
     );
@@ -1145,16 +1149,20 @@ fn test_non_utf8_env_vars_issue_198(scie_pants_scie: &Path) {
     // N.B.: This is a very hacky way to confirm the `scie-jump` is done processing env vars and has
     // exec'd the `scie-pants` native client; which then proceeds to choke on env vars in the same
     // way scie-jump <= 0.11.0 did using `env::vars()`.
-    assert!(Regex::new(concat!(
-        r#"exe: ".*/bindings/venvs/2\.17\.0a1/lib/python3\.9/"#,
-        r#"site-packages/pants/bin/native_client""#
-    ))
-    .unwrap()
-    .find(&error_text)
-    .is_some());
+    assert!(
+        Regex::new(concat!(
+            r#"exe: ".*/bindings/venvs/2\.17\.0a1/lib/python3\.9/"#,
+            r#"site-packages/pants/bin/native_client""#
+        ))
+        .unwrap()
+        .find(&error_text)
+        .is_some()
+    );
     assert!(error_text.contains("[DEBUG TimerFinished] jump::prepare_boot(), Elapsed="));
-    assert!(error_text
-        .contains(r#"panicked at 'called `Result::unwrap()` on an `Err` value: "B\xA5R"'"#));
+    assert!(
+        error_text
+            .contains(r#"panicked at 'called `Result::unwrap()` on an `Err` value: "B\xA5R"'"#)
+    );
 
     // The error path we test below requires flowing through the pantsd path via PyNailgunClient.
     let err = execute(
@@ -1217,8 +1225,8 @@ fn test_bad_boot_error_text(scie_pants_scie: &Path) {
 
 fn test_pants_bootstrap_urls(scie_pants_scie: &Path) {
     integration_test!(
-      "Verifying PANTS_BOOTSTRAP_URLS is used for both CPython interpreter and Pants PEX ({issue})",
-      issue = issue_link!(243)
+        "Verifying PANTS_BOOTSTRAP_URLS is used for both CPython interpreter and Pants PEX ({issue})",
+        issue = issue_link!(243)
     );
 
     // This test runs in 4 parts:
@@ -1326,8 +1334,12 @@ fn test_pants_bootstrap_urls(scie_pants_scie: &Path) {
     assert_stderr_output(
         &mut command,
         vec![
-            &format!("Failed to determine release URL for Pants: {pants_release}: pants.{pants_release}-cp3"),
-            &format!(".pex: URL check failed, from PANTS_BOOTSTRAP_URLS: {doesnt_exist_pex_url}: <urlopen error [Errno 2] No such file or directory: "),
+            &format!(
+                "Failed to determine release URL for Pants: {pants_release}: pants.{pants_release}-cp3"
+            ),
+            &format!(
+                ".pex: URL check failed, from PANTS_BOOTSTRAP_URLS: {doesnt_exist_pex_url}: <urlopen error [Errno 2] No such file or directory: "
+            ),
         ],
         ExpectedResult::Failure,
     );

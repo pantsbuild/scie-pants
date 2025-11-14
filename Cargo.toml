@@ -7,7 +7,7 @@ members = [
 name = "scie-pants"
 description = "Protects your Pants from the elements."
 version = "0.12.5"
-edition = "2021"
+edition = "2024"
 authors = [
     "John Sirois <john.sirois@gmail.com>",
 ]
