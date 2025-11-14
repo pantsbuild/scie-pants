@@ -95,13 +95,11 @@ pub(crate) fn remove_dir(path: &Path) -> Result<()> {
 }
 
 pub(crate) fn ensure_directory(path: &Path, clean: bool) -> Result<()> {
-    if clean {
-        if let Err(e) = remove_dir(path) {
-            warn!(
-                "Failed to clean directory at {path}: {e}",
-                path = path.display()
-            )
-        }
+    if clean && let Err(e) = remove_dir(path) {
+        warn!(
+            "Failed to clean directory at {path}: {e}",
+            path = path.display()
+        )
     }
     std::fs::create_dir_all(path).with_context(|| {
         format!(

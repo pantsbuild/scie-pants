@@ -131,10 +131,10 @@ pub(crate) fn run_integration_tests(
         Color::Yellow,
         "Disabling pants rc files for the smoke tests."
     );
-    env::set_var("PANTS_PANTSRC", "False");
+    unsafe { env::set_var("PANTS_PANTSRC", "False") };
 
     // Our `.pants.bootstrap` uses `tput` which requires TERM be set: ensure it is.
-    env::set_var("TERM", env::var_os("TERM").unwrap_or_else(|| "dumb".into()));
+    unsafe { env::set_var("TERM", env::var_os("TERM").unwrap_or_else(|| "dumb".into())) };
 
     // Max Python supported is 3.9 and only Linux x86_64 and macOS aarch64 and x86_64 wheels were
     // released.
@@ -150,7 +150,7 @@ pub(crate) fn run_integration_tests(
         test_pants_bootstrap_tools(scie_pants_scie);
 
         log!(Color::Yellow, "Turning off pantsd for remaining tests.");
-        env::set_var("PANTS_PANTSD", "False");
+        unsafe { env::set_var("PANTS_PANTSD", "False") };
 
         test_pants_2_25_using_python_3_11(scie_pants_scie);
         test_python_repos_repos(scie_pants_scie);
@@ -974,22 +974,22 @@ fn test_caching_issue_129(scie_pants_scie: &Path) {
                 if !dir_entry.file_type().is_file() {
                     return None;
                 }
-                if let Some(file_name) = dir_entry.file_name().to_str() {
-                    if let Some(parent_dir) = dir_entry.path().parent() {
-                        if let Some(parent_dir_name) = parent_dir.file_name() {
-                            if "locks" != parent_dir_name {
-                                return None;
-                            }
-                        }
-                        if !file_name.ends_with(".lck") {
-                            return None;
-                        }
-                        if file_name.starts_with("configure-") {
-                            return Some(LockType::Configure);
-                        }
-                        if file_name.starts_with("install-") {
-                            return Some(LockType::Install);
-                        }
+                if let Some(file_name) = dir_entry.file_name().to_str()
+                    && let Some(parent_dir) = dir_entry.path().parent()
+                {
+                    if let Some(parent_dir_name) = parent_dir.file_name()
+                        && "locks" != parent_dir_name
+                    {
+                        return None;
+                    }
+                    if !file_name.ends_with(".lck") {
+                        return None;
+                    }
+                    if file_name.starts_with("configure-") {
+                        return Some(LockType::Configure);
+                    }
+                    if file_name.starts_with("install-") {
+                        return Some(LockType::Install);
                     }
                 }
                 None
@@ -1135,7 +1135,7 @@ fn test_non_utf8_env_vars_issue_198(scie_pants_scie: &Path) {
     write_file(&pants_toml, false, pants_toml_content).unwrap();
 
     use std::os::unix::ffi::OsStringExt;
-    env::set_var("FOO", OsString::from_vec(vec![b'B', 0xa5, b'R']));
+    unsafe { env::set_var("FOO", OsString::from_vec(vec![b'B', 0xa5, b'R'])) };
 
     let err = execute(
         Command::new(scie_pants_scie)
@@ -1194,7 +1194,7 @@ fn test_non_utf8_env_vars_issue_198(scie_pants_scie: &Path) {
     .unwrap();
     assert_eq!(pants_release, decode_output(output.stdout).unwrap().trim());
 
-    env::remove_var("FOO");
+    unsafe { env::remove_var("FOO") };
 }
 
 fn test_bad_boot_error_text(scie_pants_scie: &Path) {
