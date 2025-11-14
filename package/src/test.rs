@@ -739,9 +739,9 @@ index 796b3cddd2..aef0e649bb 100644
         )
         .unwrap();
         ensure_directory(clone_dir, true).unwrap();
-        rename(&clone_root_tmp.into_path(), pants_2_25_0_dev1_clone_dir).unwrap();
+        rename(&clone_root_tmp.keep(), pants_2_25_0_dev1_clone_dir).unwrap();
         ensure_directory(venv_dir, true).unwrap();
-        rename(&venv_root_tmp.into_path(), pants_2_25_0_dev1_venv_dir).unwrap();
+        rename(&venv_root_tmp.keep(), pants_2_25_0_dev1_venv_dir).unwrap();
     }
 
     assert_stderr_output(
@@ -812,8 +812,8 @@ fn test_pants_from_sources_mode(
             .env("PANTS_VENV_DIR_PREFIX", pants_2_25_0_dev1_venv_dir)
             .current_dir(&user_repo_dir),
         vec![
-            &"Error: Unable to find the `pants` runner script in the requested Pants source directory `../pants`. \
-            Running Pants from sources was enabled because the Pants launcher was invoked as `pants_from_sources`.".to_string()
+            "Error: Unable to find the `pants` runner script in the requested Pants source directory `../pants`. \
+            Running Pants from sources was enabled because the Pants launcher was invoked as `pants_from_sources`."
         ],
         ExpectedResult::Failure,
     );
