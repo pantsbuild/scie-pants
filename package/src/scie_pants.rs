@@ -7,7 +7,7 @@ use termcolor::WriteColor;
 use crate::utils::build::{BuildContext, Science};
 use crate::utils::exe::{binary_full_name, execute};
 use crate::utils::fs::{ensure_directory, path_as_str};
-use crate::{BINARY, build_step};
+use crate::{build_step, BINARY};
 
 pub(crate) struct SciePantsBuild {
     pub(crate) exe: PathBuf,
