@@ -30,7 +30,7 @@ use crate::utils::fs::{base_name, canonicalize, copy, ensure_directory};
 const BINARY: &str = "scie-pants";
 
 // The version of a-scie/lift to use by default.
-const SCIENCE_TAG: &str = "v0.11.2";
+const SCIENCE_TAG: &str = "v0.15.1";
 
 #[derive(Clone)]
 struct SpecifiedPath(PathBuf);

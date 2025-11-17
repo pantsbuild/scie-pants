@@ -1,10 +1,12 @@
 name: CI
 on:
   push:
-    # Ignore non top-level branches.
-    branches-ignore:
-    - '*/**'
+    branches: 
+      - main
   pull_request:
+    branches: 
+      - main
+
 defaults:
   run:
     shell: bash
