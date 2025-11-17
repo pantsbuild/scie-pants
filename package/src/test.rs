@@ -13,7 +13,7 @@ use tempfile::TempDir;
 use termcolor::{Color, WriteColor};
 
 use crate::utils::build::fingerprint;
-use crate::utils::exe::{execute, execute_with_input, Platform, CURRENT_PLATFORM};
+use crate::utils::exe::{CURRENT_PLATFORM, Platform, execute, execute_with_input};
 use crate::utils::fs::{
     copy, create_tempdir, ensure_directory, remove_dir, rename, softlink, touch, write_file,
 };
@@ -539,8 +539,10 @@ fn test_pants_from_bad_pex_version(scie_pants_scie: &Path) {
     .unwrap_err();
 
     let error_text = err.to_string();
-    assert!(error_text
-        .contains("Pants version must be a full version, including patch level, got: `2.19`."));
+    assert!(
+        error_text
+            .contains("Pants version must be a full version, including patch level, got: `2.19`.")
+    );
     assert!(error_text.contains(
         "Please add `.<patch_version>` to the end of the version. For example: `2.18` -> `2.18.0`."
     ));
@@ -972,22 +974,22 @@ fn test_caching_issue_129(scie_pants_scie: &Path) {
                 if !dir_entry.file_type().is_file() {
                     return None;
                 }
-                if let Some(file_name) = dir_entry.file_name().to_str() {
-                    if let Some(parent_dir) = dir_entry.path().parent() {
-                        if let Some(parent_dir_name) = parent_dir.file_name() {
-                            if "locks" != parent_dir_name {
-                                return None;
-                            }
-                        }
-                        if !file_name.ends_with(".lck") {
-                            return None;
-                        }
-                        if file_name.starts_with("configure-") {
-                            return Some(LockType::Configure);
-                        }
-                        if file_name.starts_with("install-") {
-                            return Some(LockType::Install);
-                        }
+                if let Some(file_name) = dir_entry.file_name().to_str()
+                    && let Some(parent_dir) = dir_entry.path().parent()
+                {
+                    if let Some(parent_dir_name) = parent_dir.file_name()
+                        && "locks" != parent_dir_name
+                    {
+                        return None;
+                    }
+                    if !file_name.ends_with(".lck") {
+                        return None;
+                    }
+                    if file_name.starts_with("configure-") {
+                        return Some(LockType::Configure);
+                    }
+                    if file_name.starts_with("install-") {
+                        return Some(LockType::Install);
                     }
                 }
                 None
@@ -1147,16 +1149,20 @@ fn test_non_utf8_env_vars_issue_198(scie_pants_scie: &Path) {
     // N.B.: This is a very hacky way to confirm the `scie-jump` is done processing env vars and has
     // exec'd the `scie-pants` native client; which then proceeds to choke on env vars in the same
     // way scie-jump <= 0.11.0 did using `env::vars()`.
-    assert!(Regex::new(concat!(
-        r#"exe: ".*/bindings/venvs/2\.17\.0a1/lib/python3\.9/"#,
-        r#"site-packages/pants/bin/native_client""#
-    ))
-    .unwrap()
-    .find(&error_text)
-    .is_some());
+    assert!(
+        Regex::new(concat!(
+            r#"exe: ".*/bindings/venvs/2\.17\.0a1/lib/python3\.9/"#,
+            r#"site-packages/pants/bin/native_client""#
+        ))
+        .unwrap()
+        .find(&error_text)
+        .is_some()
+    );
     assert!(error_text.contains("[DEBUG TimerFinished] jump::prepare_boot(), Elapsed="));
-    assert!(error_text
-        .contains(r#"panicked at 'called `Result::unwrap()` on an `Err` value: "B\xA5R"'"#));
+    assert!(
+        error_text
+            .contains(r#"panicked at 'called `Result::unwrap()` on an `Err` value: "B\xA5R"'"#)
+    );
 
     // The error path we test below requires flowing through the pantsd path via PyNailgunClient.
     let err = execute(

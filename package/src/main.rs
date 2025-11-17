@@ -16,15 +16,15 @@ use std::io::Write;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Result};
-use clap::{arg, command, Parser, Subcommand};
+use anyhow::{Result, bail};
+use clap::{Parser, Subcommand, arg, command};
 use termcolor::{Color, WriteColor};
 use utils::fs;
 
-use crate::scie_pants::{build_scie_pants_scie, SciePantsBuild};
+use crate::scie_pants::{SciePantsBuild, build_scie_pants_scie};
 use crate::test::run_integration_tests;
 use crate::tools_pex::build_tools_pex;
-use crate::utils::build::{check_sha256, fetch_science, BuildContext};
+use crate::utils::build::{BuildContext, check_sha256, fetch_science};
 use crate::utils::fs::{base_name, canonicalize, copy, ensure_directory};
 
 const BINARY: &str = "scie-pants";
