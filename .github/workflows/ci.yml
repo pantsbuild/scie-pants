@@ -49,7 +49,7 @@ jobs:
     env:
       PY: python3.9
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
-      PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SCIENCE_AUTH_API_GITHUB_COM_BEARER: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - name: Check Formatting
@@ -100,8 +100,7 @@ jobs:
           # bytecode if the particular wheel was ever run against in the past. This leads to varying
           # final PEX content.
           #
-          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test --check --tools-pex-mismatch-warn
+          cargo run -p package -- test --check --tools-pex-mismatch-warn
       - name: Build, Package & Integration Tests (Ubuntu)
         if: ${{ matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
         run: |
@@ -117,8 +116,7 @@ jobs:
           echo
           echo "Running under: $(uname -a)"
           echo
-          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test \
-              --tools-pex dist/tools.pex --scie-pants dist/scie-pants \
-              --check \
-              --tools-pex-mismatch-warn
+          cargo run -p package -- test \
+            --tools-pex dist/tools.pex --scie-pants dist/scie-pants \
+            --check \
+            --tools-pex-mismatch-warn
