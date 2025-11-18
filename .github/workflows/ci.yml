@@ -47,7 +47,7 @@ jobs:
             name: windows-2022
 
     env:
-      PY: python3.9
+      PY: python3.11
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
       SCIENCE_AUTH_API_GITHUB_COM_BEARER: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -60,7 +60,7 @@ jobs:
         run: cargo clippy --locked --all
       - name: Unit Tests
         run: cargo test --all
-      - name: Setup Python 3.9 (Ubuntu only)
+      - name: Setup Python 3.9, 3.10, 3.11 (Ubuntu only)
         if: ${{ matrix.os == 'ubuntu-22.04' }}
         uses: actions/setup-python@v6
         with:
