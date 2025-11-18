@@ -845,7 +845,7 @@ fn test_use_pants_release_in_pants_repo(
     scie_pants_scie: &Path,
     pants_2_31_0_dev2_clone_dir: &PathBuf,
 ) {
-    let pants_release = "2.31.0.dev2";
+    let pants_release = "2.31.0.dev1";
     integration_test!("Verify usage of Pants {pants_release} on the pants repo.");
     let (output, stderr) = assert_stderr_output(
         Command::new(scie_pants_scie)
