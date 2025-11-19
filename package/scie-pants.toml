@@ -24,37 +24,44 @@ version = "3.8.20"
 [[lift.interpreters]]
 id = "cpython39"
 provider = "PythonBuildStandalone"
-release = "20250612"
+release = "20251031"
 lazy = true
-version = "3.9.23"
+version = "3.9.25"
 
 [[lift.interpreters]]
 id = "cpython310"
 provider = "PythonBuildStandalone"
-release = "20250612"
+release = "20251031"
 lazy = true
-version = "3.10.18"
+version = "3.10.19"
 
 [[lift.interpreters]]
 id = "cpython311"
 provider = "PythonBuildStandalone"
-release = "20250612"
+release = "20251031"
 lazy = true
-version = "3.11.13"
+version = "3.11.14"
 
 [[lift.interpreters]]
 id = "cpython312"
 provider = "PythonBuildStandalone"
-release = "20250612"
+release = "20251031"
 lazy = true
-version = "3.12.11"
+version = "3.12.12"
 
 [[lift.interpreters]]
 id = "cpython313"
 provider = "PythonBuildStandalone"
-release = "20250612"
+release = "20251031"
 lazy = true
-version = "3.13.5"
+version = "3.13.9"
+
+[[lift.interpreters]]
+id = "cpython314"
+provider = "PythonBuildStandalone"
+release = "20251031"
+lazy = true
+version = "3.14.0"
 
 [[lift.interpreter_groups]]
 id = "cpython"
@@ -66,6 +73,7 @@ members = [
     "cpython311",
     "cpython312",
     "cpython313",
+    "cpython314",
 ]
 
 [[lift.files]]
