@@ -16,7 +16,7 @@ use termcolor::WriteColor;
 use crate::utils::exe::{binary_full_name, execute, prepare_exe};
 use crate::utils::fs::{copy, ensure_directory, path_as_str, rename};
 use crate::utils::os::PATHSEP;
-use crate::{build_step, BINARY, SCIENCE_TAG};
+use crate::{BINARY, SCIENCE_TAG, build_step};
 
 const CARGO: &str = env!("CARGO");
 const CARGO_MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
@@ -54,7 +54,10 @@ pub(crate) fn check_sha256(path: &Path) -> Result<()> {
 
 fn fetch_file(url: &str, dest_file: &Path) -> Result<()> {
     let mut file = File::create(dest_file)?;
-    std::io::copy(&mut ureq::get(url).call()?.into_reader(), &mut file)?;
+    std::io::copy(
+        &mut ureq::get(url).call()?.into_body().as_reader(),
+        &mut file,
+    )?;
     Ok(())
 }
 

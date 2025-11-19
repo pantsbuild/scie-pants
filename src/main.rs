@@ -6,10 +6,10 @@ use std::ffi::{OsStr, OsString};
 use std::fmt::Debug;
 use std::path::PathBuf;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use build_root::BuildRoot;
 use log::{info, trace};
-use logging_timer::{time, timer, Level};
+use logging_timer::{Level, time, timer};
 use uuid::Uuid;
 
 use crate::config::PantsConfig;
@@ -66,7 +66,7 @@ impl Process {
         );
 
         for (name, value) in self.env {
-            env::set_var(name, value);
+            unsafe { env::set_var(name, value) };
         }
 
         execv(&c_exe, &c_args)
@@ -316,11 +316,11 @@ fn main() -> Result<()> {
     // N.B.: The bogus version of `report` is used to signal scie-pants should report version
     // information for the update tool to use in determining if there are newer versions of
     // scie-pants available.
-    if let Ok(value) = env::var("PANTS_BOOTSTRAP_VERSION") {
-        if "report" == value.as_str() {
-            println!("{}", SCIE_PANTS_VERSION);
-            std::process::exit(0);
-        }
+    if let Ok(value) = env::var("PANTS_BOOTSTRAP_VERSION")
+        && "report" == value.as_str()
+    {
+        println!("{}", SCIE_PANTS_VERSION);
+        std::process::exit(0);
     }
 
     let pants_process = if let Ok(value) = env::var("PANTS_SOURCE") {

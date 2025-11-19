@@ -5,5 +5,18 @@ version: 2
 updates:
   - package-ecosystem: "cargo"
     directory: "/"
+    groups:
+      rust-deps:
+        patterns:
+          - "*"
     schedule:
       interval: "weekly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    groups:
+      gha-deps:
+        patterns:
+          - "*"
+    schedule:
+      interval: "monthly"

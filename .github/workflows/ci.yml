@@ -1,10 +1,12 @@
 name: CI
 on:
   push:
-    # Ignore non top-level branches.
-    branches-ignore:
-    - '*/**'
+    branches: 
+      - main
   pull_request:
+    branches: 
+      - main
+
 defaults:
   run:
     shell: bash
@@ -45,8 +47,9 @@ jobs:
             name: windows-2022
 
     env:
-      PY: python3.9
+      PY: python3.11
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
+      SCIENCE_AUTH_API_GITHUB_COM_BEARER: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - name: Check Formatting
@@ -57,13 +60,14 @@ jobs:
         run: cargo clippy --locked --all
       - name: Unit Tests
         run: cargo test --all
-      - name: Setup Python 3.9 (Ubuntu only)
+      - name: Setup Python 3.9, 3.10, 3.11 (Ubuntu only)
         if: ${{ matrix.os == 'ubuntu-22.04' }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
-          # N.B.: We need Python 3.9 for running Pants goals against our tools.pex Python tools
-          # codebase as well as running Pants from sources in ITs.
-          python-version: "3.9"
+          python-version: |-
+            3.9
+            3.10
+            3.11
       - name: Compute cache key
         id: build_it_cache_key
         run: |
@@ -97,8 +101,7 @@ jobs:
           # bytecode if the particular wheel was ever run against in the past. This leads to varying
           # final PEX content.
           #
-          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test --check --tools-pex-mismatch-warn
+          cargo run -p package -- test --check --tools-pex-mismatch-warn
       - name: Build, Package & Integration Tests (Ubuntu)
         if: ${{ matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
         run: |
@@ -106,7 +109,7 @@ jobs:
           docker run --rm \
             -v $PWD:/code \
             -w /code \
-            rust:1.86.0-alpine3.21 \
+            rust:1.91.1-alpine3.21 \
               sh -c '
                 apk add cmake make musl-dev perl && \
                 cargo run -p package -- --dest-dir dist/ scie-pants
@@ -114,8 +117,7 @@ jobs:
           echo
           echo "Running under: $(uname -a)"
           echo
-          PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN=${{ secrets.GITHUB_TOKEN }} \
-            cargo run -p package -- test \
-              --tools-pex dist/tools.pex --scie-pants dist/scie-pants \
-              --check \
-              --tools-pex-mismatch-warn
+          cargo run -p package -- test \
+            --tools-pex dist/tools.pex --scie-pants dist/scie-pants \
+            --check \
+            --tools-pex-mismatch-warn

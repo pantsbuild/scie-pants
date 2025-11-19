@@ -8,11 +8,11 @@ repo = "https://github.com/pantsbuild/scie-pants"
 
 [lift.ptex]
 id = "ptex"
-version = "0.7.0"
+version = "1.7.0"
 argv1 = "{scie.env.PANTS_BOOTSTRAP_URLS={scie.lift}}"
 
 [lift.scie_jump]
-version = "0.14.0"
+version = "1.6.1"
 
 [[lift.interpreters]]
 id = "cpython38"
