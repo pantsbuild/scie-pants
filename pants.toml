@@ -17,7 +17,8 @@ config = "tools/pyproject.toml"
 
 [python]
 enable_resolves = true
-interpreter_constraints = [">=3.8,<3.12"]
+interpreter_constraints = [">=3.8,<3.15"]
+pip_version = "24.3.1"
 
 # We generate this via cargo run -p package -- --update-lock.
 resolves_generate_lockfiles = false
@@ -29,12 +30,12 @@ python-default = "tools/lock.json"
 use_rust_parser = true
 
 [pex-cli]
-version = "v2.30.0"
+version = "v2.70.0"
 known_versions = [
-    "v2.30.0|macos_arm64 |f68d6683749fb2d7cd5c7a62c72e1b5f9155b0bc0f752f7ceb83855164bfee56|4374406",
-    "v2.30.0|macos_x86_64|f68d6683749fb2d7cd5c7a62c72e1b5f9155b0bc0f752f7ceb83855164bfee56|4374406",
-    "v2.30.0|linux_x86_64|f68d6683749fb2d7cd5c7a62c72e1b5f9155b0bc0f752f7ceb83855164bfee56|4374406",
-    "v2.30.0|linux_arm64 |f68d6683749fb2d7cd5c7a62c72e1b5f9155b0bc0f752f7ceb83855164bfee56|4374406",
+    "v2.70.0|macos_arm64 |0d5b550b0c31992ea852c604d9ac2fcb14b1c82a4ea3d26a84c7a22ab86a4417|4937924",
+    "v2.70.0|macos_x86_64|0d5b550b0c31992ea852c604d9ac2fcb14b1c82a4ea3d26a84c7a22ab86a4417|4937924",
+    "v2.70.0|linux_x86_64|0d5b550b0c31992ea852c604d9ac2fcb14b1c82a4ea3d26a84c7a22ab86a4417|4937924",
+    "v2.70.0|linux_arm64 |0d5b550b0c31992ea852c604d9ac2fcb14b1c82a4ea3d26a84c7a22ab86a4417|4937924",
 ]
 
 [subprocess-environment]
