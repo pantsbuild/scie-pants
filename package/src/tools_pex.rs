@@ -45,7 +45,7 @@ pub(crate) fn build_tools_pex(
     let requirements = path_as_str(&requirements_path)?;
     let test_requirements_path = tools_path.join("test-requirements.txt");
     let test_requirements = path_as_str(&test_requirements_path)?;
-    let interpreter_constraints = ["--interpreter-constraint", "CPython>=3.8,<3.12"];
+    let interpreter_constraints = ["--interpreter-constraint", "CPython>=3.8,<3.15"];
 
     if update_lock {
         build_step!("Updating the scie_jump tools lock file");
