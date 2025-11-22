@@ -152,6 +152,8 @@ pub(crate) fn run_integration_tests(
         log!(Color::Yellow, "Turning off pantsd for remaining tests.");
         unsafe { env::set_var("PANTS_PANTSD", "False") };
 
+        // TODO: Replace this with a real branch when ready
+        test_pants_314_temporary_release_requiring_python_3_14(scie_pants_scie);
         test_pants_2_25_using_python_3_11(scie_pants_scie);
         test_python_repos_repos(scie_pants_scie);
         test_initialize_new_pants_project(scie_pants_scie);
@@ -377,6 +379,75 @@ fn test_pants_bootstrap_tools(scie_pants_scie: &Path) {
             .args(["bootstrap-cache-key"]),
     )
     .unwrap();
+}
+
+fn test_pants_314_temporary_release_requiring_python_3_14(scie_pants_scie: &Path) {
+    integration_test!("Verifying we can run Pants 2.32.0, which uses Python 3.14");
+    // Pants 2.32+ is built on macOS 13 (x86-64) and 14 (arm64), and only truly supports those
+    // versions. See https://github.com/pantsbuild/pants/pull/21655
+    if is_macos_thats_too_old(13, 14) {
+        log!(
+            Color::Yellow,
+            "Pants 2.32+ cannot run on this version of macOS => skipping"
+        );
+        return;
+    }
+
+    let tmpdir = create_tempdir().unwrap();
+    let pants_release = "2.32.0.dev0";
+    write_file(
+        &tmpdir.path().join("pants.toml"),
+        false,
+        format!(
+            r#"
+            [GLOBAL]
+            pants_version = "{pants_release}"
+            [anonymous-telemetry]
+            enabled = false
+            "#
+        ),
+    )
+    .unwrap();
+
+    write_file(
+        &tmpdir.path().join("bootstrap.json"),
+        false,
+        r#"
+            {
+              "ptex": {
+                "cpython-3.9.25+20251031-aarch64-apple-darwin-install_only.tar.gz": "https://github.com/astral-sh/python-build-standalone/releases/download/20251031/cpython-3.9.25+20251031-aarch64-apple-darwin-install_only.tar.gz",
+                "cpython-3.11.14+20251120-aarch64-apple-darwin-install_only.tar.gz": "https://github.com/astral-sh/python-build-standalone/releases/download/20251120/cpython-3.11.14+20251120-aarch64-apple-darwin-install_only.tar.gz",
+                "cpython-3.14.0+20251120-aarch64-apple-darwin-install_only.tar.gz": "https://github.com/astral-sh/python-build-standalone/releases/download/20251120/cpython-3.14.0+20251120-aarch64-apple-darwin-install_only.tar.gz",
+                "cpython-3.9.25+20251031-x86_64-apple-darwin-install_only.tar.gz": "https://github.com/astral-sh/python-build-standalone/releases/download/20251031/cpython-3.9.25+20251031-x86_64-apple-darwin-install_only.tar.gz",
+                "cpython-3.11.14+20251120-x86_64-apple-darwin-install_only.tar.gz": "https://github.com/astral-sh/python-build-standalone/releases/download/20251120/cpython-3.11.14+20251120-x86_64-apple-darwin-install_only.tar.gz",
+                "cpython-3.14.0+20251120-x86_64-apple-darwin-install_only.tar.gz": "https://github.com/astral-sh/python-build-standalone/releases/download/20251120/cpython-3.14.0+20251120-x86_64-apple-darwin-install_only.tar.gz",
+                "cpython-3.9.25+20251031-aarch64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/astral-sh/python-build-standalone/releases/download/20251031/cpython-3.9.25+20251031-aarch64-unknown-linux-gnu-install_only.tar.gz",
+                "cpython-3.11.14+20251120-aarch64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/astral-sh/python-build-standalone/releases/download/20251120/cpython-3.11.14+20251120-aarch64-unknown-linux-gnu-install_only.tar.gz",
+                "cpython-3.14.0+20251120-aarch64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/astral-sh/python-build-standalone/releases/download/20251120/cpython-3.14.0+20251120-aarch64-unknown-linux-gnu-install_only.tar.gz",
+                "cpython-3.9.25+20251031-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/astral-sh/python-build-standalone/releases/download/20251031/cpython-3.9.25+20251031-x86_64-unknown-linux-gnu-install_only.tar.gz",
+                "cpython-3.11.14+20251120-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/astral-sh/python-build-standalone/releases/download/20251120/cpython-3.11.14+20251120-x86_64-unknown-linux-gnu-install_only.tar.gz",
+                "cpython-3.14.0+20251120-x86_64-unknown-linux-gnu-install_only.tar.gz": "https://github.com/astral-sh/python-build-standalone/releases/download/20251120/cpython-3.14.0+20251120-x86_64-unknown-linux-gnu-install_only.tar.gz",
+                "pants.2.32.0.dev0-cp314-darwin_arm64.pex": "https://github.com/sureshjoshi/pants/releases/download/2.32.0.dev0-py314/pants-pex.pex"
+              }
+            }
+            "#,
+    )
+    .unwrap();
+
+    let output = execute(
+        Command::new(scie_pants_scie)
+            .arg("-V")
+            .env("PANTS_BOOTSTRAP_URLS", "bootstrap.json")
+            .current_dir(&tmpdir)
+            .stdout(Stdio::piped()),
+    )
+    .unwrap();
+
+    let stdout = decode_output(output.stdout).unwrap();
+    assert!(
+        stdout.contains(pants_release),
+        "STDOUT did not contain '{pants_release}':\n{stdout}"
+    );
 }
 
 fn test_pants_2_25_using_python_3_11(scie_pants_scie: &Path) {
