@@ -12,7 +12,7 @@ version = "1.7.0"
 argv1 = "{scie.env.PANTS_BOOTSTRAP_URLS={scie.lift}}"
 
 [lift.scie_jump]
-version = "1.6.1"
+version = "1.8.2"
 
 [[lift.interpreters]]
 id = "cpython38"
@@ -31,35 +31,35 @@ version = "3.9.25"
 [[lift.interpreters]]
 id = "cpython310"
 provider = "PythonBuildStandalone"
-release = "20251031"
+release = "20251120"
 lazy = true
 version = "3.10.19"
 
 [[lift.interpreters]]
 id = "cpython311"
 provider = "PythonBuildStandalone"
-release = "20251031"
+release = "20251120"
 lazy = true
 version = "3.11.14"
 
 [[lift.interpreters]]
 id = "cpython312"
 provider = "PythonBuildStandalone"
-release = "20251031"
+release = "20251120"
 lazy = true
 version = "3.12.12"
 
 [[lift.interpreters]]
 id = "cpython313"
 provider = "PythonBuildStandalone"
-release = "20251031"
+release = "20251120"
 lazy = true
 version = "3.13.9"
 
 [[lift.interpreters]]
 id = "cpython314"
 provider = "PythonBuildStandalone"
-release = "20251031"
+release = "20251120"
 lazy = true
 version = "3.14.0"
 

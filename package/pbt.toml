@@ -8,7 +8,7 @@ Python Build Tool: A BusyBox that provides `python`, `pip`, `pex`, `pex3` and `p
 version = "1.7.0"
 
 [lift.scie_jump]
-version = "1.6.1"
+version = "1.8.2"
 
 [[lift.interpreters]]
 id = "cpython"
