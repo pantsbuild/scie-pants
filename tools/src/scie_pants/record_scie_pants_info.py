@@ -36,7 +36,7 @@ def main() -> NoReturn:
 
     version = subprocess.run(
         args=[options.scie],
-        env={"PANTS_BOOTSTRAP_VERSION": "report"},
+        env={**os.environ, "PANTS_BOOTSTRAP_VERSION": "report"},
         stdout=subprocess.PIPE,
         text=True,
         check=True,
