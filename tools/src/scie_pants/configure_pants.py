@@ -65,7 +65,7 @@ def main() -> NoReturn:
     )
     parser.add_argument(
         "--pants-bootstrap-urls",
-        type=str,
+        action="append",
         help="The path to the JSON file containing alternate URLs for downloaded artifacts.",
     )
     parser.add_argument("base_dir", nargs=1, help="The base directory to create Pants venvs in.")
@@ -91,7 +91,7 @@ def main() -> NoReturn:
             pants_version=options.pants_version,
             find_links_dir=find_links_dir,
             github_api_bearer_token=options.github_api_bearer_token,
-            bootstrap_urls_path=options.pants_bootstrap_urls,
+            bootstrap_urls_paths=options.pants_bootstrap_urls,
         )
     else:
         if pants_config:
@@ -109,7 +109,7 @@ def main() -> NoReturn:
             pants_config=pants_config,
             find_links_dir=find_links_dir,
             github_api_bearer_token=options.github_api_bearer_token,
-            bootstrap_urls_path=options.pants_bootstrap_urls,
+            bootstrap_urls_paths=tuple(options.pants_bootstrap_urls),
         )
         finalizers.append(configure_version)
 
