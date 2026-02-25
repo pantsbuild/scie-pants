@@ -16,7 +16,7 @@ See the official installation recommendations here for use as your `pants` launc
 https://www.pantsbuild.org/docs/installation
 
 The binaries are released via [GitHub Releases](https://github.com/pantsbuild/scie-pants/releases)
-for both Linux and macOS and both aarch64 and x86_64 chip architectures.
+for Linux (aarch64 and x86_64) and macOS (aarch64).
 
 If you'd like to build your own version, see the [contribution guide](CONTRIBUTING.md). There are
 build instructions there.

@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.13.0
+
+Remove support for MacOS 13 on Intel. Pants itself, from version 2.31.0, no longer
+supports this platform.
+
 ## 0.12.5
 
 A better error message for an invalid Pants source directory.

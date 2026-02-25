@@ -49,9 +49,8 @@ fn decode_output(output: Vec<u8>) -> Result<String> {
 /// Returns true if the current platform is a macOS major version that's older than the requested minimums.
 ///
 /// (NB. Running on a non-macOS platform will always return false.)
-fn is_macos_thats_too_old(minimum_x86_64: i64, minimum_arm64: i64) -> bool {
+fn is_macos_thats_too_old(minimum_arm64: i64) -> bool {
     let min_major = match *CURRENT_PLATFORM {
-        Platform::MacOSX86_64 => minimum_x86_64,
         Platform::MacOSAarch64 => minimum_arm64,
         _ => return false,
     };
@@ -136,11 +135,11 @@ pub(crate) fn run_integration_tests(
     // Our `.pants.bootstrap` uses `tput` which requires TERM be set: ensure it is.
     unsafe { env::set_var("TERM", env::var_os("TERM").unwrap_or_else(|| "dumb".into())) };
 
-    // Max Python supported is 3.9 and only Linux x86_64 and macOS aarch64 and x86_64 wheels were
-    // released.
+    // Max Python supported is 3.9 and only Linux x86_64 (aarch64 and x86_64) and macOS (aarch64)
+    // wheels are released.
     if matches!(
         *CURRENT_PLATFORM,
-        Platform::LinuxX86_64 | Platform::MacOSAarch64 | Platform::MacOSX86_64
+        Platform::LinuxX86_64 | Platform::MacOSAarch64
     ) {
         test_tools(scie_pants_scie, check);
         test_pants_bin_name_handling(scie_pants_scie);
@@ -199,11 +198,9 @@ pub(crate) fn run_integration_tests(
         test_pants_bootstrap_urls(scie_pants_scie);
     }
 
-    // Max Python supported is 3.8 and only Linux and macOS x86_64 wheels were released.
-    if matches!(
-        *CURRENT_PLATFORM,
-        Platform::LinuxX86_64 | Platform::MacOSX86_64
-    ) {
+    // Max Python supported is 3.8 and only Linux x86_64 wheels were released (macOS x86_64
+    // wheels were also released, but scie-pants no longer runs on that platform).
+    if matches!(*CURRENT_PLATFORM, Platform::LinuxX86_64) {
         test_python38_used_for_old_pants(scie_pants_scie);
     }
 
@@ -381,9 +378,9 @@ fn test_pants_bootstrap_tools(scie_pants_scie: &Path) {
 
 fn test_pants_2_25_using_python_3_11(scie_pants_scie: &Path) {
     integration_test!("Verifying we can run Pants 2.25+, which uses Python 3.11");
-    // Pants 2.25 is built on macOS 13 (x86-64) and 14 (arm64), and only truly supports those
-    // versions. See https://github.com/pantsbuild/pants/pull/21655
-    if is_macos_thats_too_old(13, 14) {
+    // Pants 2.25 is built on macOS 14 (arm64), and only truly supports that version.
+    // See https://github.com/pantsbuild/pants/pull/21655
+    if is_macos_thats_too_old(14) {
         log!(
             Color::Yellow,
             "Pants 2.25 cannot run on this version of macOS => skipping"
@@ -423,7 +420,7 @@ fn test_initialize_new_pants_project(scie_pants_scie: &Path) {
     integration_test!("Verifying initializing a new Pants project works");
     // This test uses the latest Pants version (as it runs in a repo with no pants.toml).
     // So we must only run it on appropriate macos versions.
-    if is_macos_thats_too_old(13, 14) {
+    if is_macos_thats_too_old(14) {
         log!(
             Color::Yellow,
             "The latest version of Pants cannot run on this version of macOS => skipping"
@@ -892,11 +889,6 @@ fn test_python38_used_for_old_pants(scie_pants_scie: &Path) {
                 ]",
         )
         .args(["--no-verify-config", "--version"]);
-    if Platform::MacOSX86_64 == *CURRENT_PLATFORM {
-        // For unknown reasons, macOS x86_64 hangs in CI if this last test, like all prior tests
-        // nonetheless!, is run with pantsd enabled mode.
-        command.arg("--no-pantsd");
-    }
     execute(&mut command).unwrap();
 }
 
