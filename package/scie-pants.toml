@@ -155,6 +155,7 @@ name = "update"
 description = "Update scie-pants."
 exe = "#{cpython39:python}"
 args = [
+    "-I",
     "{tools.pex}",
     "update-scie-pants",
     "--ptex-path",
@@ -184,6 +185,7 @@ name = "scie-pants-info"
 description = "Records information about the current scie-pants binary."
 exe = "#{cpython39:python}"
 args = [
+    "-I",
     "{tools.pex}",
     "record-scie-pants-info",
     "--base-dir",
@@ -205,6 +207,7 @@ name = "configure"
 description = "Prompts the user for missing Pants configuration if needed."
 exe = "#{cpython39:python}"
 args = [
+    "-I",
     "{tools.pex}",
     "configure-pants",
     "--ptex-path",
