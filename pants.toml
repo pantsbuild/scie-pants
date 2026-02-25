@@ -32,7 +32,6 @@ use_rust_parser = true
 version = "v2.30.0"
 known_versions = [
     "v2.30.0|macos_arm64 |f68d6683749fb2d7cd5c7a62c72e1b5f9155b0bc0f752f7ceb83855164bfee56|4374406",
-    "v2.30.0|macos_x86_64|f68d6683749fb2d7cd5c7a62c72e1b5f9155b0bc0f752f7ceb83855164bfee56|4374406",
     "v2.30.0|linux_x86_64|f68d6683749fb2d7cd5c7a62c72e1b5f9155b0bc0f752f7ceb83855164bfee56|4374406",
     "v2.30.0|linux_arm64 |f68d6683749fb2d7cd5c7a62c72e1b5f9155b0bc0f752f7ceb83855164bfee56|4374406",
 ]
