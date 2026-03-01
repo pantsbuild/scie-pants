@@ -169,25 +169,24 @@ pub(crate) fn run_integration_tests(
 
         let dev_cache_dir = crate::utils::fs::dev_cache_dir()?;
         let clone_dir = dev_cache_dir.join("clones");
-        let pants_2_31_0_dev2_clone_dir = clone_dir.join("pants-2.31.0.dev2");
+        let pants_2_31_0_clone_dir = clone_dir.join("pants-2.31.0");
         let venv_dir = dev_cache_dir.join("venvs");
-        let pants_2_31_0_dev2_venv_dir = venv_dir.join("pants-2.31.0.dev2");
+        let pants_2_31_0_venv_dir = venv_dir.join("pants-2.31.0");
 
         test_pants_source_mode(
             scie_pants_scie,
             &clone_dir,
-            &pants_2_31_0_dev2_clone_dir,
+            &pants_2_31_0_clone_dir,
             &venv_dir,
-            &pants_2_31_0_dev2_venv_dir,
+            &pants_2_31_0_venv_dir,
         );
         test_pants_from_sources_mode(
             scie_pants_scie,
-            &pants_2_31_0_dev2_clone_dir,
-            &pants_2_31_0_dev2_venv_dir,
+            &pants_2_31_0_clone_dir,
+            &pants_2_31_0_venv_dir,
         );
-        test_delegate_pants_in_pants_repo(scie_pants_scie, &pants_2_31_0_dev2_clone_dir);
-        // Nov 17, 2025: Commenting out test that is hard to pass
-        // test_use_pants_release_in_pants_repo(scie_pants_scie, &pants_2_31_0_dev2_clone_dir);
+        test_delegate_pants_in_pants_repo(scie_pants_scie, &pants_2_31_0_clone_dir);
+        test_use_pants_release_in_pants_repo(scie_pants_scie, &pants_2_31_0_clone_dir);
 
         test_caching_issue_129(scie_pants_scie);
         test_custom_pants_toml_issue_153(scie_pants_scie);
@@ -684,17 +683,17 @@ fn test_dot_env_error(scie_pants_scie: &Path) {
 fn test_pants_source_mode(
     scie_pants_scie: &Path,
     clone_dir: &Path,
-    pants_2_31_0_dev2_clone_dir: &Path,
+    pants_2_31_0_clone_dir: &Path,
     venv_dir: &Path,
-    pants_2_31_0_dev2_venv_dir: &Path,
+    pants_2_31_0_venv_dir: &Path,
 ) {
     integration_test!("Verify PANTS_SOURCE mode.");
     // NB. we assume that these directories are setup perfectly if they exist. A possible failure
     // mode is the symlinks to python interpreters in the venv; if the system changes to make them
-    // invalid, we start getting errors like `${pants_2_31_0_dev2_venv_dir}/.../bin/python: No such file
+    // invalid, we start getting errors like `${pants_2_31_0_venv_dir}/.../bin/python: No such file
     // or directory`. This can occur in practice with cross-runner caching and the runner updating,
     // but our cache key is designed to avoid this (see `build_it_cache_key` step in ci.yml).
-    if !pants_2_31_0_dev2_clone_dir.exists() || !pants_2_31_0_dev2_venv_dir.exists() {
+    if !pants_2_31_0_clone_dir.exists() || !pants_2_31_0_venv_dir.exists() {
         let clone_root_tmp = create_tempdir().unwrap();
         let clone_root_path = clone_root_tmp
             .path()
@@ -704,9 +703,9 @@ fn test_pants_source_mode(
             })
             .unwrap();
         execute(Command::new("git").args(["init", clone_root_path])).unwrap();
-        // N.B.: The release_2.31.0.dev2 tag has sha 86d7491e15324e87e457b47ae40d3eb66e87bd1a and we
-        // must pass a full sha to use the shallow fetch trick.
-        const PANTS_2_31_0_DEV2_SHA: &str = "86d7491e15324e87e457b47ae40d3eb66e87bd1a";
+
+        // We must pass a full sha to use the shallow fetch trick.
+        const PANTS_2_31_0_SHA: &str = "29576ba14d5aeb4a9e742e32b8429bad43f15c11";
         execute(
             Command::new("git")
                 .args([
@@ -714,14 +713,14 @@ fn test_pants_source_mode(
                     "--depth",
                     "1",
                     "https://github.com/pantsbuild/pants",
-                    PANTS_2_31_0_DEV2_SHA,
+                    PANTS_2_31_0_SHA,
                 ])
                 .current_dir(clone_root_tmp.path()),
         )
         .unwrap();
         execute(
             Command::new("git")
-                .args(["reset", "--hard", PANTS_2_31_0_DEV2_SHA])
+                .args(["reset", "--hard", PANTS_2_31_0_SHA])
                 .current_dir(clone_root_tmp.path()),
         )
         .unwrap();
@@ -737,7 +736,7 @@ index 90fa82f6d3..e4f7e97a95 100755
 
  platform=$(uname -mps)
 
-+echo >&2 "The ${SCIE_PANTS_TEST_MODE:-Pants 2.31.0.dev2 clone} is working."
++echo >&2 "The ${SCIE_PANTS_TEST_MODE:-Pants 2.31.0 clone} is working."
 +
  function venv_dir() {
    # Include the entire version string in order to differentiate e.g. PyPy from CPython.
@@ -766,8 +765,8 @@ index 796b3cddd2..aef0e649bb 100644
 --- a/src/python/pants/VERSION
 +++ b/src/python/pants/VERSION
 @@ -1 +1 @@
--2.31.0.dev2
-+2.31.0.dev2+Custom-Local
+-2.31.0
++2.31.0+Custom-Local
 "#,
         )
         .unwrap();
@@ -797,17 +796,17 @@ index 796b3cddd2..aef0e649bb 100644
         )
         .unwrap();
         ensure_directory(clone_dir, true).unwrap();
-        rename(&clone_root_tmp.keep(), pants_2_31_0_dev2_clone_dir).unwrap();
+        rename(&clone_root_tmp.keep(), pants_2_31_0_clone_dir).unwrap();
         ensure_directory(venv_dir, true).unwrap();
-        rename(&venv_root_tmp.keep(), pants_2_31_0_dev2_venv_dir).unwrap();
+        rename(&venv_root_tmp.keep(), pants_2_31_0_venv_dir).unwrap();
     }
 
     assert_stderr_output(
         Command::new(scie_pants_scie)
             .arg("-V")
-            .env("PANTS_SOURCE", pants_2_31_0_dev2_clone_dir)
+            .env("PANTS_SOURCE", pants_2_31_0_clone_dir)
             .env("SCIE_PANTS_TEST_MODE", "PANTS_SOURCE mode")
-            .env("PANTS_VENV_DIR_PREFIX", pants_2_31_0_dev2_venv_dir),
+            .env("PANTS_VENV_DIR_PREFIX", pants_2_31_0_venv_dir),
         vec![
             "The PANTS_SOURCE mode is working.",
             "Pants from sources argv: --no-verify-config -V.",
@@ -815,13 +814,13 @@ index 796b3cddd2..aef0e649bb 100644
         ExpectedResult::Success,
     );
 
-    let invalid_pants_clone_dir = pants_2_31_0_dev2_clone_dir.join("xyzzy");
+    let invalid_pants_clone_dir = pants_2_31_0_clone_dir.join("xyzzy");
     assert_stderr_output(
         Command::new(scie_pants_scie)
             .arg("-V")
             .env("PANTS_SOURCE", &invalid_pants_clone_dir)
             .env("SCIE_PANTS_TEST_MODE", "PANTS_SOURCE mode")
-            .env("PANTS_VENV_DIR_PREFIX", pants_2_31_0_dev2_venv_dir),
+            .env("PANTS_VENV_DIR_PREFIX", pants_2_31_0_venv_dir),
         vec![&format!(
             "Error: Unable to find the `pants` runner script in the requested Pants source directory `{}`. \
             Running Pants from sources was enabled because the `PANTS_SOURCE` environment variable is set.",
@@ -895,40 +894,37 @@ fn test_delegate_pants_in_pants_repo(
     );
 }
 
-// fn test_use_pants_release_in_pants_repo(
-//     scie_pants_scie: &Path,
-//     pants_2_31_0_dev2_clone_dir: &PathBuf,
-// ) {
-//     let pants_release = "2.31.0.dev1";
-//     integration_test!("Verify usage of Pants {pants_release} on the pants repo.");
-//     let (output, stderr) = assert_stderr_output(
-//         Command::new(scie_pants_scie)
-//             .arg("help")
-//             .env("PANTS_VERSION", pants_release)
-//             .env(
-//                 "PANTS_BACKEND_PACKAGES",
-//                 "-[\
-//                     'internal_plugins.test_lockfile_fixtures',\
-//                     'pants_explorer.server',\
-//                     ]",
-//             )
-//             .current_dir(pants_2_31_0_dev2_clone_dir)
-//             .stdout(Stdio::piped()),
-//         vec![],
-//         ExpectedResult::Success,
-//     );
-//     let expected_message = pants_release;
-//     let stdout = decode_output(output.stdout).unwrap();
-//     assert!(
-//         stdout.contains(expected_message),
-//         "STDOUT did not contain '{expected_message}':\n{stdout}"
-//     );
-//     let unexpected_message = "Pants from sources argv";
-//     assert!(
-//         !stderr.contains(unexpected_message),
-//         "STDERR unexpectedly contained '{unexpected_message}':\n{stderr}"
-//     );
-// }
+fn test_use_pants_release_in_pants_repo(scie_pants_scie: &Path, pants_2_31_0_clone_dir: &PathBuf) {
+    let pants_release = "2.31.0rc0";
+    integration_test!("Verify usage of Pants {pants_release} on the pants repo.");
+    let (output, stderr) = assert_stderr_output(
+        Command::new(scie_pants_scie)
+            .arg("help")
+            .env("PANTS_VERSION", pants_release)
+            .env(
+                "PANTS_BACKEND_PACKAGES",
+                "-[\
+                    'internal_plugins.test_lockfile_fixtures',\
+                    'pants_explorer.server',\
+                    ]",
+            )
+            .current_dir(pants_2_31_0_clone_dir)
+            .stdout(Stdio::piped()),
+        vec![],
+        ExpectedResult::Success,
+    );
+    let expected_message = pants_release;
+    let stdout = decode_output(output.stdout).unwrap();
+    assert!(
+        stdout.contains(expected_message),
+        "STDOUT did not contain '{expected_message}':\n{stdout}"
+    );
+    let unexpected_message = "Pants from sources argv";
+    assert!(
+        !stderr.contains(unexpected_message),
+        "STDERR unexpectedly contained '{unexpected_message}':\n{stderr}"
+    );
+}
 
 fn test_python38_used_for_old_pants(scie_pants_scie: &Path) {
     integration_test!("Verifying Python 3.8 is selected for Pants older than 2.5.0");
