@@ -17,7 +17,7 @@ config = "tools/pyproject.toml"
 
 [python]
 enable_resolves = true
-interpreter_constraints = [">=3.8,<3.15"]
+interpreter_constraints = [">=3.9,<3.15"]
 pip_version = "latest"
 separate_lockfile_metadata_file = true
 
