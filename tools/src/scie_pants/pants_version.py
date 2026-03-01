@@ -27,7 +27,7 @@ PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.0.0.dev0")
 PANTS_PYTHON_VERSIONS = [
     # Sorted on pants version in descending order. Add a new entry when the python version for a
     # particular pants version changes.
-    {"pants": "2.32.0.dev0", "python": "cp314"},
+    {"pants": "2.32.0.dev2", "python": "cp314"},
     {"pants": "2.25.0.dev0", "python": "cp311"},
     {"pants": "2.5.0.dev0", "python": "cp39"},
     {"pants": "2.0.0.dev0", "python": "cp38"},

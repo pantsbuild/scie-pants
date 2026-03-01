@@ -8,7 +8,7 @@ Python Build Tool: A BusyBox that provides `python`, `pip`, `pex`, `pex3` and `p
 version = "1.7.0"
 
 [lift.scie_jump]
-version = "1.8.2"
+version = "1.11.2"
 
 [[lift.interpreters]]
 id = "cpython"
@@ -20,8 +20,8 @@ version = "3.8.20"
 [[lift.files]]
 name = "pex"
 type = "blob"
-digest = { size = 4937924, fingerprint = "0d5b550b0c31992ea852c604d9ac2fcb14b1c82a4ea3d26a84c7a22ab86a4417" }
-source = { url = "https://github.com/pantsbuild/pex/releases/download/v2.70.0/pex", lazy = true }
+digest = { size = 5069818, fingerprint = "311d8eb35ad3d64e1c508b7e7ac3479e1fd40911117396f754a9914eb5faf017" }
+source = { url = "https://github.com/pantsbuild/pex/releases/download/v2.90.2/pex", lazy = true }
 
 [[lift.commands]]
 name = "pex"
