@@ -382,7 +382,7 @@ fn test_pants_2_32_dev2_using_python_3_14(scie_pants_scie: &Path) {
     integration_test!("Verifying we can run Pants 2.32.0dev2+, which uses Python 3.14");
     // Pants 2.32+ is built on macOS 13 (x86-64) and 14 (arm64), and only truly supports those
     // versions. See https://github.com/pantsbuild/pants/pull/21655
-    if is_macos_thats_too_old(13, 14) {
+    if is_macos_thats_too_old(14) {
         log!(
             Color::Yellow,
             "Pants 2.32+ cannot run on this version of macOS => skipping"
@@ -409,7 +409,7 @@ fn test_pants_2_32_dev1_using_python_3_11(scie_pants_scie: &Path) {
     integration_test!("Verifying we can run Pants 2.32.0dev1, which uses Python 3.11");
     // Pants 2.32+ is built on macOS 13 (x86-64) and 14 (arm64), and only truly supports those
     // versions. See https://github.com/pantsbuild/pants/pull/21655
-    if is_macos_thats_too_old(13, 14) {
+    if is_macos_thats_too_old(14) {
         log!(
             Color::Yellow,
             "Pants 2.32+ cannot run on this version of macOS => skipping"

@@ -17,7 +17,7 @@ use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Result, bail};
-use clap::{Parser, Subcommand, arg, command};
+use clap::{Parser, Subcommand};
 use termcolor::{Color, WriteColor};
 use utils::fs;
 
