@@ -150,7 +150,7 @@ pub(crate) fn run_integration_tests(
 
         log!(Color::Yellow, "Turning off pantsd for remaining tests.");
         unsafe { env::set_var("PANTS_PANTSD", "False") };
-        
+
         test_pants_2_32_dev2_using_python_3_14(scie_pants_scie);
         test_pants_2_32_dev1_using_python_3_11(scie_pants_scie);
         test_pants_2_25_using_python_3_11(scie_pants_scie);
