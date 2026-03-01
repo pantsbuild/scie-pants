@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.31.0"
+pants_version = "2.26.0"
 
 backend_packages = [
     "pants.backend.python",
@@ -17,9 +17,9 @@ config = "tools/pyproject.toml"
 
 [python]
 enable_resolves = true
-interpreter_constraints = [">=3.9,<3.15"]
-pip_version = "latest"
-separate_lockfile_metadata_file = true
+interpreter_constraints = [">=3.8,<3.15"]
+pip_version = "24.3.1" # Matches the `pip-version` in tools_pex.rs
+#separate_lockfile_metadata_file = true
 
 # We generate this via cargo run -p package -- --update-lock.
 resolves_generate_lockfiles = false
