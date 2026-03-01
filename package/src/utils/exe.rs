@@ -19,7 +19,6 @@ pub(crate) enum Platform {
     LinuxAarch64,
     LinuxX86_64,
     MacOSAarch64,
-    MacOSX86_64,
     WindowsX86_64,
 }
 
@@ -29,7 +28,6 @@ impl Platform {
             ("linux", "aarch64") => Ok(Self::LinuxAarch64),
             ("linux", "x86_64") => Ok(Self::LinuxX86_64),
             ("macos", "aarch64") => Ok(Self::MacOSAarch64),
-            ("macos", "x86_64") => Ok(Self::MacOSX86_64),
             ("windows", "x86_64") => Ok(Self::WindowsX86_64),
             _ => bail!(
                 "Unsupported platform: os={os} arch={arch}",
@@ -44,7 +42,6 @@ impl Platform {
             Platform::LinuxAarch64 => "linux-aarch64",
             Platform::LinuxX86_64 => "linux-x86_64",
             Platform::MacOSAarch64 => "macos-aarch64",
-            Platform::MacOSX86_64 => "macos-x86_64",
             Platform::WindowsX86_64 => "windows-x86_64",
         }
     }

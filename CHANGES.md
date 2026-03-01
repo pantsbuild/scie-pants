@@ -13,6 +13,11 @@ Updated runtime tools to:
 
 Updated to latest patch versions of Python interpreters from [Python Build Standalone (20260211)](https://github.com/astral-sh/python-build-standalone/releases/tag/20260211). Note: PBS will no longer provide Python 3.9 builds - so will remain on [Python Build Standalone (20251031)](https://github.com/astral-sh/python-build-standalone/releases/tag/20251031).
 
+## 0.13.0
+
+Remove support for MacOS 13 on Intel. Pants itself, from version 2.31.0, no longer
+supports this platform.
+
 ## 0.12.5
 
 A better error message for an invalid Pants source directory.
