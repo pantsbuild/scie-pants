@@ -2,14 +2,14 @@
 
 ## next
 
-Added support for Python 3.14 (required for a recent Pants release).
+Support for Pants 2.32.0.dev2 and newer, which run on Python 3.14 instead of 3.11.
 
-Updated scie-pants to build using Rust 1.91.1 and the 2024 edition.
+Updated scie-pants to build using Rust 1.93.1 and the 2024 edition.
 
 Updated runtime tools to:
-- [Science 0.18.1](https://github.com/a-scie/lift/releases/tag/v0.18.1)
+- [Jump 1.6.1](https://github.com/a-scie/jump/releases/tag/v1.6.1)
 - [Ptex 1.7.0](https://github.com/a-scie/ptex/releases/tag/v1.7.0)
-- [Jump 1.11.2](https://github.com/a-scie/jump/releases/tag/v1.11.2)
+- [Science 0.18.1](https://github.com/a-scie/lift/releases/tag/v0.18.1)
 
 Updated to latest patch versions of Python interpreters from [Python Build Standalone (20260211)](https://github.com/astral-sh/python-build-standalone/releases/tag/20260211). Note: PBS will no longer provide Python 3.9 builds - so will remain on [Python Build Standalone (20251031)](https://github.com/astral-sh/python-build-standalone/releases/tag/20251031).
 
