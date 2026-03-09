@@ -17,7 +17,7 @@ use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Result, bail};
-use clap::{Parser, Subcommand, arg, command};
+use clap::{Parser, Subcommand};
 use termcolor::{Color, WriteColor};
 use utils::fs;
 
@@ -30,7 +30,7 @@ use crate::utils::fs::{base_name, canonicalize, copy, ensure_directory};
 const BINARY: &str = "scie-pants";
 
 // The version of a-scie/lift to use by default.
-const SCIENCE_TAG: &str = "v0.15.1";
+const SCIENCE_TAG: &str = "v0.18.1";
 
 #[derive(Clone)]
 struct SpecifiedPath(PathBuf);

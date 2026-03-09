@@ -71,7 +71,7 @@ jobs:
     environment: Release
     steps:
       - name: Checkout scie-pants ${{ needs.determine-tag.outputs.release-tag }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ needs.determine-tag.outputs.release-tag }}
       - name: Package scie-pants ${{ needs.determine-tag.outputs.release-tag }} binary
@@ -84,7 +84,7 @@ jobs:
           docker run --rm \
             -v $PWD:/code \
             -w /code \
-            rust:1.86.0-alpine3.21 \
+            rust:1.93.1-alpine3.23 \
               sh -c '
                 apk add cmake make musl-dev perl && \
                 cargo run -p package -- --dest-dir dist/ scie-pants
@@ -124,7 +124,7 @@ jobs:
 
       - name: Prepare Changelog
         id: prepare-changelog
-        uses: a-scie/actions/changelog@v1.5
+        uses: a-scie/actions/changelog@v1.6
         with:
           changelog-file: ${{ github.workspace }}/CHANGES.md
           version: ${{ needs.determine-tag.outputs.release-version }}
@@ -175,7 +175,7 @@ jobs:
     steps:
       - name: Bump `scie-pants` version in Casks/pants.rb to ${{ needs.determine-tag.outputs.release-tag }}
         if: ${{ needs.determine-tag.outputs.prerelease != 'true' }}
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.TAP_TOKEN }}
           # Docs: https://octokit.github.io/rest.js/v19#actions-create-workflow-dispatch

@@ -48,7 +48,7 @@ jobs:
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
       SCIENCE_AUTH_API_GITHUB_COM_BEARER: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Check Formatting
         run: |
           rustup toolchain add nightly -c rustfmt
@@ -72,7 +72,7 @@ jobs:
           # should be resilient to this (see `test_pants_source_mode` in `test.rs`).
           echo "cache_key=${{ matrix.os }}-scie-pants-v7-$(which python)" | tee -a "$GITHUB_OUTPUT"
       - name: Cache Build and IT Artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.SCIE_PANTS_DEV_CACHE }}
           key: ${{ steps.build_it_cache_key.outputs.cache_key }}
@@ -106,7 +106,7 @@ jobs:
           docker run --rm \
             -v $PWD:/code \
             -w /code \
-            rust:1.91.1-alpine3.21 \
+            rust:1.93.1-alpine3.23 \
               sh -c '
                 apk add cmake make musl-dev perl && \
                 cargo run -p package -- --dest-dir dist/ scie-pants
