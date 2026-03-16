@@ -23,7 +23,7 @@ codegen-units = 1
 anyhow = "1.0"
 dirs = "6.0.0"
 log = "0.4.29"
-tempfile = "3.26.0"
+tempfile = "3.27.0"
 
 [dependencies]
 anyhow = { workspace = true}
