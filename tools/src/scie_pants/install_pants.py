@@ -50,6 +50,7 @@ def install_pants_from_req(
     subprocess.run(
         args=[
             sys.executable,
+            "-I",
             "-m",
             "venv",
             "--clear",
@@ -94,6 +95,7 @@ def install_pants_from_pex(
             pants_venv_result = subprocess.run(
                 args=[
                     sys.executable,
+                    "-I",
                     pants_pex.name,
                     "venv",
                     "--prompt",
