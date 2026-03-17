@@ -114,7 +114,7 @@ impl ScieBoot {
 
     #[cfg(unix)]
     fn quote<T: Into<OsString> + Debug>(value: T) -> Result<String> {
-        String::from_utf8(shell_quote::bash::escape(value))
+        String::from_utf8(shell_quote::Bash::quote_vec(&value.into()))
             .context("Shell-quoted value could not be interpreted as UTF-8.")
     }
 

@@ -4,7 +4,7 @@
 
 Support for Pants 2.32.0.dev2 and newer, which run on Python 3.14 instead of 3.11.
 
-Updated scie-pants to build using Rust 1.93.1 and the 2024 edition.
+Updated scie-pants to build using Rust 1.94.0 and the 2024 edition.
 
 Updated runtime tools to:
 - [Jump 1.6.1](https://github.com/a-scie/jump/releases/tag/v1.6.1)
