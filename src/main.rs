@@ -10,7 +10,6 @@ use anyhow::{Context, Result, anyhow};
 use build_root::BuildRoot;
 use log::{info, trace};
 use logging_timer::{Level, time, timer};
-use shell_quote::Bash;
 use uuid::Uuid;
 
 use crate::config::PantsConfig;
@@ -115,7 +114,7 @@ impl ScieBoot {
 
     #[cfg(unix)]
     fn quote<T: Into<OsString> + Debug>(value: T) -> Result<String> {
-        String::from_utf8(Bash::quote_vec(&value.into()))
+        String::from_utf8(shell_quote::Bash::quote_vec(&value.into()))
             .context("Shell-quoted value could not be interpreted as UTF-8.")
     }
 

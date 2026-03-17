@@ -106,7 +106,7 @@ jobs:
           docker run --rm \
             -v $PWD:/code \
             -w /code \
-            rust:1.93.1-alpine3.23 \
+            rust:1.94.0-alpine3.23 \
               sh -c '
                 apk add cmake make musl-dev perl && \
                 cargo run -p package -- --dest-dir dist/ scie-pants
