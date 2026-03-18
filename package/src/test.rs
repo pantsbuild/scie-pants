@@ -948,7 +948,18 @@ fn test_self_update(scie_pants_scie: &Path) {
     integration_test!("Verifying self update works");
     // N.B.: There should never be a newer release in CI; so this should always gracefully noop
     // noting no newer release was available.
-    execute(Command::new(scie_pants_scie).env("SCIE_BOOT", "update")).unwrap();
+    let github_token = env::var("GITHUB_TOKEN").unwrap_or("".to_string());
+    let args = if github_token.is_empty() {
+        vec![]
+    } else {
+        vec!["--github-api-bearer-token".to_string(), github_token]
+    };
+    execute(
+        Command::new(scie_pants_scie)
+            .args(args)
+            .env("SCIE_BOOT", "update"),
+    )
+    .unwrap();
 }
 
 fn test_self_downgrade(scie_pants_scie: &Path) {
