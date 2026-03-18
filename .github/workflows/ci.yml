@@ -87,6 +87,9 @@ jobs:
 
       - name: Build, Package & Integration Tests (MacOS)
         if: ${{ matrix.os == 'macos-14'}}
+        env:
+          # Tests that scrape the github API may need this.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # TODO(John Sirois): Kill --tools-pex-mismatch-warn:
           #   https://github.com/pantsbuild/scie-pants/issues/2
@@ -101,6 +104,9 @@ jobs:
           cargo run -p package -- test --check --tools-pex-mismatch-warn
       - name: Build, Package & Integration Tests (Ubuntu)
         if: ${{ matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
+        env:
+          # Tests that scrape the github API may need this.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cargo run -p package -- --dest-dir dist/ tools
           docker run --rm \
