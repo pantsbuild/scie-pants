@@ -948,16 +948,13 @@ fn test_self_update(scie_pants_scie: &Path) {
     integration_test!("Verifying self update works");
     // N.B.: There should never be a newer release in CI; so this should always gracefully noop
     // noting no newer release was available.
-    let github_token = env::var("GITHUB_TOKEN").unwrap_or("".to_string());
-    let args = if github_token.is_empty() {
-        vec![]
-    } else {
-        vec!["--github-api-bearer-token".to_string(), github_token]
-    };
     execute(
         Command::new(scie_pants_scie)
-            .args(args)
-            .env("SCIE_BOOT", "update"),
+            .env("SCIE_BOOT", "update")
+            .env(
+                "PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN",
+                env::var("GITHUB_TOKEN").unwrap_or("".to_string()),
+            ),
     )
     .unwrap();
 }
@@ -973,6 +970,10 @@ fn test_self_downgrade(scie_pants_scie: &Path) {
     execute(
         Command::new(PathBuf::from(".").join(scie_pants_basename))
             .env("SCIE_BOOT", "update")
+            .env(
+                "PANTS_BOOTSTRAP_GITHUB_API_BEARER_TOKEN",
+                env::var("GITHUB_TOKEN").unwrap_or("".to_string()),
+            )
             .arg("0.1.8")
             .current_dir(tmpdir.path()),
     )
