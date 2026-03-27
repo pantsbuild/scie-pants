@@ -6,14 +6,14 @@
 The scie-pants binary is the next-generation `./pants` script.
 
 It's currently in production use as the [recommended way to install Pants](
-https://www.pantsbuild.org/docs/installation) and is suitable for trying out in any existing
+https://www.pantsbuild.org/stable/docs/getting-started/installing-pants) and is suitable for trying out in any existing
 Pants-using project. We welcome reports of successes, failures and where things work but could be
 better.
 
 ## Installing
 
 See the official installation recommendations here for use as your `pants` launcher:
-https://www.pantsbuild.org/docs/installation
+https://www.pantsbuild.org/stable/docs/getting-started/installing-pants
 
 The binaries are released via [GitHub Releases](https://github.com/pantsbuild/scie-pants/releases)
 for Linux (aarch64 and x86_64) and macOS (aarch64).
@@ -35,7 +35,7 @@ provides the following:
   your system to use Pants. If you use `scie-pants` in a repo with old Pants (< 2.5.0), it will
   fetch a CPython 3.8 interpreter to use and a CPython 3.9 interpreter otherwise. These interpreters
   are self-contained from the [Python Build Standalone](
-  https://python-build-standalone.readthedocs.io/en/latest/) project.
+  https://gregoryszorc.com/docs/python-build-standalone/main/) project.
 
 + Support for `.env` files:
 
@@ -65,7 +65,7 @@ provides the following:
 
 Currently, you can re-direct the URLs used to fetch:
 
-  + [Python Build Standalone](https://python-build-standalone.readthedocs.io/en/latest/) CPython
+  + [Python Build Standalone](https://gregoryszorc.com/docs/python-build-standalone/main/) CPython
     distributions used to bootstrap Pants.
   + Pants PEX release assets which contain Pants as a single-file application.
 
