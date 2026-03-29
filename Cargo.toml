@@ -6,7 +6,7 @@ members = [
 [package]
 name = "scie-pants"
 description = "Protects your Pants from the elements."
-version = "0.13.0"
+version = "0.13.1"
 edition = "2024"
 authors = [
     "John Sirois <john.sirois@gmail.com>",
