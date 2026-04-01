@@ -124,7 +124,7 @@ jobs:
     steps:
       # Now, do the human-facing prep on the release (changelog etc.), and publish it
       - name: Checkout scie-pants ${{ needs.determine-tag.outputs.release-tag }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ needs.determine-tag.outputs.release-tag }}
 
@@ -153,7 +153,7 @@ jobs:
       - name: Post Release Announcement to Pants Slack `#announce`
         if: ${{ needs.determine-tag.outputs.prerelease != 'true' }}
         id: slack
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v3.0.1
         with:
           channel-id: "C18RRR4JK"
           # N.B.: You can muck with the JSON blob and see the results rendered here:
