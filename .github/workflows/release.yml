@@ -124,7 +124,7 @@ jobs:
     steps:
       # Now, do the human-facing prep on the release (changelog etc.), and publish it
       - name: Checkout scie-pants ${{ needs.determine-tag.outputs.release-tag }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ needs.determine-tag.outputs.release-tag }}
 

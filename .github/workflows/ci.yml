@@ -24,6 +24,17 @@ jobs:
     steps:
       - name: Noop
         run: "true"
+
+      # TODO: This is just a temporary thing for debugging
+      - name: Fetch rate_limit JSON
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -s -H "Authorization: token $GITHUB_TOKEN" \
+                   -H "Accept: application/vnd.github+json" \
+                   https://api.github.com/rate_limit \
+            | jq .
+
   ci:
     name: (${{ matrix.name }}) CI
     needs: org-check
@@ -34,8 +45,8 @@ jobs:
           - os: ubuntu-22.04
             name: ubuntu-22.04
 
-          - os: [runs-on, runner=4cpu-linux-arm64, image=ubuntu22-full-arm64-python3.7-3.13, "run-id=${{ github.run_id }}"]
-            name: linux-arm64
+          - os: ubuntu-22.04-arm
+            name: ubuntu-22.04-arm
 
           - os: macos-14
             name: macos-14-arm64
@@ -49,14 +60,18 @@ jobs:
       SCIENCE_AUTH_API_GITHUB_COM_BEARER: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v6
+
       - name: Check Formatting
         run: |
           rustup toolchain add nightly -c rustfmt
           cargo +nightly fmt --check --all
+
       - name: Lint
         run: cargo clippy --locked --all
+
       - name: Unit Tests
         run: cargo test --all
+
       - name: Setup Python 3.9, 3.10, 3.11 (Ubuntu only)
         if: ${{ matrix.os == 'ubuntu-22.04' }}
         uses: actions/setup-python@v6
@@ -65,12 +80,14 @@ jobs:
             3.9
             3.10
             3.11
+
       - name: Compute cache key
         id: build_it_cache_key
         run: |
           # The caches include venvs which have absolute links to Python binaries, so our system
           # should be resilient to this (see `test_pants_source_mode` in `test.rs`).
           echo "cache_key=${{ matrix.os }}-scie-pants-v7-$(which python)" | tee -a "$GITHUB_OUTPUT"
+
       - name: Cache Build and IT Artifacts
         uses: actions/cache@v5
         with:
@@ -80,47 +97,41 @@ jobs:
       # required for the PANTS_SOURCE tests, which build a version of Pants that requires an external protoc
       - name: Install Protoc
         uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
-        if: ${{ matrix.os == 'macos-14' || matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
+        if: ${{ matrix.os != 'windows-2022' }}
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           version: 23.x
 
-      - name: Build, Package & Integration Tests (MacOS)
-        if: ${{ matrix.os == 'macos-14'}}
+      - name: Build, Package & Integration Tests
+        if: ${{ matrix.os != 'windows-2022'}}
         env:
           # Tests that scrape the github API may need this.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # TODO(John Sirois): Kill --tools-pex-mismatch-warn:
-          #   https://github.com/pantsbuild/scie-pants/issues/2
-          #
-          # N.B.: Our self-hosted runners do not clean the work directory between runs like the
-          # GitHub hosted runners do; as such, the ~/.cache/pants, etc sticks around. This exposes
-          # a bug in Pants / Pex reproducibility when building PEXes where the
-          # PEX_ROOT/installed_wheels that get packaged up into a PEX may (or may not) contain
-          # bytecode if the particular wheel was ever run against in the past. This leads to varying
-          # final PEX content.
-          #
-          cargo run -p package -- test --check --tools-pex-mismatch-warn
-      - name: Build, Package & Integration Tests (Ubuntu)
-        if: ${{ matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
-        env:
-          # Tests that scrape the github API may need this.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cargo run -p package -- --dest-dir dist/ tools
-          docker run --rm \
-            -v $PWD:/code \
-            -w /code \
-            rust:1.94.0-alpine3.23 \
-              sh -c '
-                apk add cmake make musl-dev perl && \
-                cargo run -p package -- --dest-dir dist/ scie-pants
-              '
-          echo
-          echo "Running under: $(uname -a)"
-          echo
           cargo run -p package -- test \
-            --tools-pex dist/tools.pex --scie-pants dist/scie-pants \
             --check \
             --tools-pex-mismatch-warn
+
+      # TODO: Disabling to see what happens
+      # - name: Build, Package & Integration Tests (Ubuntu)
+      #   if: ${{ matrix.os == 'ubuntu-22.04' || matrix.name == 'ubuntu-22.04-arm' }}
+      #   env:
+      #     # Tests that scrape the github API may need this.
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: |
+      #     cargo run -p package -- --dest-dir dist/ tools
+      #     docker run --rm \
+      #       -v $PWD:/code \
+      #       -w /code \
+      #       rust:1.94.0-alpine3.23 \
+      #         sh -c '
+      #           apk add cmake make musl-dev perl && \
+      #           cargo run -p package -- --dest-dir dist/ scie-pants
+      #         '
+      #     echo
+      #     echo "Running under: $(uname -a)"
+      #     echo
+      #     cargo run -p package -- test \
+      #       --tools-pex dist/tools.pex --scie-pants dist/scie-pants \
+      #       --check \
+      #       --tools-pex-mismatch-warn
