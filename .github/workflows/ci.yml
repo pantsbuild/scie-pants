@@ -11,10 +11,10 @@ on:
     outputs:
       artifact-name:
         description: The name of the uploaded artifacts
-        value: ${{ jobs.build.outputs.artifact-name }}
+        value: ${{ jobs.ci.outputs.artifact-name }}
       artifact-path:
         description: The path of the uploaded artifacts
-        value: ${{ jobs.build.outputs.artifact-path }}
+        value: ${{ jobs.ci.outputs.artifact-path }}
 
 concurrency:
   group: CI-${{ github.ref }}
@@ -123,8 +123,7 @@ jobs:
           echo "artifact-path=dist/scie-pants-*" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
-        id: upload-artifact
-        if: ${{ github.event_name == 'workflow_dispatch' && matrix.name != 'windows-2022-x64' }}
+        if: ${{ matrix.name != 'windows-2022-x64' }}
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.package.outputs.artifact-name }}
