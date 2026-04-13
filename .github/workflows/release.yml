@@ -130,7 +130,7 @@ jobs:
             .
 
       - name: Post release announcement to Pants Slack in `#announce` channel
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v3.0.1
         id: slack
         env:
           RELEASE_TAG: ${{ needs.determine-tag.outputs.release-tag }}
