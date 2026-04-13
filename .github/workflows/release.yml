@@ -1,51 +1,51 @@
 name: Release
 on:
-  push:
-    tags:
-      - v[0-9]+.[0-9]+.[0-9]+
   workflow_dispatch:
     inputs:
       tag:
-        description: The tag to manually run a deploy for. (example tag `v1.2.3`)
+        description: The scie-pants release version (i.e. `v1.2.3`)
         required: true
       prerelease:
         description: |
-          Is this for a prerelease?
-          (for internal testing, not announced nor published to our brew tap)
-          (example tag `v1.2.3-beta.0`)
+          Is this a pre-release?
+          These are not announced in Slack nor published to HomeBrew (i.e. `v1.2.3-beta.0`)
         type: boolean
         default: false
         required: true
+
+defaults:
+  run:
+    shell: bash
+
 env:
   CARGO_TERM_COLOR: always
+
 jobs:
   org-check:
     name: Check GitHub Organization
     if: ${{ github.repository_owner == 'pantsbuild' }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Noop
         run: "true"
+
   determine-tag:
     name: Determine the release tag to operate against.
     needs: org-check
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.inputs.tag }}
+      PRERELEASE: ${{ github.event.inputs.prerelease }}
     outputs:
       release-tag: ${{ steps.determine-tag.outputs.release-tag }}
       release-version: ${{ steps.determine-tag.outputs.release-version }}
       prerelease: ${{ steps.determine-tag.outputs.prerelease }}
+
     steps:
       - name: Determine Tag
         id: determine-tag
         run: |
-          if [[ -n "${{ github.event.inputs.tag }}" ]]; then
-            RELEASE_TAG=${{ github.event.inputs.tag }}
-            PRERELEASE=${{ github.event.inputs.prerelease }}
-          else
-            RELEASE_TAG=${GITHUB_REF#refs/tags/}
-            PRERELEASE=false
-          fi
-          if [[ "${RELEASE_TAG}" =~ ^v[0-9]+.[0-9]+.[0-9]+$ ]] || [[ "${PRERELEASE}" == true ]]; then
+          if [[ "${RELEASE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || [[ "${PRERELEASE}" == true ]]; then
             echo "release-tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
             echo "release-version=${RELEASE_TAG#v}" >> $GITHUB_OUTPUT
             echo "prerelease=${PRERELEASE}" >> $GITHUB_OUTPUT
@@ -53,107 +53,88 @@ jobs:
             echo "::error::Release tag '${RELEASE_TAG}' must match 'v\d+.\d+.\d+' when not doing a pre-release."
             exit 1
           fi
-  github-release:
-    name: (${{ matrix.name }}) Create Github Release
+
+  run-ci:
     needs: determine-tag
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-22.04
-            name: ubuntu-22.04
+    uses: ./.github/workflows/ci.yml
 
-          - os: [runs-on, runner=4cpu-linux-arm64, image=ubuntu22-full-arm64-python3.7-3.13, "run-id=${{ github.run_id }}"]
-            name: linux-arm64
-
-          - os: macos-14
-            name: macos-14-arm64
+  github-release:
+    name: Create Github Release
+    needs: 
+      - determine-tag
+      - run-ci
+    runs-on: ubuntu-latest
     environment: Release
+    permissions:
+      id-token: write
+      attestations: write
+      contents: write
+      discussions: write
+
     steps:
-      - name: Checkout scie-pants ${{ needs.determine-tag.outputs.release-tag }}
+      - name: Sparse checkout (so 'gh' will work)
         uses: actions/checkout@v6
         with:
-          ref: ${{ needs.determine-tag.outputs.release-tag }}
-      - name: Package scie-pants ${{ needs.determine-tag.outputs.release-tag }} binary
-        if: ${{ matrix.os != 'ubuntu-22.04' && matrix.name != 'linux-arm64' }}
-        env:
-          # So we can download PBS releases without hitting github API rate limits.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: cargo run -p package -- --dest-dir dist/ scie
-      - name: Package scie-pants ${{ needs.determine-tag.outputs.release-tag }} binary
-        if: ${{ matrix.os == 'ubuntu-22.04' || matrix.name == 'linux-arm64' }}
-        env:
-          # So we can download PBS releases without hitting github API rate limits.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cargo run -p package -- --dest-dir dist/ tools
-          docker run --rm \
-            -v $PWD:/code \
-            -w /code \
-            rust:1.94.0-alpine3.23 \
-              sh -c '
-                apk add cmake make musl-dev perl && \
-                cargo run -p package -- --dest-dir dist/ scie-pants
-              '
-          cargo run -p package -- --dest-dir dist/ scie \
-            --scie-pants dist/scie-pants --tools-pex dist/tools.pex
+          sparse-checkout: |
+            .
 
-      # Build up a draft release with the artifacts from each of these jobs:
-      - name: Create ${{ needs.determine-tag.outputs.release-tag }} Release
-        # Need to pull in https://github.com/softprops/action-gh-release/pull/316 to work-around
-        # double-release-creation that happens when attempting to update a draft release to
-        # not-draft.
-        uses: huonw/action-gh-release@998f80d5380609557d7464b01d59a10d845600a0 # v2.0.9 (v2) + https://github.com/softprops/action-gh-release/pull/316
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+        with:
+          merge-multiple: true
+          path: dist/
+
+      - name: Create GitHub release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.determine-tag.outputs.release-tag }}
+          RELEASE_VERSION: ${{ needs.determine-tag.outputs.release-version }}
+          PRERELEASE: ${{ needs.determine-tag.outputs.prerelease }}
+        run: |
+          # Using Markdown headers, grab everything between the current version and subsequent (including current version title)
+          CHANGELOG_NOTES=$(sed -n "/^## ${RELEASE_VERSION}/, /^## /p" CHANGES.md | sed '$d')
+
+          PRERELEASE_FLAG=""
+          if [[ "$PRERELEASE" != "false" ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
+          gh release create \
+            "$RELEASE_TAG" \
+            dist/scie-pants-* \
+            --discussion-category "Announcements" \
+            --fail-on-no-commits \
+            --notes "$CHANGELOG_NOTES" \
+            --repo pantsbuild/scie-pants \
+            --title "scie-pants $RELEASE_VERSION" \
+            $PRERELEASE_FLAG
+
+      - name: Generate ${{ needs.determine-tag.outputs.release-version }} build provenance attestations
+        uses: actions/attest@v4
         with:
-          tag_name: ${{ needs.determine-tag.outputs.release-tag }}
-          name: scie-pants ${{ needs.determine-tag.outputs.release-version }}
-          draft: true
-          # placeholder body to help someone track down why a release is still in draft:
-          body: "Release job in progress: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          files: dist/scie-pants-*
-          fail_on_unmatched_files: true
+          subject-path: dist/scie-pants-*
 
   publish-announce-release:
     name: Publish and Announce Release
     needs:
       - determine-tag
       - github-release
-    runs-on: ubuntu-22.04
+    if: ${{ needs.determine-tag.outputs.prerelease != 'true' }}
+    runs-on: ubuntu-latest
+
     steps:
-      # Now, do the human-facing prep on the release (changelog etc.), and publish it
-      - name: Checkout scie-pants ${{ needs.determine-tag.outputs.release-tag }}
-        uses: actions/checkout@v4
+      - name: Sparse checkout (to get the Changelog)
+        uses: actions/checkout@v6
         with:
-          ref: ${{ needs.determine-tag.outputs.release-tag }}
+          sparse-checkout: |
+            .
 
-      - name: Prepare Changelog
-        id: prepare-changelog
-        uses: a-scie/actions/changelog@v1.6
-        with:
-          changelog-file: ${{ github.workspace }}/CHANGES.md
-          version: ${{ needs.determine-tag.outputs.release-version }}
-          setup-python: true
-
-      - name: Publish ${{ needs.determine-tag.outputs.release-tag }} Release
-        # See above for discussion:
-        uses: huonw/action-gh-release@998f80d5380609557d7464b01d59a10d845600a0 # v2.0.9 (v2) + https://github.com/softprops/action-gh-release/pull/316
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ needs.determine-tag.outputs.release-tag }}
-          name: scie-pants ${{ needs.determine-tag.outputs.release-version }}
-          body_path: ${{ steps.prepare-changelog.outputs.changelog-file }}
-          draft: false
-          prerelease: ${{ needs.determine-tag.outputs.prerelease }}
-          discussion_category_name: Announcements
-
-      # Announce the release! Yay
-      - name: Post Release Announcement to Pants Slack `#announce`
-        if: ${{ needs.determine-tag.outputs.prerelease != 'true' }}
-        id: slack
+      - name: Post release announcement to Pants Slack in `#announce` channel
         uses: slackapi/slack-github-action@v1.23.0
+        id: slack
+        env:
+          RELEASE_TAG: ${{ needs.determine-tag.outputs.release-tag }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         with:
           channel-id: "C18RRR4JK"
           # N.B.: You can muck with the JSON blob and see the results rendered here:
@@ -165,33 +146,26 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "The `pants` launcher binary (scie-pants) ${{ needs.determine-tag.outputs.release-tag }} is released:\n* https://github.com/pantsbuild/scie-pants/releases/tag/${{ needs.determine-tag.outputs.release-tag }}\n* https://www.pantsbuild.org/docs/installation"
+                    "text": "The `pants` launcher binary (scie-pants) $RELEASE_TAG is released:\n* https://github.com/pantsbuild/scie-pants/releases/tag/${RELEASE_TAG}\n* https://www.pantsbuild.org/docs/installation"
                   }
                 }
               ]
             }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
   update-homebrew-tap:
     name: Update pantsbuild/homebrew-tap
     needs:
       - determine-tag
       - github-release
-    runs-on: ubuntu-22.04
+    if: ${{ needs.determine-tag.outputs.prerelease != 'true' }}
+    runs-on: ubuntu-latest
+
     steps:
       - name: Bump `scie-pants` version in Casks/pants.rb to ${{ needs.determine-tag.outputs.release-tag }}
-        if: ${{ needs.determine-tag.outputs.prerelease != 'true' }}
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{ secrets.TAP_TOKEN }}
-          # Docs: https://octokit.github.io/rest.js/v19#actions-create-workflow-dispatch
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: 'pantsbuild',
-              repo: 'homebrew-tap',
-              workflow_id: 'release.yml',
-              ref: 'main',
-              inputs: {
-                tag: '${{ needs.determine-tag.outputs.release-tag }}'
-              }
-            })
+        env:
+          GITHUB_TOKEN: ${{ secrets.TAP_TOKEN }}
+          RELEASE_TAG: ${{ needs.determine-tag.outputs.release-tag }}
+        run: |
+          gh workflow run "release.yml" \
+            --raw-field "tag=$RELEASE_TAG" \
+            --repo pantsbuild/homebrew-tap
