@@ -2,7 +2,7 @@ name: Scheduled zizmor audit
 
 on:
   schedule:
-  - cron: 11 8 * * *
+  - cron: 21 8 * * *  # 8:21am
   workflow_dispatch:
 
 defaults:
