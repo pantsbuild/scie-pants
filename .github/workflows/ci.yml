@@ -50,12 +50,27 @@ jobs:
         include:
           - os: macos-14
             name: macos-14-arm64
+            target: aarch64-apple-darwin
+
+          # - os: ubuntu-22.04
+          #   name: ubuntu-22.04-x64-gnu
+          #   target: x86_64-unknown-linux-gnu
+
           - os: ubuntu-22.04
             name: ubuntu-22.04-x64
+            target: x86_64-unknown-linux-musl
+
+          # - os: ubuntu-22.04-arm
+          #   name: ubuntu-22.04-arm64-gnu
+          #   target: aarch64-unknown-linux-gnu
+
           - os: ubuntu-22.04-arm
             name: ubuntu-22.04-arm64
+            target: aarch64-unknown-linux-musl
+
           - os: windows-2022
             name: windows-2022-x64
+            target: x86_64-pc-windows-msvc
 
     steps:
       - uses: actions/checkout@v6
@@ -100,13 +115,21 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           version: 23.x
 
+      - name: Install platform target
+        if: ${{ matrix.name != 'windows-2022-x64'}}
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          rustup target add $TARGET
+
       - name: Run Integration Tests
         if: ${{ matrix.name != 'windows-2022-x64'}}
         env:
           # Tests that scrape the github API may need this.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET: ${{ matrix.target }}
         run: |
-          cargo run -p package -- test \
+          cargo run -p package -- --target $TARGET test \
             --check \
             --tools-pex-mismatch-warn
 
@@ -116,10 +139,12 @@ jobs:
         env:
           # So we can download PBS releases without hitting github API rate limits.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NAME: ${{ matrix.name }}
+          TARGET: ${{ matrix.target }}
         run: |
-          cargo run -p package -- --dest-dir dist/ scie
+          cargo run -p package -- --dest-dir dist/ --target $TARGET scie
 
-          echo "artifact-name=zipped-scie-pants-${{ matrix.name }}" >> "$GITHUB_OUTPUT"
+          echo "artifact-name=zipped-scie-pants-$NAME" >> "$GITHUB_OUTPUT"
           echo "artifact-path=dist/scie-pants-*" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
