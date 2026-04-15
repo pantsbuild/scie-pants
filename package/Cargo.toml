@@ -18,8 +18,8 @@ log = { workspace = true }
 pretty_env_logger = "0.5.0"
 regex = "1.12.3"
 serde_json = "1.0.149"
-sha2 = "0.10.9"
+sha2 = "0.11.0"
 tempfile = { workspace = true }
 termcolor = "1.4.1"
-ureq = "3.2.0"
+ureq = "3.3.0"
 walkdir = "2.5.0"
