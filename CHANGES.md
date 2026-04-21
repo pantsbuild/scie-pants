@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.13.2
+
+Using Python 3.14, instead of Python 3.9, for meta commands.
+
 ## 0.13.1
 
 Support for Pants 2.32.0.dev2 and newer, which run on Python 3.14 instead of 3.11.

@@ -161,7 +161,7 @@ PEX_PYTHON_PATH = "#{cpython:python}"
 [[lift.commands]]
 name = "update"
 description = "Update scie-pants."
-exe = "#{cpython39:python}"
+exe = "#{cpython314:python}"
 args = [
     "-I",
     "{tools.pex}",
@@ -185,13 +185,13 @@ env.remove_re = [
 
 [lift.commands.env.replace]
 PEX_ROOT = "{scie.bindings}/pex_root"
-PEX_PYTHON_PATH = "#{cpython39:python}"
+PEX_PYTHON_PATH = "#{cpython314:python}"
 
 # Self Info
 [[lift.bindings]]
 name = "scie-pants-info"
 description = "Records information about the current scie-pants binary."
-exe = "#{cpython39:python}"
+exe = "#{cpython314:python}"
 args = [
     "-I",
     "{tools.pex}",
@@ -207,13 +207,13 @@ env.remove_re = [
 
 [lift.bindings.env.replace]
 PEX_ROOT = "{scie.bindings}/pex_root"
-PEX_PYTHON_PATH = "#{cpython39:python}"
+PEX_PYTHON_PATH = "#{cpython314:python}"
 
 # Configure Pants
 [[lift.bindings]]
 name = "configure"
 description = "Prompts the user for missing Pants configuration if needed."
-exe = "#{cpython39:python}"
+exe = "#{cpython314:python}"
 args = [
     "-I",
     "{tools.pex}",
@@ -239,7 +239,7 @@ PANTS_VERSION_PROMPT_SALT = "{scie.env.PANTS_VERSION_PROMPT_SALT}"
 
 [lift.bindings.env.replace]
 PEX_ROOT = "{scie.bindings}/pex_root"
-PEX_PYTHON_PATH = "#{cpython39:python}"
+PEX_PYTHON_PATH = "#{cpython314:python}"
 
 # Install Pants
 [[lift.bindings]]
