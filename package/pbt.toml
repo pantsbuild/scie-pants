@@ -21,7 +21,7 @@ version = "3.8.20"
 name = "pex"
 type = "blob"
 digest = { size = 5082037, fingerprint = "925d08cc9ffe5cff5a3dd67519e24bdb42b1257814bcae7355bd594e33de139d" }
-source = { url = "https://github.com/pantsbuild/pex/releases/download/v2.92.3/pex", lazy = true }
+source = { url = "https://github.com/pex-tool/pex/releases/download/v2.92.3/pex", lazy = true }
 
 [[lift.commands]]
 name = "pex"
