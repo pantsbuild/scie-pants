@@ -1,6 +1,5 @@
 [toolchain]
-# N.B.: Update .github and .circleci yaml to use a matching image.
-channel = "1.94.0"
+channel = "1.95.0"
 components = [
   "cargo",
   "clippy",
