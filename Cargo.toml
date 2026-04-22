@@ -6,7 +6,7 @@ members = [
 [package]
 name = "scie-pants"
 description = "Protects your Pants from the elements."
-version = "0.13.1"
+version = "0.13.2"
 edition = "2024"
 authors = [
     "John Sirois <john.sirois@gmail.com>",
@@ -27,14 +27,14 @@ tempfile = "3.27.0"
 
 [dependencies]
 anyhow = { workspace = true}
-env_logger = { version = "0.11.8", default-features = false }
+env_logger = { version = "0.11.10", default-features = false }
 log = { workspace = true }
 logging_timer = "1.1.1"
 nix = { version = "0.31.2", features = ["process"] }
 serde = { version = "1.0", features = ["derive"] }
 tempfile = { workspace = true }
-toml = "1.0.6"
-uuid = { version = "1.18.1", features = ["v4"], default-features = false }
+toml = "1.1.0"
+uuid = { version = "1.23.0", features = ["v4"], default-features = false }
 
 [target.'cfg(unix)'.dependencies]
 shell-quote = "0.7.2"

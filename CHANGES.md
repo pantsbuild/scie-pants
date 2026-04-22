@@ -2,10 +2,6 @@
 
 ## 0.13.2
 
-Using Python 3.14, instead of Python 3.9, for meta commands.
-
-## 0.13.1
-
 Support for Pants 2.32.0.dev2 and newer, which run on Python 3.14 instead of 3.11.
 
 Remove support for MacOS 13 on Intel. Pants itself, from version 2.31.0, no longer
@@ -13,15 +9,21 @@ supports this platform.
 
 Make `pants` bootstrapping resilient to `sys.path` pollution.
 
-Updated scie-pants to build using Rust 1.94.0 and the 2024 edition.
+Updated scie-pants to build using Rust 1.95.0 and the 2024 edition.
 
 Update runtime tools to:
 - [Jump 1.6.1](https://github.com/a-scie/jump/releases/tag/v1.6.1)
 - [Ptex 1.7.0](https://github.com/a-scie/ptex/releases/tag/v1.7.0)
 - [Science 0.18.1](https://github.com/a-scie/lift/releases/tag/v0.18.1)
-- [Pex 2.91.2](https://github.com/pex-tool/pex/releases/tag/v2.91.2)
+- [Pex 2.92.3](https://github.com/pex-tool/pex/releases/tag/v2.92.3)
 
-Update to latest patch versions of Python interpreters from [Python Build Standalone (20260211)](https://github.com/astral-sh/python-build-standalone/releases/tag/20260211). Note: PBS will no longer provide Python 3.9 builds - so will remain on [Python Build Standalone (20251031)](https://github.com/astral-sh/python-build-standalone/releases/tag/20251031).
+Update to latest patch versions of Python interpreters from [Python Build Standalone (20260414)](https://github.com/astral-sh/python-build-standalone/releases/tag/20260414). Note: PBS will no longer provide Python 3.9 builds - so will remain on [Python Build Standalone (20251031)](https://github.com/astral-sh/python-build-standalone/releases/tag/20251031).
+
+Using Python 3.14, instead of Python 3.9, for meta commands.
+
+## 0.13.1
+
+Aborted due to issues with the release scripts.
 
 ## 0.13.0
 
