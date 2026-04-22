@@ -17,7 +17,7 @@ Update runtime tools to:
 - [Science 0.18.1](https://github.com/a-scie/lift/releases/tag/v0.18.1)
 - [Pex 2.92.3](https://github.com/pex-tool/pex/releases/tag/v2.92.3)
 
-Update to latest patch versions of Python interpreters from [Python Build Standalone (20260211)](https://github.com/astral-sh/python-build-standalone/releases/tag/20260211). Note: PBS will no longer provide Python 3.9 builds - so will remain on [Python Build Standalone (20251031)](https://github.com/astral-sh/python-build-standalone/releases/tag/20251031).
+Update to latest patch versions of Python interpreters from [Python Build Standalone (20260414)](https://github.com/astral-sh/python-build-standalone/releases/tag/20260414). Note: PBS will no longer provide Python 3.9 builds - so will remain on [Python Build Standalone (20251031)](https://github.com/astral-sh/python-build-standalone/releases/tag/20251031).
 
 Using Python 3.14, instead of Python 3.9, for meta commands.
 
