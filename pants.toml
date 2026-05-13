@@ -31,11 +31,11 @@ python-default = "tools/lock.json"
 use_rust_parser = true
 
 [pex-cli]
-version = "v2.92.3"
+version = "v2.95.0"
 known_versions = [
-    "v2.92.3|macos_arm64|925d08cc9ffe5cff5a3dd67519e24bdb42b1257814bcae7355bd594e33de139d|5082037",
-    "v2.92.3|linux_x86_64|925d08cc9ffe5cff5a3dd67519e24bdb42b1257814bcae7355bd594e33de139d|5082037",
-    "v2.92.3|linux_arm64|925d08cc9ffe5cff5a3dd67519e24bdb42b1257814bcae7355bd594e33de139d|5082037",
+    "v2.95.0|macos_arm64|51ec878f1deb129a2cc728f5d473743228f82d9fb3053ca49a45331cfdf5d1e6|5123805",
+    "v2.95.0|linux_x86_64|51ec878f1deb129a2cc728f5d473743228f82d9fb3053ca49a45331cfdf5d1e6|5123805",
+    "v2.95.0|linux_arm64|51ec878f1deb129a2cc728f5d473743228f82d9fb3053ca49a45331cfdf5d1e6|5123805",
 ]
 
 [subprocess-environment]
