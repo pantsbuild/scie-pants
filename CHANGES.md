@@ -1,5 +1,13 @@
 # Release Notes
 
+## 0.13.3
+
+Updated runtime tools to:
+
+- [Pex 2.95.0](https://github.com/pex-tool/pex/releases/tag/v2.95.0)
+
+Update to latest patch versions of Python interpreters from [Python Build Standalone (20260510)](https://github.com/astral-sh/python-build-standalone/releases/tag/20260510). Note: PBS will no longer provide Python 3.9 builds - so will remain on [Python Build Standalone (20251031)](https://github.com/astral-sh/python-build-standalone/releases/tag/20251031).
+
 ## 0.13.2
 
 Support for Pants 2.32.0.dev2 and newer, which run on Python 3.14 instead of 3.11.
