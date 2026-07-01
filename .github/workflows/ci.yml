@@ -73,7 +73,7 @@ jobs:
             target: x86_64-pc-windows-msvc
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Check Formatting
         run: |
@@ -102,7 +102,7 @@ jobs:
           echo "cache_key=${{ matrix.name }}-scie-pants-v7-$(which python)" | tee -a "$GITHUB_OUTPUT"
 
       - name: Cache Build and IT Artifacts
-        uses: actions/cache@v5
+        uses: actions/cache@v6.1.0
         with:
           path: ${{ env.SCIE_PANTS_DEV_CACHE }}
           key: ${{ steps.build_it_cache_key.outputs.cache_key }}
