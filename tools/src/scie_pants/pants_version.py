@@ -27,6 +27,9 @@ PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.0.0.dev0")
 PANTS_PYTHON_VERSIONS = [
     # Sorted on pants version in descending order. Add a new entry when the python version for a
     # particular pants version changes.
+    # Pants switched to free-threaded CPython in 2.34.0.dev3; its release assets are named
+    # with the full ABI tag (e.g. cp314t). Earlier 2.34 dev releases are cp314.
+    {"pants": "2.34.0.dev3", "python": "cp314t"},
     {"pants": "2.32.0.dev2", "python": "cp314"},
     {"pants": "2.25.0.dev0", "python": "cp311"},
     {"pants": "2.5.0.dev0", "python": "cp39"},
@@ -35,6 +38,7 @@ PANTS_PYTHON_VERSIONS = [
 PYTHON_IDS = {
     # N.B.: These values must match the lift TOML interpreter ids.
     # Important: all pythons used in pants_python_versions.json must be represented in this list.
+    "cp314t": "cpython314t",
     "cp314": "cpython314",
     "cp313": "cpython313",
     "cp312": "cpython312",

@@ -63,6 +63,16 @@ release = "20260510"
 lazy = true
 version = "3.14.5"
 
+[[lift.interpreters]]
+id = "cpython314t"
+provider = "PythonBuildStandalone"
+release = "20260807"
+lazy = true
+version = "3.14.7t"
+# N.B.: Set explicitly; science only synthesizes a free-threaded install_only distribution
+# when the flavor is not left at its default.
+flavor = "install_only_stripped"
+
 [[lift.interpreter_groups]]
 id = "cpython"
 selector = "{scie.bindings.configure:PYTHON}"
@@ -74,6 +84,7 @@ members = [
     "cpython312",
     "cpython313",
     "cpython314",
+    "cpython314t",
 ]
 
 [[lift.files]]
