@@ -167,13 +167,16 @@ def main() -> NoReturn:
 
     pants_requirements = [f"pantsbuild.pants=={version}"]
     extra_requirements = []
+    # The abiflags distinguish venvs for versions that ship more than one CPython flavor
+    # (e.g. cp314 and cp314t), and are empty for flavors that predate this.
+    version_and_abi = f"{version}{sys.abiflags}"
     if options.debug:
         debugpy_requirement = options.debugpy_requirement or "debugpy==1.6.0"
         extra_requirements.append(debugpy_requirement)
-        venv_dir = venvs_dir / f"{version}-{debugpy_requirement}"
+        venv_dir = venvs_dir / f"{version_and_abi}-{debugpy_requirement}"
         prompt = f"Pants {version} [{debugpy_requirement}]"
     else:
-        venv_dir = venvs_dir / str(version)
+        venv_dir = venvs_dir / version_and_abi
         prompt = f"Pants {version}"
 
     info(
