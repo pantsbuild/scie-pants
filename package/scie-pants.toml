@@ -233,6 +233,8 @@ args = [
     "{ptex}",
     "--pants-version",
     "{scie.env.PANTS_VERSION}",
+    "--free-threaded",
+    "{scie.env.PANTS_FREE_THREADED}",
     "--pants-config",
     "{scie.env.PANTS_TOML}",
     "--github-api-bearer-token",
