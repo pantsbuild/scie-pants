@@ -46,6 +46,7 @@ jobs:
       SCIE_PANTS_DEV_CACHE: .scie_pants_dev_cache
       SCIENCE_AUTH_API_GITHUB_COM_BEARER: ${{ secrets.GITHUB_TOKEN }}    
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: macos-14
