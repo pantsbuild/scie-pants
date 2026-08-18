@@ -27,6 +27,9 @@ PANTS_PEX_GITHUB_RELEASE_VERSION = Version("2.0.0.dev0")
 PANTS_PYTHON_VERSIONS = [
     # Sorted on pants version in descending order. Add a new entry when the python version for a
     # particular pants version changes.
+    # Pants switched to free-threaded CPython in 2.34.0.dev3; its release assets are named
+    # with the full ABI tag (e.g. cp314t). Earlier 2.34 dev releases are cp314.
+    {"pants": "2.34.0.dev3", "python": "cp314t"},
     {"pants": "2.32.0.dev2", "python": "cp314"},
     {"pants": "2.25.0.dev0", "python": "cp311"},
     {"pants": "2.5.0.dev0", "python": "cp39"},
@@ -35,6 +38,7 @@ PANTS_PYTHON_VERSIONS = [
 PYTHON_IDS = {
     # N.B.: These values must match the lift TOML interpreter ids.
     # Important: all pythons used in pants_python_versions.json must be represented in this list.
+    "cp314t": "cpython314t",
     "cp314": "cpython314",
     "cp313": "cpython313",
     "cp312": "cpython312",
@@ -93,6 +97,7 @@ def determine_tag_version(
     find_links_dir: Path,
     github_api_bearer_token: str | None,
     bootstrap_urls_path: str | None,
+    free_threaded: bool | None = None,
 ) -> ResolveInfo:
     version = Version(pants_version)
     if version.base_version.count(".") < 2:
@@ -103,7 +108,9 @@ def determine_tag_version(
         )
 
     if version >= PANTS_PEX_GITHUB_RELEASE_VERSION:
-        pex_url, python = determine_pex_url_and_python_id(ptex, version, bootstrap_urls_path)
+        pex_url, python = determine_pex_url_and_python_id(
+            ptex, version, bootstrap_urls_path, free_threaded
+        )
         return ResolveInfo(version=version, python=python, pex_url=pex_url)
 
     tag = f"release_{pants_version}"
@@ -160,6 +167,7 @@ def determine_latest_stable_version(
     find_links_dir: Path,
     github_api_bearer_token: str | None,
     bootstrap_urls_path: str | None,
+    free_threaded: bool | None = None,
 ) -> tuple[Callable[[], None], ResolveInfo]:
     info(f"Fetching latest stable Pants version since none is configured")
 
@@ -199,7 +207,12 @@ def determine_latest_stable_version(
         pants_config.write_text(tomlkit.dumps(config))
 
     return configure_version, determine_tag_version(
-        ptex, pants_version, find_links_dir, github_api_bearer_token, bootstrap_urls_path
+        ptex,
+        pants_version,
+        find_links_dir,
+        github_api_bearer_token,
+        bootstrap_urls_path,
+        free_threaded,
     )
 
 
@@ -207,10 +220,13 @@ def determine_pex_url_and_python_id(
     ptex: Ptex,
     version: Version,
     bootstrap_urls_path: str | None,
+    free_threaded: bool | None = None,
 ) -> tuple[str, str]:
     uname = os.uname()
     platform = f"{uname.sysname.lower()}_{uname.machine.lower()}"
-    pex_url, python = get_pex_url_and_python_id(ptex, version, platform, bootstrap_urls_path)
+    pex_url, python = get_pex_url_and_python_id(
+        ptex, version, platform, bootstrap_urls_path, free_threaded
+    )
     if python not in PYTHON_IDS:
         # Should not happen... but if we mess up, this is a nicer error message rather than blowing up.
         fatal(f"This version of scie-pants does not support {python!r}.")
@@ -239,14 +255,29 @@ def get_pex_url_and_python_id(
     version: Version,
     platform: str,
     bootstrap_urls_path: str | None,
+    free_threaded: bool | None = None,
 ) -> tuple[str, str]:
     ptex_urls = get_bootstrap_urls(bootstrap_urls_path)
     py = get_python_id_for_pants_version(version)
+    if py and free_threaded is not None:
+        preferred = py.rstrip("t") + ("t" if free_threaded else "")
+        if preferred not in PYTHON_IDS:
+            warn(
+                f"pants_free_threaded = {str(free_threaded).lower()} is not supported for Pants "
+                f"{version}: there is no {preferred} distribution. Using {py}."
+            )
+        else:
+            py = preferred
     error: str | None = None
     if py:
         pex_url, error = get_download_url(version, platform, py, ptex_urls)
         if pex_url:
             return pex_url, py
+        if free_threaded is not None:
+            warn(
+                f"No Pants {version} distribution for {py} was found, falling back to other "
+                f"Pythons despite pants_free_threaded = {str(free_threaded).lower()}."
+            )
 
     # Else, try all known Pythons...
     for maybe_py in PYTHON_IDS.keys():

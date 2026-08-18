@@ -13,6 +13,8 @@ use crate::build_root::BuildRoot;
 pub(crate) struct Global {
     #[serde(default)]
     pub(crate) pants_version: Option<String>,
+    #[serde(default)]
+    pub(crate) pants_free_threaded: Option<bool>,
 }
 
 #[derive(Default, Deserialize)]
@@ -43,6 +45,10 @@ pub(crate) struct PantsConfig {
 impl PantsConfig {
     pub(crate) fn package_version(&self) -> Option<String> {
         self.config.global.pants_version.clone()
+    }
+
+    pub(crate) fn free_threaded(&self) -> Option<bool> {
+        self.config.global.pants_free_threaded
     }
 
     pub(crate) fn build_root(&self) -> &Path {

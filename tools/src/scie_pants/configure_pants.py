@@ -59,6 +59,11 @@ def main() -> NoReturn:
     parser = ArgumentParser()
     get_ptex = Ptex.add_options(parser)
     parser.add_argument("--pants-version", help="The Pants version to install")
+    parser.add_argument(
+        "--free-threaded",
+        default="",
+        help="Whether to prefer a free-threaded CPython Pants distribution (true or false).",
+    )
     parser.add_argument("--pants-config", help="The path of the pants.toml file")
     parser.add_argument(
         "--github-api-bearer-token", help="The GITHUB_TOKEN to use if running in CI context."
@@ -85,6 +90,7 @@ def main() -> NoReturn:
     finalizers = []
     newly_created_build_root = None
     pants_config = Path(options.pants_config) if options.pants_config else None
+    free_threaded = {"true": True, "false": False}.get(options.free_threaded.lower(), None)
     if options.pants_version:
         resolve_info = determine_tag_version(
             ptex=ptex,
@@ -92,6 +98,7 @@ def main() -> NoReturn:
             find_links_dir=find_links_dir,
             github_api_bearer_token=options.github_api_bearer_token,
             bootstrap_urls_path=options.pants_bootstrap_urls,
+            free_threaded=free_threaded,
         )
     else:
         if pants_config:
@@ -110,6 +117,7 @@ def main() -> NoReturn:
             find_links_dir=find_links_dir,
             github_api_bearer_token=options.github_api_bearer_token,
             bootstrap_urls_path=options.pants_bootstrap_urls,
+            free_threaded=free_threaded,
         )
         finalizers.append(configure_version)
 

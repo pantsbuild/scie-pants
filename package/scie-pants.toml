@@ -31,37 +31,47 @@ version = "3.9.25"
 [[lift.interpreters]]
 id = "cpython310"
 provider = "PythonBuildStandalone"
-release = "20260510"
+release = "20260807"
 lazy = true
 version = "3.10.20"
 
 [[lift.interpreters]]
 id = "cpython311"
 provider = "PythonBuildStandalone"
-release = "20260510"
+release = "20260807"
 lazy = true
 version = "3.11.15"
 
 [[lift.interpreters]]
 id = "cpython312"
 provider = "PythonBuildStandalone"
-release = "20260510"
+release = "20260807"
 lazy = true
 version = "3.12.13"
 
 [[lift.interpreters]]
 id = "cpython313"
 provider = "PythonBuildStandalone"
-release = "20260510"
+release = "20260807"
 lazy = true
-version = "3.13.13"
+version = "3.13.15"
 
 [[lift.interpreters]]
 id = "cpython314"
 provider = "PythonBuildStandalone"
-release = "20260510"
+release = "20260807"
 lazy = true
-version = "3.14.5"
+version = "3.14.7"
+
+[[lift.interpreters]]
+id = "cpython314t"
+provider = "PythonBuildStandalone"
+release = "20260807"
+lazy = true
+version = "3.14.7t"
+# N.B.: Set explicitly; science only synthesizes a free-threaded install_only distribution
+# when the flavor is not left at its default.
+flavor = "install_only_stripped"
 
 [[lift.interpreter_groups]]
 id = "cpython"
@@ -74,6 +84,7 @@ members = [
     "cpython312",
     "cpython313",
     "cpython314",
+    "cpython314t",
 ]
 
 [[lift.files]]
@@ -222,6 +233,8 @@ args = [
     "{ptex}",
     "--pants-version",
     "{scie.env.PANTS_VERSION}",
+    "--free-threaded",
+    "{scie.env.PANTS_FREE_THREADED}",
     "--pants-config",
     "{scie.env.PANTS_TOML}",
     "--github-api-bearer-token",
