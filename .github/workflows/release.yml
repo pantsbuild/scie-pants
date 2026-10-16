@@ -133,7 +133,6 @@ jobs:
         uses: slackapi/slack-github-action@v1.23.0
         id: slack
         env:
-          RELEASE_TAG: ${{ needs.determine-tag.outputs.release-tag }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         with:
           channel-id: "C18RRR4JK"
@@ -146,7 +145,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "The `pants` launcher binary (scie-pants) $RELEASE_TAG is released:\n* https://github.com/pantsbuild/scie-pants/releases/tag/${RELEASE_TAG}\n* https://www.pantsbuild.org/docs/installation"
+                    "text": "The `pants` launcher binary (scie-pants) ${{ needs.determine-tag.outputs.release-tag }} is released:\n* https://github.com/pantsbuild/scie-pants/releases/tag/${{ needs.determine-tag.outputs.release-tag }}\n* https://www.pantsbuild.org/stable/docs/getting-started/installing-pants"
                   }
                 }
               ]
