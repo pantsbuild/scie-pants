@@ -1,5 +1,16 @@
 # Release Notes
 
+## 0.13.3
+
+Support for Pants 2.34.0.dev3 and newer, which run on free-threaded CPython 3.14t instead of CPython 3.14. Set `[GLOBAL] pants_free_threaded = false` in `pants.toml`, or `PANTS_FREE_THREADED=false` in the environment, to select the GIL-enabled CPython 3.14 build instead. Earlier Pants versions are unaffected.
+
+Updated runtime tools to:
+
+- [Science 0.21.0](https://github.com/a-scie/lift/releases/tag/v0.21.0)
+- [Pex 2.95.0](https://github.com/pex-tool/pex/releases/tag/v2.95.0)
+
+Update to latest patch versions of Python interpreters from [Python Build Standalone (20260807)](https://github.com/astral-sh/python-build-standalone/releases/tag/20260807), including Python 3.14.7 and 3.13.15. The free-threaded CPython 3.14t interpreter uses the stripped distribution, so it is fetched as roughly 34 MiB instead of roughly 128 MiB. Note: PBS will no longer provide Python 3.9 builds - so will remain on [Python Build Standalone (20251031)](https://github.com/astral-sh/python-build-standalone/releases/tag/20251031).
+
 ## 0.13.2
 
 Support for Pants 2.32.0.dev2 and newer, which run on Python 3.14 instead of 3.11.

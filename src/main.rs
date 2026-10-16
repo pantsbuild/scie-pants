@@ -159,23 +159,43 @@ impl ScieBoot {
 #[time("debug", "scie-pants::{}")]
 fn get_pants_process() -> Result<Process> {
     let pants_installation = find_pants_installation()?;
-    let (build_root, configured_pants_version, debugpy_version, delegate_bootstrap) =
-        if let Some(ref pants_config) = pants_installation {
-            (
-                Some(pants_config.build_root().to_path_buf()),
-                pants_config.package_version(),
-                pants_config.debugpy_version(),
-                pants_config.delegate_bootstrap(),
-            )
-        } else {
-            (None, None, None, false)
-        };
+    let (
+        build_root,
+        configured_pants_version,
+        configured_free_threaded,
+        debugpy_version,
+        delegate_bootstrap,
+    ) = if let Some(ref pants_config) = pants_installation {
+        (
+            Some(pants_config.build_root().to_path_buf()),
+            pants_config.package_version(),
+            pants_config.free_threaded(),
+            pants_config.debugpy_version(),
+            pants_config.delegate_bootstrap(),
+        )
+    } else {
+        (None, None, None, None, false)
+    };
 
     let env_pants_version = env_version("PANTS_VERSION")?;
     let pants_version = if let Some(env_version) = env_pants_version {
         Some(env_version)
     } else {
         configured_pants_version.clone()
+    };
+
+    // Mirrors [GLOBAL] pants_free_threaded in pants.toml, with the env var taking precedence.
+    let free_threaded = match env::var("PANTS_FREE_THREADED") {
+        Ok(value) if !value.is_empty() => match value.to_lowercase().as_str() {
+            "1" | "true" => Some(true),
+            "0" | "false" => Some(false),
+            other => {
+                return Err(anyhow!(
+                    "PANTS_FREE_THREADED must be one of 1, 0, true or false, got: {other}"
+                ));
+            }
+        },
+        _ => configured_free_threaded,
     };
 
     if delegate_bootstrap && pants_version.is_none() {
@@ -232,6 +252,12 @@ fn get_pants_process() -> Result<Process> {
                 build_root.join("pants.toml").into_os_string(),
             ));
         }
+    }
+    if let Some(free_threaded) = free_threaded {
+        env.push((
+            "PANTS_FREE_THREADED".into(),
+            if free_threaded { "true" } else { "false" }.into(),
+        ));
     }
     if let Some(version) = pants_version {
         if delegate_bootstrap {
