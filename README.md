@@ -104,6 +104,93 @@ GitHub Release page's Assets (e.g. https://github.com/pantsbuild/pants/releases/
 (Note that for 2.18.x, PEX exist versioned and unversioned. `scie-pants` only uses the versioned
 name as the key).
 
+### Private Google Cloud Storage
+
+Explicit `gs://bucket/object` entries in `PANTS_BOOTSTRAP_URLS` can be delegated to a
+GCS-enabled native `ptex`, including Python downloads before any interpreter is installed:
+
+```json
+{
+  "ptex": {
+    "pants.2.33.1-cp314-linux_x86_64.pex": "gs://private-builds/releases/pants.pex"
+  }
+}
+```
+
+This requires **both** the launcher change and a bundled ptex containing GCS support.
+The current `package/scie-pants.toml` pin (`1.7.0`) does not contain that support; change
+it only once a GCS-enabled release is available, or package a local development build.
+Installing a different ptex on `PATH` does not replace the launcher's embedded downloader.
+Keep any Python mappings required by your launcher in the same map.
+
+Configure Google Application Default Credentials before launching: set
+`GOOGLE_APPLICATION_CREDENTIALS` to a trusted ADC configuration file, use existing local
+ADC (for example, from `gcloud auth application-default login`), or use an attached
+service account. The identity needs `storage.objects.get`. Credentials are resolved by
+the native downloader, not passed as subprocess arguments or stored in the URL map.
+For cold Python bootstrap, export credential settings in the parent environment rather
+than relying on a project `.env` file being loaded first.
+
+Explicit GCS mappings are authoritative: the launcher does not perform an unauthenticated
+`urllib` HEAD request or fall back to a public release if the selected object cannot be
+fetched. Authentication failures, missing objects, redirects and interrupted downloads
+abort installation before executing the downloaded PEX. Existing `file:`, HTTP and HTTPS
+mappings keep their current behavior; HTTPS GCS URLs do not automatically acquire ADC.
+
+Use immutable object names and restrict bucket write access: private access is not an
+artifact signature. Existing embedded Python hashes are still checked, but dynamically
+selected Pants PEX mappings do not add a new integrity check. Query parameters (including
+object generations) and requester-pays buckets are not supported by this implementation.
+
+### Private GitHub artifacts and release assets
+
+A GitHub-enabled native ptex accepts Actions browser artifact links, Actions API
+archive links, and release-asset API links in `PANTS_BOOTSTRAP_URLS`. For example,
+a raw release asset can supply the Pants PEX:
+
+```json
+{
+  "ptex": {
+    "pants.2.33.1-cp314-linux_x86_64.pex": "https://api.github.com/repos/example/builds/releases/assets/123"
+  }
+}
+```
+
+Keep all required Python mappings alongside this example: the override replaces the
+embedded URL map, not just the Pants entry. The embedded downloader must contain the
+new GitHub support; the current ptex `1.7.0` pin does not. Package a local development
+build or use a future supporting release, rather than replacing ptex on `PATH`.
+
+Export `PTEX_GITHUB_TOKEN` in the parent environment **before** cold bootstrap. Use a
+repository-restricted fine-grained PAT/App token with **Contents: read** for release
+assets or **Actions: read** for Actions artifacts. `GITHUB_TOKEN` from a workflow can
+be explicitly assigned to this variable, but generally cannot read another private
+repository. The downloader does not implicitly read `GH_TOKEN`, `GITHUB_TOKEN`,
+GitHub CLI credentials, or the launcher's older GitHub API token setting. Tokens
+never become ptex subprocess arguments or URL-map values; take care that a parent
+launcher's environment may also be inherited by the application it starts.
+
+Supported Actions links are:
+
+- `https://github.com/OWNER/REPO/actions/runs/RUN_ID/artifacts/ARTIFACT_ID`
+- `https://api.github.com/repos/OWNER/REPO/actions/artifacts/ARTIFACT_ID/zip`
+
+**Default Actions artifacts are ZIP-wrapped and cannot replace a raw Pants PEX or
+Python tarball.** ptex preserves bytes and does not extract archives. Use raw release
+assets, or an `actions/upload-artifact` version supporting `archive: false` for a
+single file. Embedded Python hashes must still match the original distribution.
+Actions artifacts can expire with workflow retention, so release assets or GCS are
+preferable for durable bootstrap sources.
+
+The launcher delegates recognized explicit mappings directly to ptex, without an
+unauthenticated HEAD request. Invalid links, missing credentials, expired artifacts
+and failed/partial downloads abort installation before the PEX is executed; the
+launcher does not fall back to a public release after selection. Native ptex confines
+bearer authentication to the GitHub API and fetches its signed redirect with a fresh
+credential-free request. Private release browser links (`/releases/download/...`)
+and GitHub Enterprise are not handled by this provider; use the GitHub.com release
+asset API URL. Ordinary public release links keep their existing behavior.
+
 ## Caveats
 
 The `scie-pants` binary will re-install versions of Pants you have already installed. The underlying

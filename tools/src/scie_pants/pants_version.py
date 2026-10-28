@@ -169,7 +169,7 @@ def determine_latest_stable_version(
     bootstrap_urls_path: str | None,
     free_threaded: bool | None = None,
 ) -> tuple[Callable[[], None], ResolveInfo]:
-    info(f"Fetching latest stable Pants version since none is configured")
+    info("Fetching latest stable Pants version since none is configured")
 
     try:
         latest_tag = ptex.fetch_json(
@@ -305,14 +305,36 @@ def get_python_id_for_pants_version(version: Version) -> str | None:
     return None
 
 
+def is_github_download_url(url: str) -> bool:
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        host = parsed.hostname
+    except ValueError:
+        return False
+    if host == "api.github.com":
+        return bool(
+            re.fullmatch(
+                r"/repos/[^/]*/[^/]*/(?:actions/artifacts/[^/]*/zip|releases/assets/[^/]*)",
+                parsed.path,
+            )
+        )
+    if host == "github.com":
+        return bool(re.fullmatch(r"/[^/]*/[^/]*/actions/runs/[^/]*/artifacts/[^/]*", parsed.path))
+    return False
+
+
 def get_download_url(
     version: Version, platform: str, python: str, ptex_urls: dict[str, str] | None
 ) -> tuple[str, None] | tuple[None, str]:
     pex_name = f"pants.{version}-{python}-{platform}.pex"
-    if ptex_urls:
+    if ptex_urls is not None:
         pex_url = ptex_urls.get(pex_name)
         if not pex_url:
             return None, f"{pex_name}: has no URL in PANTS_BOOTSTRAP_URLS file."
+        if pex_url.startswith("gs://") or is_github_download_url(pex_url):
+            # Ptex owns private-source authentication and validation; an unauthenticated HEAD
+            # cannot probe these URLs. Explicit mappings fail at download if unavailable.
+            return pex_url, None
     else:
         pex_url = (
             f"https://github.com/pantsbuild/pants/releases/download/release_{version}/{pex_name}"
