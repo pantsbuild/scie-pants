@@ -1,4 +1,5 @@
 ansicolors
+certifi>=2026.10.23
 conscript
 packaging
 tomlkit

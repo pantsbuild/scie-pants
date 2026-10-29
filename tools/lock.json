@@ -80,6 +80,19 @@
           "artifacts": [
             {
               "algorithm": "sha256",
+              "hash": "e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1",
+              "url": "https://files.pythonhosted.org/packages/32/d1/a3652fe2c19134d0d15922177821d863cbd7e842d53a21bbe7e8e3a1b5ac/certifi-2026.10.23-py3-none-any.whl"
+            }
+          ],
+          "project_name": "certifi",
+          "requires_dists": [],
+          "requires_python": ">=3.7",
+          "version": "2026.10.23"
+        },
+        {
+          "artifacts": [
+            {
+              "algorithm": "sha256",
               "hash": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
               "url": "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl"
             }
@@ -447,6 +460,7 @@
   "prefer_older_binary": false,
   "requirements": [
     "ansicolors",
+    "certifi>=2026.10.23",
     "conscript",
     "packaging",
     "pytest==7.2.0",

@@ -38,37 +38,37 @@ version = "3.10.20"
 [[lift.interpreters]]
 id = "cpython311"
 provider = "PythonBuildStandalone"
-release = "20260807"
+release = "20261026"
 lazy = true
-version = "3.11.15"
+version = "3.11.18"
 
 [[lift.interpreters]]
 id = "cpython312"
 provider = "PythonBuildStandalone"
-release = "20260807"
+release = "20261026"
 lazy = true
-version = "3.12.13"
+version = "3.12.16"
 
 [[lift.interpreters]]
 id = "cpython313"
 provider = "PythonBuildStandalone"
-release = "20260807"
+release = "20261026"
 lazy = true
-version = "3.13.15"
+version = "3.13.18"
 
 [[lift.interpreters]]
 id = "cpython314"
 provider = "PythonBuildStandalone"
-release = "20260807"
+release = "20261026"
 lazy = true
-version = "3.14.7"
+version = "3.14.10"
 
 [[lift.interpreters]]
 id = "cpython314t"
 provider = "PythonBuildStandalone"
-release = "20260807"
+release = "20261026"
 lazy = true
-version = "3.14.7t"
+version = "3.14.10t"
 # N.B.: Set explicitly; science only synthesizes a free-threaded install_only distribution
 # when the flavor is not left at its default.
 flavor = "install_only_stripped"

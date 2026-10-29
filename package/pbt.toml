@@ -20,8 +20,8 @@ version = "3.8.20"
 [[lift.files]]
 name = "pex"
 type = "blob"
-digest = { size = 5123805, fingerprint = "51ec878f1deb129a2cc728f5d473743228f82d9fb3053ca49a45331cfdf5d1e6" }
-source = { url = "https://github.com/pex-tool/pex/releases/download/v2.95.0/pex", lazy = true }
+digest = { size = 5407115, fingerprint = "b3a9e9ded90336ee58d8dd57701e3561151b08279ad5f5b6ed9e62758a0cd5d8" }
+source = { url = "https://github.com/pex-tool/pex/releases/download/v2.105.2/pex", lazy = true }
 
 [[lift.commands]]
 name = "pex"
