@@ -73,7 +73,7 @@ jobs:
 
     steps:
       - name: Sparse checkout (so 'gh' will work)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           sparse-checkout: |
             .
@@ -110,7 +110,7 @@ jobs:
             $PRERELEASE_FLAG
 
       - name: Generate ${{ needs.determine-tag.outputs.release-version }} build provenance attestations
-        uses: actions/attest@v4
+        uses: actions/attest@v4.1.0
         with:
           subject-path: dist/scie-pants-*
 
@@ -124,13 +124,13 @@ jobs:
 
     steps:
       - name: Sparse checkout (to get the Changelog)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           sparse-checkout: |
             .
 
       - name: Post release announcement to Pants Slack in `#announce` channel
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v3.0.3
         id: slack
         env:
           RELEASE_TAG: ${{ needs.determine-tag.outputs.release-tag }}
