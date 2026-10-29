@@ -5,10 +5,10 @@ Python Build Tool: A BusyBox that provides `python`, `pip`, `pex`, `pex3` and `p
 """
 
 [lift.ptex]
-version = "1.7.0"
+version = "1.7.1"
 
 [lift.scie_jump]
-version = "1.6.1"
+version = "1.13.0"
 
 [[lift.interpreters]]
 id = "cpython"
