@@ -1,15 +1,26 @@
 # Release Notes
 
-## 0.13.3
+## 0.13.4
 
-Support for Pants 2.34.0.dev3 and newer, which run on free-threaded CPython 3.14t instead of CPython 3.14. Set `[GLOBAL] pants_free_threaded = false` in `pants.toml`, or `PANTS_FREE_THREADED=false` in the environment, to select the GIL-enabled CPython 3.14 build instead. Earlier Pants versions are unaffected.
+Mitigations for the [eMudhra CA compromise](https://emudhra.we-have-a-problem.com/).
+
+When installing Pants via Pip, scie-pants now has Pip trust the CA bundle from certifi 2026.10.23 instead of the older CA bundles vendored in the Pip versions it uses. This does not apply if you configure your own CA bundle via `PIP_CERT`, `REQUESTS_CA_BUNDLE`, `CURL_CA_BUNDLE` or a `cert` setting in your Pip config.
 
 Updated runtime tools to:
 
-- [Science 0.21.0](https://github.com/a-scie/lift/releases/tag/v0.21.0)
-- [Pex 2.95.0](https://github.com/pex-tool/pex/releases/tag/v2.95.0)
+- [Pex 2.105.2](https://github.com/pex-tool/pex/releases/tag/v2.105.2), whose vendored Pip trusts the CA bundle from certifi 2026.10.23.
 
-Update to latest patch versions of Python interpreters from [Python Build Standalone (20260807)](https://github.com/astral-sh/python-build-standalone/releases/tag/20260807), including Python 3.14.7 and 3.13.15. The free-threaded CPython 3.14t interpreter uses the stripped distribution, so it is fetched as roughly 34 MiB instead of roughly 128 MiB. Note: PBS will no longer provide Python 3.9 builds - so will remain on [Python Build Standalone (20251031)](https://github.com/astral-sh/python-build-standalone/releases/tag/20251031).
+- Latest patch versions of Python interpreters from [Python Build Standalone (20261026)](https://github.com/astral-sh/python-build-standalone/releases/tag/20261026), including Python 3.14.10, 3.13.18, 3.12.16 and 3.11.18, whose bundled Pip no longer trusts the eMudhra CAs. The free-threaded CPython 3.14t interpreter uses the stripped distribution, so it is fetched as roughly 34 MiB instead of roughly 128 MiB. Note: PBS no longer provides Python 3.10 builds - so will remain on [Python Build Standalone (20260807)](https://github.com/astral-sh/python-build-standalone/releases/tag/20260807).
+
+- webpki-roots 1.0.11 and rustls-webpki 0.103.16.
+
+- [Science 0.21.0](https://github.com/a-scie/lift/releases/tag/v0.21.0)
+
+Support for Pants 2.34.0.dev3 and newer, which run on free-threaded CPython 3.14t instead of CPython 3.14. Set `[GLOBAL] pants_free_threaded = false` in `pants.toml`, or `PANTS_FREE_THREADED=false` in the environment, to select the GIL-enabled CPython 3.14 build instead. Earlier Pants versions are unaffected.
+
+## 0.13.3
+
+Aborted due to broken CI.
 
 ## 0.13.2
 

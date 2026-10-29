@@ -13,8 +13,9 @@ import tempfile
 from argparse import ArgumentParser
 from glob import glob
 from pathlib import Path
-from typing import Iterable, NoReturn
+from typing import Iterable, Mapping, NoReturn
 
+import certifi
 from packaging.version import Version
 
 from scie_pants.log import debug, fatal, info, init_logging
@@ -23,7 +24,32 @@ from scie_pants.ptex import Ptex
 log = logging.getLogger(__name__)
 
 
-def venv_pip_install(venv_dir: Path, *args: str, find_links: str | None = None) -> None:
+def pip_env(venv_dir: Path) -> Mapping[str, str]:
+    """Returns an environment that has Pip trust an up-to-date CA bundle.
+
+    The Pip that ships with the venv, as well as the Pip we pin below, vendor CA bundles that may
+    trust CAs that have since been distrusted (e.g.: the eMudhra CAs). We point Pip at the CA bundle
+    from our own up-to-date certifi instead, unless the user has configured a CA bundle of their own.
+    """
+    env = os.environ.copy()
+    if any(var in env for var in ("PIP_CERT", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE")):
+        return env
+    pip_config = subprocess.run(
+        args=[str(venv_dir / "bin" / "python"), "-sE", "-m", "pip", "config", "list"],
+        stdout=subprocess.PIPE,
+        text=True,
+    ).stdout
+    if any(line.split("=", 1)[0].endswith(".cert") for line in pip_config.splitlines()):
+        return env
+    ca_bundle = certifi.where()
+    debug(f"Using CA bundle {ca_bundle} for Pip.")
+    env["PIP_CERT"] = ca_bundle
+    return env
+
+
+def venv_pip_install(
+    venv_dir: Path, *args: str, env: Mapping[str, str], find_links: str | None = None
+) -> None:
     subprocess.run(
         args=[
             str(venv_dir / "bin" / "python"),
@@ -40,6 +66,7 @@ def venv_pip_install(venv_dir: Path, *args: str, find_links: str | None = None) 
             *(("--find-links", find_links) if find_links else ()),
             *args,
         ],
+        env=env,
         check=True,
     )
 
@@ -61,15 +88,20 @@ def install_pants_from_req(
         check=True,
     )
 
-    # Pin Pip to 22.3.1 (currently latest). The key semantic that should be preserved by the Pip
-    # we use is that --find-links are used as a fallback only and PyPI is preferred. This saves us
-    # money by avoiding fetching wheels from our S3 bucket at https://binaries.pantsbuild.org unless
-    # absolutely needed.
+    # Pin Pip to 25.0.1 (the latest to support Python 3.8, which Pants 1.x runs on). The key
+    # semantic that should be preserved by the Pip we use is that --find-links are used as a
+    # fallback only and PyPI is preferred. This saves us money by avoiding fetching wheels from our
+    # S3 bucket at https://binaries.pantsbuild.org unless absolutely needed.
     #
     # Also, we don't advance setuptools past 58 which drops support for the `setup` kwarg `use_2to3`
     # which Pants 1.x sdist dependencies (pystache) use.
-    venv_pip_install(venv_dir, "-U", "pip==22.3.1", "setuptools<58", "wheel", find_links=find_links)
-    venv_pip_install(venv_dir, "--progress-bar", "off", *pants_requirements, find_links=find_links)
+    env = pip_env(venv_dir)
+    venv_pip_install(
+        venv_dir, "-U", "pip==25.0.1", "setuptools<58", "wheel", env=env, find_links=find_links
+    )
+    venv_pip_install(
+        venv_dir, "--progress-bar", "off", *pants_requirements, env=env, find_links=find_links
+    )
 
 
 def install_pants_from_pex(
@@ -125,7 +157,9 @@ def install_pants_from_pex(
                 print("\n-----", file=fp)
 
     if extra_requirements:
-        venv_pip_install(venv_dir, "--progress-bar", "off", *extra_requirements)
+        venv_pip_install(
+            venv_dir, "--progress-bar", "off", *extra_requirements, env=pip_env(venv_dir)
+        )
 
 
 def chmod_plus_x(path: str) -> None:
